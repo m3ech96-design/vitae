@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
+import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
 
 const MAIN_ITEMS = [
   { href: "/home", label: "Home", icon: HomeIcon },
@@ -38,10 +39,12 @@ export function BottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
+  const { hasUnreadNotification } = useVitaegramSocial();
   if (HIDDEN_ON.includes(pathname)) return null;
 
   const moreActive = MORE_ITEMS.some((m) => m.enabled && pathname.startsWith(m.href));
   const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
+  const notifDotColor = mood?.color ?? "#B79A6B";
 
   return (
     <>
@@ -66,11 +69,17 @@ export function BottomNav() {
                 key={href}
                 href={href}
                 className={clsx(
-                  "focus-ring flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-all",
+                  "focus-ring relative flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-all",
                   active ? "bg-aura-violet/15 text-ink-100 shadow-glow-sm" : "text-ink-600 hover:text-ink-200"
                 )}
               >
                 <Icon size={18} />
+                {href === "/vitaegram" && hasUnreadNotification && (
+                  <span
+                    className="absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
+                    style={{ background: notifDotColor }}
+                  />
+                )}
                 <span className="text-[9px]">{label}</span>
               </Link>
             );

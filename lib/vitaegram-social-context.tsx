@@ -1,10 +1,11 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { VitaegramPost, VitaegramComment, VitaegramTag } from "./vitaegram-social-types";
-import { buildDemoPosts } from "./vitaegram-demo-data";
+import { buildDemoPosts, DEMO_ACCOUNTS } from "./vitaegram-demo-data";
 import { newId } from "./id";
 
-const KEY = "vitae:vitaegram-posts";
+const POSTS_KEY = "vitae:vitaegram-posts";
+const NOTIF_KEY = "vitae:vitaegram-notifications";
 
 interface NewPostInput {
   caption: string;
@@ -14,9 +15,21 @@ interface NewPostInput {
   tags: VitaegramTag[];
 }
 
+export interface VitaegramNotification {
+  id: string;
+  postId: string;
+  fromAccountId: string;
+  kind: "like" | "comment";
+  createdAt: string;
+  read: boolean;
+}
+
 interface VitaegramSocialContextValue {
   hydrated: boolean;
   posts: VitaegramPost[];
+  notifications: VitaegramNotification[];
+  hasUnreadNotification: boolean;
+  markNotificationsRead: () => void;
   publish: (input: NewPostInput) => void;
   toggleLike: (postId: string) => void;
   toggleCommentLike: (postId: string, commentId: string, replyId?: string) => void;
@@ -31,14 +44,35 @@ function mapComment(c: VitaegramComment, fn: (c: VitaegramComment) => VitaegramC
   return { ...next, replies: next.replies.map((r) => fn(r)) };
 }
 
+const DEMO_REPLY_TEXTS = ["Bellissimo 🙂", "Mi piace tantissimo questa cosa.", "Vero, capisco perfettamente.", "Che bello leggerlo."];
+
 export function VitaegramSocialProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [posts, setPosts] = useState<VitaegramPost[]>([]);
+  const [notifications, setNotifications] = useState<VitaegramNotification[]>([]);
+  const postsRef = useRef<VitaegramPost[]>([]);
+  const notifRef = useRef<VitaegramNotification[]>([]);
 
-  const persist = useCallback((next: VitaegramPost[]) => {
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+  useEffect(() => {
+    notifRef.current = notifications;
+  }, [notifications]);
+
+  const persistPosts = useCallback((next: VitaegramPost[]) => {
     setPosts(next);
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(next));
+      window.localStorage.setItem(POSTS_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
+  const persistNotifications = useCallback((next: VitaegramNotification[]) => {
+    setNotifications(next);
+    try {
+      window.localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
     } catch {
       // storage non disponibile: continua solo in memoria
     }
@@ -46,21 +80,68 @@ export function VitaegramSocialProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(KEY);
-      if (raw) {
-        setPosts(JSON.parse(raw) as VitaegramPost[]);
+      const rawPosts = window.localStorage.getItem(POSTS_KEY);
+      if (rawPosts) {
+        setPosts(JSON.parse(rawPosts) as VitaegramPost[]);
       } else {
         // Prima apertura di Vitaegram: semina i post dimostrativi una volta sola, poi
         // diventano dati locali come tutto il resto (i tuoi like/commenti sopra restano).
         const seeded = buildDemoPosts();
         setPosts(seeded);
-        window.localStorage.setItem(KEY, JSON.stringify(seeded));
+        window.localStorage.setItem(POSTS_KEY, JSON.stringify(seeded));
       }
+      const rawNotif = window.localStorage.getItem(NOTIF_KEY);
+      if (rawNotif) setNotifications(JSON.parse(rawNotif) as VitaegramNotification[]);
     } catch {
       setPosts(buildDemoPosts());
     }
     setHydrated(true);
   }, []);
+
+  /**
+   * "Quando qualcuno clicca la gemma, arriva una notifica..." — senza un vero backend non
+   * c'è nessun altro account reale che possa mai cliccarla per davvero. Per non lasciare
+   * la funzione a vuoto nell'anteprima, un account dimostrativo interagisce con un tuo post
+   * nuovo dopo una manciata di secondi — solo per i TUOI post, mai per quelli demo, e
+   * sempre chiaramente un account demo, mai spacciato per una persona vera.
+   */
+  const simulateDemoEngagement = useCallback(
+    (postId: string) => {
+      const delay = 4000 + Math.random() * 5000;
+      setTimeout(() => {
+        const account = DEMO_ACCOUNTS[Math.floor(Math.random() * DEMO_ACCOUNTS.length)];
+        const isComment = Math.random() < 0.3;
+        const current = postsRef.current;
+        const updated = current.map((p) => {
+          if (p.id !== postId) return p;
+          if (isComment) {
+            const comment: VitaegramComment = {
+              id: newId(),
+              authorId: account.id,
+              text: DEMO_REPLY_TEXTS[Math.floor(Math.random() * DEMO_REPLY_TEXTS.length)],
+              createdAt: new Date().toISOString(),
+              likedByUser: false,
+              likeCount: 0,
+              replies: [],
+            };
+            return { ...p, comments: [...p.comments, comment] };
+          }
+          return { ...p, likeCount: p.likeCount + 1 };
+        });
+        persistPosts(updated);
+        const notif: VitaegramNotification = {
+          id: newId(),
+          postId,
+          fromAccountId: account.id,
+          kind: isComment ? "comment" : "like",
+          createdAt: new Date().toISOString(),
+          read: false,
+        };
+        persistNotifications([notif, ...notifRef.current]);
+      }, delay);
+    },
+    [persistPosts, persistNotifications]
+  );
 
   const publish = useCallback(
     (input: NewPostInput) => {
@@ -77,25 +158,26 @@ export function VitaegramSocialProvider({ children }: { children: React.ReactNod
         likeCount: 0,
         comments: [],
       };
-      persist([post, ...posts]);
+      persistPosts([post, ...posts]);
+      simulateDemoEngagement(post.id);
     },
-    [posts, persist]
+    [posts, persistPosts, simulateDemoEngagement]
   );
 
   const toggleLike = useCallback(
     (postId: string) => {
-      persist(
+      persistPosts(
         posts.map((p) =>
           p.id === postId ? { ...p, likedByUser: !p.likedByUser, likeCount: p.likeCount + (p.likedByUser ? -1 : 1) } : p
         )
       );
     },
-    [posts, persist]
+    [posts, persistPosts]
   );
 
   const toggleCommentLike = useCallback(
     (postId: string, commentId: string, replyId?: string) => {
-      persist(
+      persistPosts(
         posts.map((p) => {
           if (p.id !== postId) return p;
           return {
@@ -111,7 +193,7 @@ export function VitaegramSocialProvider({ children }: { children: React.ReactNod
         })
       );
     },
-    [posts, persist]
+    [posts, persistPosts]
   );
 
   const addComment = useCallback(
@@ -126,7 +208,7 @@ export function VitaegramSocialProvider({ children }: { children: React.ReactNod
         likeCount: 0,
         replies: [],
       };
-      persist(
+      persistPosts(
         posts.map((p) => {
           if (p.id !== postId) return p;
           if (!replyToCommentId) return { ...p, comments: [...p.comments, comment] };
@@ -143,13 +225,30 @@ export function VitaegramSocialProvider({ children }: { children: React.ReactNod
         })
       );
     },
-    [posts, persist]
+    [posts, persistPosts]
   );
 
-  const removePost = useCallback((postId: string) => persist(posts.filter((p) => p.id !== postId)), [posts, persist]);
+  const removePost = useCallback((postId: string) => persistPosts(posts.filter((p) => p.id !== postId)), [posts, persistPosts]);
+
+  const markNotificationsRead = useCallback(() => {
+    persistNotifications(notifications.map((n) => ({ ...n, read: true })));
+  }, [notifications, persistNotifications]);
 
   return (
-    <VitaegramSocialContext.Provider value={{ hydrated, posts, publish, toggleLike, toggleCommentLike, addComment, removePost }}>
+    <VitaegramSocialContext.Provider
+      value={{
+        hydrated,
+        posts,
+        notifications,
+        hasUnreadNotification: notifications.some((n) => !n.read),
+        markNotificationsRead,
+        publish,
+        toggleLike,
+        toggleCommentLike,
+        addComment,
+        removePost,
+      }}
+    >
       {children}
     </VitaegramSocialContext.Provider>
   );

@@ -1,10 +1,7 @@
 "use client";
 import { Gem, MessageCircle, Share2 } from "lucide-react";
 import { VitaegramPost } from "@/lib/vitaegram-social-types";
-import { resolveAccount, resolveTag } from "@/lib/vitaegram-resolve";
-import { useHousehold } from "@/lib/household-context";
-import { useTasks } from "@/lib/tasks-context";
-import { usePlaces } from "@/lib/places-context";
+import { resolveAccount, resolveTaggedAccounts } from "@/lib/vitaegram-resolve";
 import { useMood } from "@/lib/mood-context";
 import { useProfile } from "@/lib/profile-context";
 import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
@@ -21,17 +18,15 @@ function timeAgo(iso: string): string {
 }
 
 export function PostCard({ post, onOpenComments, onShare }: { post: VitaegramPost; onOpenComments: () => void; onShare: () => void }) {
-  const { people } = useHousehold();
-  const { tasks } = useTasks();
-  const { places } = usePlaces();
   const { allMoods } = useMood();
   const { profile } = useProfile();
   const { toggleLike } = useVitaegramSocial();
 
-  const account = resolveAccount(post.authorId, { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl });
+  const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
+  const account = resolveAccount(post.authorId, userAccount);
   const mood = allMoods.find((m) => m.id === post.moodId);
   const color = mood?.color ?? "#565B77";
-  const tags = post.tags.map((t) => resolveTag(t, { people, tasks, places }));
+  const taggedAccounts = resolveTaggedAccounts(post.tags, userAccount);
 
   return (
     <div className="overflow-hidden rounded-xl2" style={{ border: `1.5px solid ${color}88`, background: "rgba(255,255,255,0.02)" }}>
@@ -73,7 +68,7 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaegramPos
             <Share2 size={17} color="#8B90A8" strokeWidth={1.6} />
           </button>
         </div>
-        <TaggedAvatars tags={tags} />
+        <TaggedAvatars accounts={taggedAccounts} />
       </div>
     </div>
   );

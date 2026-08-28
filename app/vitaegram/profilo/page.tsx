@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Aperture } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
+import { useVitaegramDraft } from "@/lib/vitaegram-draft-context";
 import { VitaegramPost } from "@/lib/vitaegram-social-types";
 import { NicknameGate } from "@/components/vitaegram/NicknameGate";
 import { PostCard } from "@/components/vitaegram/PostCard";
@@ -13,8 +14,20 @@ import { AuraAvatar } from "@/components/ui/AuraAvatar";
 function Bacheca() {
   const { profile } = useProfile();
   const { hydrated, posts, publish } = useVitaegramSocial();
+  const { draft } = useVitaegramDraft();
   const [composerOpen, setComposerOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<VitaegramPost | null>(null);
+
+  // Riprende da sola una bozza lasciata a metà quando sei uscito con "Home" — vedi
+  // lib/vitaegram-draft-context.tsx. Solo all'ingresso in questa scheda, una volta.
+  useEffect(() => {
+    if (draft?.kind === "post") setComposerOpen(true);
+    if (draft?.kind === "comment") {
+      const p = posts.find((x) => x.id === draft.postId);
+      if (p) setCommentsFor(p);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   if (!hydrated) return null;
   const ownPosts = posts.filter((p) => p.authorId === "user");

@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuraAvatar } from "../ui/AuraAvatar";
-import { ResolvedTag } from "@/lib/vitaegram-resolve";
+import { VitaegramAccount } from "@/lib/vitaegram-social-types";
 
-export function TaggedAvatars({ tags }: { tags: ResolvedTag[] }) {
+export function TaggedAvatars({ accounts }: { accounts: VitaegramAccount[] }) {
   const [open, setOpen] = useState(false);
-  if (tags.length === 0) return null;
+  if (accounts.length === 0) return null;
 
   return (
     <div className="relative">
@@ -22,10 +22,10 @@ export function TaggedAvatars({ tags }: { tags: ResolvedTag[] }) {
             className="glass-strong relative z-20 flex flex-col gap-2 rounded-xl2 p-2"
             onClick={() => setOpen(false)}
           >
-            {tags.map((t, i) => (
-              <div key={i} className="flex items-center gap-2 pr-3">
-                <AuraAvatar imageUrl={t.avatarUrl} firstName={t.label} size={26} ring="idle" />
-                <span className="text-xs text-ink-200">{t.label}</span>
+            {accounts.map((a) => (
+              <div key={a.id} className="flex items-center gap-2 pr-3">
+                <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={26} ring="idle" />
+                <span className="text-xs text-ink-200">{a.nickname}</span>
               </div>
             ))}
           </motion.div>
@@ -38,14 +38,14 @@ export function TaggedAvatars({ tags }: { tags: ResolvedTag[] }) {
             onClick={() => setOpen(true)}
             className="focus-ring relative z-20 flex items-center"
           >
-            {tags.slice(0, 4).map((t, i) => (
-              <span key={i} className="-ml-2.5 first:ml-0" style={{ zIndex: tags.length - i }}>
-                <AuraAvatar imageUrl={t.avatarUrl} firstName={t.label} size={24} ring="idle" />
+            {accounts.slice(0, 4).map((a, i) => (
+              <span key={a.id} className="-ml-2.5 first:ml-0" style={{ zIndex: accounts.length - i }}>
+                <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={24} ring="idle" />
               </span>
             ))}
-            {tags.length > 4 && (
+            {accounts.length > 4 && (
               <span className="-ml-2.5 flex h-6 w-6 items-center justify-center rounded-full border border-void-950 bg-void-800 text-[9px] text-ink-400">
-                +{tags.length - 4}
+                +{accounts.length - 4}
               </span>
             )}
           </motion.button>

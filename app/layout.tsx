@@ -10,6 +10,7 @@ import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
 import { IllnessProvider } from "@/lib/illness-context";
 import { VitaegramSocialProvider } from "@/lib/vitaegram-social-context";
+import { VitaegramDraftProvider } from "@/lib/vitaegram-draft-context";
 import { IllnessFilterDefs } from "@/components/illness/IllnessFilterDefs";
 import { IllnessVignette } from "@/components/illness/IllnessVignette";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <NeedsProvider>
                           <IllnessProvider>
                             <VitaegramSocialProvider>
+                              <VitaegramDraftProvider>
                               {children}
                               <NavSwitcher />
                               <NearbyPlacePrompt />
@@ -69,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                               <TaskNotifier />
                               <MoodSuggestionPrompt />
                               <IllnessVignette />
+                            </VitaegramDraftProvider>
                             </VitaegramSocialProvider>
                           </IllnessProvider>
                         </NeedsProvider>

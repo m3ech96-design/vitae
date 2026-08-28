@@ -3,6 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home as HomeIcon, User, Globe2, MessageSquare } from "lucide-react";
 import clsx from "clsx";
+import { useMood } from "@/lib/mood-context";
+import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
 
 const ITEMS = [
   { href: "/home", label: "Home", icon: HomeIcon, exits: true },
@@ -19,6 +21,10 @@ const ITEMS = [
  */
 export function OnlineNav() {
   const pathname = usePathname();
+  const { activeMood, allMoods } = useMood();
+  const { hasUnreadNotification } = useVitaegramSocial();
+  const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
+  const notifDotColor = mood?.color ?? "#B79A6B";
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-void-950/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
@@ -30,11 +36,17 @@ export function OnlineNav() {
               key={href}
               href={href}
               className={clsx(
-                "focus-ring flex flex-col items-center gap-1 rounded-xl2 px-3 py-1.5 text-[10px] transition-colors",
+                "focus-ring relative flex flex-col items-center gap-1 rounded-xl2 px-3 py-1.5 text-[10px] transition-colors",
                 active ? "text-ink-100" : "text-ink-800"
               )}
             >
               <Icon size={20} strokeWidth={active ? 2.2 : 1.8} color={active ? "#B79A6B" : undefined} />
+              {href === "/vitaegram/chat" && hasUnreadNotification && (
+                <span
+                  className="absolute right-1.5 top-0.5 h-2 w-2 rounded-full border border-void-950"
+                  style={{ background: notifDotColor }}
+                />
+              )}
               {label}
             </Link>
           );

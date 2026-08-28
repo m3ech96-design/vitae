@@ -14,12 +14,15 @@ export interface VitaegramAccount {
 
 export type VitaegramMentionType = "person" | "place" | "task";
 
-/** Un tag agganciato a un post — per ora solo verso le TUE Persone/Luoghi/Task (le uniche
- * cose che esistono davvero); il giorno di un vero backend, potrà anche essere un altro
- * account reale, senza cambiare la forma del post. */
+/**
+ * Un tag su un post è sempre verso un ACCOUNT — "gli avatar taggati per nickname", non le
+ * tue Persone/Luoghi/Task private (quelle restano solo materiale per la didascalia in
+ * "Imprimi Momento", non hanno un proprio commento da poter fissare in alto). Per ora gli
+ * unici account taggabili sono quelli dimostrativi (vedi vitaegram-demo-data.ts) — il
+ * giorno di un vero backend, la stessa forma varrà per account reali.
+ */
 export interface VitaegramTag {
-  type: VitaegramMentionType;
-  id: string;
+  accountId: string;
 }
 
 export interface VitaegramComment {

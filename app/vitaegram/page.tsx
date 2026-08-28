@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Globe2 } from "lucide-react";
 import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
+import { useVitaegramDraft } from "@/lib/vitaegram-draft-context";
 import { VitaegramPost } from "@/lib/vitaegram-social-types";
 import { NicknameGate } from "@/components/vitaegram/NicknameGate";
 import { PostCard } from "@/components/vitaegram/PostCard";
@@ -9,7 +10,17 @@ import { PostComments } from "@/components/vitaegram/PostComments";
 
 function VitaeworldFeed() {
   const { hydrated, posts, publish } = useVitaegramSocial();
+  const { draft } = useVitaegramDraft();
   const [commentsFor, setCommentsFor] = useState<VitaegramPost | null>(null);
+
+  // Riprende da sola una bozza di commento lasciata a metà — vedi lib/vitaegram-draft-context.tsx.
+  useEffect(() => {
+    if (draft?.kind === "comment") {
+      const p = posts.find((x) => x.id === draft.postId);
+      if (p) setCommentsFor(p);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   if (!hydrated) return null;
 
