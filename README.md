@@ -1,0 +1,571 @@
+# Vitae
+
+Prima base del progetto: fondamenta tecniche + Wizard di creazione utente.
+
+## Cosa c'è in questa versione
+
+- Progetto Next.js 14 (App Router) + TypeScript + Tailwind, pronto per Vercel.
+- Tema scuro con effetto neon/glow ("Aura"), font Space Grotesk + Manrope + JetBrains Mono.
+- PWA installabile (manifest, icone, service worker base) per Android e iOS.
+- Wizard di creazione utente completo:
+  - Identità: immagine profilo con ritaglio/centratura, nome, cognome, compleanno (età calcolata), sesso, carattere (50 tratti), campi personalizzati illimitati ("+").
+  - Istruzione e Lavoro: dove ha studiato/lavorato, titolo di studio, campi personalizzati.
+  - Interessi: film, musica, libri, videogiochi (con miniature), cibi preferiti, luoghi d'interesse, campi personalizzati con miniatura facoltativa.
+  - "Crea Sezione": permette di aggiungere sezioni interamente personalizzate, sempre disponibile in fondo all'ultima sezione, non scompare mai.
+- Pagina Home segnaposto con saluto dinamico in base all'orario e riepilogo del profilo.
+- Home reale con i riquadri "Casa" e "Fuori Casa":
+  - collegamento della Casa a un indirizzo reale (con acquisizione delle coordinate GPS);
+  - "Aggiungi Alla Casa" per creare Uomo, Donna, Bambino, Bambina, Cane o Gatto (identità essenziale,
+    come da meccanica di scoperta progressiva — il resto delle informazioni arriverà con il modulo Persone);
+  - rilevamento posizione facoltativo (l'utente lo attiva lui): se ti allontani più di 500 metri
+    da Casa, il tuo avatar passa automaticamente nel riquadro "Fuori Casa" — funziona finché l'app
+    resta aperta, per i limiti delle web app spiegati più sotto;
+  - le persone/animali "dormono" (icona Zzz) tra le 22:00 e le 6:00: toccarli li sveglia per un'ora;
+  - Finestra Persona di base, con le sezioni Scoperte / Impegni / Albero Genealogico segnate
+    "Presto" in attesa del modulo Persone completo.
+- I dati sono salvati in locale (localStorage), sul dispositivo: per scelta, non è previsto un database.
+  Se in futuro servirà sincronizzare i dati tra più dispositivi, si affronterà quando richiesto.
+
+- Mappa interattiva reale (OpenStreetMap con tema scuro CARTO Dark Matter), con marker "Aura":
+  glow a diamante viola per Casa, glow a cerchio colorato per ogni altro tipo (Lavoro, Palestra,
+  Ristorante, Bar, Supermercato, Negozio, Culto, Servizio, Altro).
+  - "Aggiungi Luogo": tipo, foto facoltativa, indirizzo, posizione (GPS o tocco diretto sulla
+    mappa); per Casa/Lavoro chiede a chi appartiene tra le persone già create.
+  - Check-in/check-out manuale ("Sono Qui" / "Esci Da Qui") con richiesta di eventuali
+    accompagnatori; se resti almeno 5 minuti, alla fine ti chiede una valutazione.
+  - Valutazione a barra (Pessimo → Adoro) con incrementi del 5–10% a ogni interazione, come da
+    meccanica richiesta — semplificata rispetto ai 100 tipi di interazione descritti, che
+    aggiungeremo quando costruiremo il modulo Rapporti (la stessa barra verrà riusata lì).
+  - Conteggio visite settimana/mese/anno/sempre, cronologia con gli accompagnatori, filtri per
+    valutazione e numero di visite; il luogo in cui ti trovi ora resta sempre primo in lista.
+  - La Casa collegata in Home ora è, dietro le quinte, un vero Luogo di tipo Casa: i due moduli
+    condividono lo stesso dato, senza doppioni.
+- Barra di navigazione inferiore, con Task/Persone/Altro già visibili ma disattivati finché non
+  li costruiamo (per farti vedere la struttura finale dell'app fin da ora).
+
+- Modulo Task completo:
+  - "Aggiungi Task" con titolo, note, tipo (Attività Quotidiana, Spesa, Appuntamento,
+    Promemoria, Obiettivo, Evento), data/orario, ricorrenza, colore (50 toni "gioiello"
+    distribuiti con l'angolo aureo, non la solita ruota arcobaleno), priorità (con una
+    sfumatura leggera e indipendente sulla card, non invasiva), tag, persone e luogo
+    collegati, sub-task indipendenti con data/ora proprie.
+  - Le Attività Quotidiane si aggregano da sole in una fila dedicata, spuntabili con un tocco;
+    dalla seconda volta consecutiva compare la striscia (contatore a fiamma).
+  - "Spesa" aggiunge la Lista Della Spesa in fase di creazione; al completamento chiede quanto
+    hai speso (facoltativo) — il dato resta pronto per la futura scheda Finanze.
+  - Completare una task collegata a un luogo aggiunge automaticamente +1 alle sue visite;
+    completarla con altre persone aumenta il loro contatore di frequentazione (base per la
+    futura scheda Rapporti).
+  - Vista Calendario con una striscia di date "Aura" (stesso linguaggio visivo di avatar e
+    mappa) che espande davvero le ricorrenze — una task settimanale, ad esempio, compare in
+    automatico su tutte le date corrette, non solo su quella di creazione.
+  - Task ordinate per scadenza, filtri per tipo.
+
+- Modulo Persone:
+  - "Aggiungi Persona" con la sola Identità (nome, cognome, foto facoltativa, tipo — Uomo,
+    Donna, Bambino, Bambina, Cane, Gatto), più un interruttore "Vive Con Te" facoltativo.
+  - Finestra Persona con la scheda **Scoperte**: le sei sezioni previste (Identità, Istruzione,
+    Lavoro, Casa, Corpo, Interessi) più sezioni interamente personalizzabili — esattamente lo
+    stesso meccanismo "+" / "Crea Sezione" del wizard utente, riusato qui per coerenza.
+  - **Bolla di dialogo viva**: vicino all'avatar (in Home e in Persone) appare una nuvoletta
+    fumettistica con effetto macchina da scrivere, che cita a caso una "Frase Ricorrente"
+    (Modalità Dialogo) oppure — se è impostata un'azione per l'orario attuale, o casuale —
+    "Forse Sta"/"Probabilmente Sta [...]" (Modalità Vivo). Compare e scompare da sola, a
+    intervalli casuali, senza mai coprire il resto della card.
+  - Icone Chiama e WhatsApp sulla card, che compaiono da sole appena scopri un numero di
+    telefono — nessun campo fisso da riempire, coerente con la logica "solo ciò che scopri".
+  - Ogni nuova scoperta genera in automatico una voce nella sezione "Novità" della Home
+    ("Hai Scoperto Qualcosa Di Nuovo Su ..."), a chiudere il cerchio tra i due moduli.
+  - Elenco ordinabile per alfabeto o per frequentazione (le uscite insieme, contate
+    automaticamente dal completamento delle Task).
+  - Semplificazioni dichiarate: Impegni e Albero Genealogico sono segnati "Presto" (l'infrastruttura
+    delle Task è già pronta per diventare la base degli Impegni); Carattere/Valori/Stile Di
+    Vita si compilano come Nuova Scoperta libera invece dei menu da ~100 voci ciascuno, per
+    restare concreti senza inventare contenuti; gli animali usano per ora le stesse sei
+    sezioni delle persone, non ancora quelle dedicate (orari pappa, interessi/abitudini
+    specifici) descritte nella richiesta originale.
+
+- Modulo Salute — qui la richiesta era "scatenati senza mai essere scontato", quindi:
+  - Niente grafico a barre da app fitness generica. Le attività registrate diventano un
+    **Campo Energetico**: una costellazione di orb luminosi (stesso linguaggio "Aura" di
+    avatar, mappa e calendario) che fluttuano organicamente, grandi in proporzione alle
+    calorie, colorati per categoria. Toccarne uno apre i dettagli.
+  - Catalogo di 110 attività fisiche in 10 categorie (Cardio, Forza, Sport Di Squadra,
+    Sport Individuali, Outdoor, Acquatici, Mente-Corpo, Danza E Combattimento, Invernali,
+    Altro), ciascuna con una stima calorica per minuto suggerita (e sempre modificabile).
+  - Peso: un grafico a linea luminosa con area sfumata, obiettivo tratteggiato, e la
+    variazione rispetto alla pesata precedente.
+  - Statistiche settimanali (minuti, calorie, giorni attivi consecutivi).
+  - Nessun finto pulsante "Connetti Fitbit/Garmin/Apple Salute": la sincronizzazione reale
+    servirebbe un servizio lato server per gestire le connessioni in sicurezza (coerente con
+    la scelta di non avere un database), quindi per ora tutto si registra a mano, in fretta.
+- La barra di navigazione ora ha un pannello "Altro" che raccoglie Salute (pronta) insieme a
+  Finanze, Rapporti e Animali (ancora "Presto") — invece di continuare ad aggiungere icone
+  alla barra principale ogni volta che finisco un modulo.
+
+## Checkpoint — cose corrette dopo una rilettura del brief originale
+
+- **Title Case ovunque**: il testo scritto dall'utente (titoli task, note, indirizzi, frasi
+  ricorrenti, valori delle scoperte) ora rispetta davvero "Tutte le prime lettere devono
+  essere maiuscole" — prima alcuni campi usavano solo la maiuscola iniziale di frase.
+- **Ritaglio immagine generalizzato**: prima solo l'avatar si poteva ridimensionare per
+  centrare il soggetto; ora lo stesso strumento di ritaglio vale anche per le foto dei
+  Luoghi e per le miniature di Interessi/Scoperte, come richiesto in generale.
+- **Cliccare sull'utente in Home** ora apre davvero un "Resoconto Generale" (profilo, interessi,
+  luoghi, persone conosciute, ritmo delle task, salute) — prima mancava del tutto.
+- **Il wizard crea marker veri su Mappa**: "Dove Ha Studiato"/"Dove Ha Lavorato" avevano solo
+  una scritta rimandata a "dopo"; ora un pulsante "Crea Marker" apre davvero la creazione del
+  luogo, con la posizione da scegliere sulla mappa.
+- **Mappa e Persone ora si parlano**: collegare un luogo di tipo Casa o Lavoro a una persona
+  (non solo a te) genera davvero una voce nelle sue Scoperte, non solo nel luogo.
+- **Filtri nella scheda Persone**: oltre all'ordinamento, ora si può filtrare per Persone,
+  Animali, In Casa — mancava il "aggiungi dei filtri" esplicitamente richiesto.
+
+## Gap trovato ma non ancora corretto — il prossimo da fare
+
+Il brief dice esplicitamente: tutto ciò che è nella scheda Scoperte di una persona (soprannome,
+numero di telefono, luogo di nascita, valori, punti di forza/deboli, paure, ambizioni, stile di
+vita, materie/competenze/lingue, occupazione, stress, stato civile, partner, amici, peso,
+altezza, obiettivo fisico, categoria preferita...) deve esistere **anche nel wizard dell'utente**,
+in aggiunta a quanto già c'è. Per ora il wizard ha solo i campi originariamente descritti; il
+resto si può aggiungere solo con il "+" libero. È un lavoro corposo (una ventina di campi, alcuni
+con menu dedicati) che merita un turno suo per non essere fatto in fretta.
+
+## Checkpoint 2 — correzione e rilettura accademica
+
+**Corretto**: la regola sul maiuscolo era sbagliata nella versione precedente. Non è Title Case
+ovunque: è la prima lettera della frase intera, non di ogni parola. Ho ripristinato la maiuscola
+di sola frase per titolo/note della task, sub-task, valore dei campi scoperti, frasi ricorrenti —
+cioè tutto ciò che è davvero una frase libera. Ho lasciato il Title Case solo per nomi propri
+ed etichette (nome/cognome, titoli di sezione, nomi di luoghi, titoli di film/libri/giochi,
+indirizzi, il nome di un campo personalizzato) perché quelli sono nomi, non frasi.
+
+**Trovato e corretto — un meccanismo che avevo implementato solo a metà**: la richiesta "quanto
+hai speso" doveva dipendere dal *tipo di luogo* collegato (Ristorante, Bar, Servizio,
+Supermercato, Negozio), non dal tipo di task. Prima scattava solo per le task di tipo "Spesa".
+Ora scatta per qualunque task completata che sia collegata a uno di quei tipi di luogo — e,
+soprattutto, ora scatta anche uscendo manualmente da uno di quei luoghi nella Mappa, anche senza
+nessuna task, esattamente come descritto ("o mi ci trovo fisicamente anche senza task").
+
+**Ri-verificato e confermato corretto** (non serviva intervenire, ma l'ho controllato): la
+trasparenza PNG è gestita di serie (il ritaglio immagine esporta sempre in PNG, che preserva il
+canale alfa); le bolle di dialogo non coprono mai l'avatar o il resto della card; la sovrapposizione
+degli avatar nelle task card conta correttamente fino a 3 + "+n"; il ciclo giorno/notte si applica
+allo stesso modo sia in Casa che Fuori Casa.
+
+**Semplificazione dichiarata**: se non rinomini un luogo, il suo nome diventa l'indirizzo che hai
+digitato — non un vero "nome originale" recuperato da un servizio di mappe, perché non ho una
+fonte di dati esterna affidabile per quello.
+
+## Checkpoint 3 — avevi ragione, "mi ci trovo fisicamente anche senza task" non è un pulsante
+
+Rileggendo con più attenzione i punti sulla geolocalizzazione, il testo descrive un meccanismo
+preciso che avevo sostituito con qualcosa di più semplice: l'**ingresso** in un luogo deve essere
+**automatico** (rilevato dal sistema entro 100 metri, che chiede "Sei Attualmente A [Luogo]?"),
+non un pulsante "Sono Qui" premuto dall'utente. L'unica cosa manuale, come dice il testo, è
+**l'uscita** (il pulsante "Esci" nella sezione Mappa) — quella l'avevo già fatta giusta.
+
+Corretto ora:
+- Con il rilevamento attivo, un banner compare da solo in cima allo schermo — su qualunque
+  pagina dell'app — quando sei entro 100 metri da un luogo registrato, chiedendo conferma.
+- Se confermi, parte la visita esattamente come per il check-in manuale (stessa logica di
+  uscita, valutazione e richiesta di spesa già costruite).
+- Compare l'icona del luogo in alto a destra sull'avatar dell'utente (in Home, sia nella card
+  profilo che nei riquadri Casa/Fuori Casa) finché non ti allontani di 200 metri — l'icona sparisce,
+  ma la visita resta aperta finché non esci manualmente dalla Mappa, come descritto.
+- Ho lasciato il pulsante "Sono Qui" manuale come ripiego per quando il rilevamento è spento
+  (o il permesso GPS non è concesso), con una didascalia che lo chiarisce.
+
+## Checkpoint 4 — chiuso il gap più grande rimasto
+
+Il wizard utente ora ha, di serie e in aggiunta a quanto già c'era, tutti i campi previsti dalla
+scheda Scoperte di una persona:
+
+- **Identità**: + Soprannome, Numero Di Telefono, Luogo Di Nascita, Valori (60 voci, stessa
+  meccanica di ricerca del Carattere), Punti Di Forza, Punti Deboli, Paure, Ambizioni, Obiettivi,
+  Stile Di Vita (60 voci).
+- **Istruzione E Lavoro**: + Materie Conosciute, Competenze, Abilità, Lingue Conosciute (liste
+  libere), Occupazione Attuale, Stress (Basso/Medio/Alto), Ambizione Professionale.
+- **Corpo** (sezione nuova): Peso — la prima pesata inserita qui diventa automaticamente la prima
+  voce della cronologia in Salute, invece di essere un dato isolato — Altezza, Obiettivo Fisico.
+- **Casa** (sezione nuova, vita privata — da non confondere con la Casa/Fuori Casa di Home):
+  Stato Civile, Partner e Amici scelti tra le persone già create (con un messaggio chiaro se non
+  ne hai ancora create nessuna, invece di mostrare un menu vuoto e basta).
+- **Interessi**: + Categoria Preferita (60 voci).
+
+Le tre nuove liste da ~60 voci (Valori, Stile Di Vita, Categorie D'Interesse) sono curate a mano,
+non le 100 originali richieste per ciascuna — la stessa scelta già fatta per Carattere nella
+prima versione del wizard, per restare concreti senza riempire con voci senza qualità.
+
+## Checkpoint 5 — Rapporti, e stavolta niente foglio dal basso
+
+Avevo notato anch'io, quando me l'hai fatto notare: ogni modulo nuovo finiva per essere la
+stessa coreografia — tocca, si apre un pannello dal basso, compila, salva. Rapporti rompe
+volutamente quello schema:
+
+- **Niente modal per il dettaglio**: aprire una persona in Rapporti porta a una vera pagina
+  dedicata (`/rapporti/[id]`), con tanto di pulsante Indietro — non l'ennesimo foglio che
+  scivola dall'basso.
+- **L'elenco non è un elenco**: è una galleria di medaglioni. L'avatar di ogni persona è
+  incorniciato da un alone il cui colore *è* il rapporto (rosso per l'inimicizia, viola per
+  l'amicizia, oro per l'Amicizia Suprema, cremisi per l'Inimicizia Suprema) e la cui intensità
+  cresce con la forza del legame — non una barra separata accanto a una card generica.
+- **Lo spettro Inimicizia↔Amicizia** è una sola barra orizzontale (come richiesto: "complementari
+  al 100%"), con l'avatar della persona che galleggia sopra di essa nella posizione esatta,
+  invece di un numero o uno slider anonimo.
+- **100 interazioni scritte per intero** (50 positive, 50 negative per le persone; 20+20 per gli
+  animali, dominio più ristretto per natura), non generiche — frasi come "Le hai fatto una
+  sorpresa" o "Hai dimenticato il suo compleanno", non semplici pulsanti + / −.
+- **Amicizia e Inimicizia si sbloccano davvero**: raggiunto il 100% di Amicizia, le interazioni
+  positive continuano a riempire Vera Amicizia (icona corona); un'interazione negativa intacca
+  prima quella, non la barra base, esattamente come descritto — e specularmente per Profonda
+  Inimicizia. Amore si sblocca solo se la persona è il Partner scelto nel wizard.
+
+## Checkpoint 6 — Finanze, e stavolta "di più" sul serio
+
+- **Nessun modal, da nessuna parte**: ogni "aggiungi" (spesa in loop, spesa futura, spesa
+  singola, nuovo obiettivo, deposito nel salvadanaio) si apre sul posto, dentro la sua
+  sezione — lo stesso linguaggio già usato per le sub-task, non l'ennesimo foglio dal basso.
+- **L'anello del budget** non è una barra: è un anello luminoso che cambia colore da solo —
+  ciano sotto il 70%, ambra in avvicinamento, rosso oltre il budget — con la cifra spesa al
+  centro, modificabile toccandola.
+- **Il donut delle categorie** si popola da solo aggregando quattro fonti insieme: le task
+  completate con spesa registrata, le uscite dai luoghi (Ristorante, Bar, Supermercato,
+  Negozio, Servizio) con spesa registrata, le spese singole inserite a mano, e la quota
+  mensile delle spese ricorrenti attive — così il totale del mese non è mai un numero isolato
+  da reinserire, è già lì.
+- **Gli obiettivi di risparmio** sono boccette che si riempiono di luce, non barre di
+  progresso — oro quando li raggiungi.
+- **Indice Di Risparmio** e **Risparmio Del Mese** calcolati sul budget impostato, aggiornati
+  in automatico ogni volta che qualcosa viene speso altrove nell'app.
+- Le "Spese Singole" restano distinte da quelle raccolte in automatico, con una riga che lo
+  spiega, così non sembra che manchino dati: semplicemente vivono altrove, alla fonte.
+
+## Checkpoint 7 — tutte le correzioni segnalate, completate
+
+- **Notch**: ogni pagina principale e l'header della Mappa rispettano `env(safe-area-inset-top)`.
+- **"Aggiungi Luogo"** non è più coperto dalla mappa (mancava lo z-index sull'overlay).
+- **Card profilo in Home**: solo nome, età, icona modifica — via i tratti caratteriali.
+- **Risparmi**: niente più segno "meno" da digitare (introvabile sul tastierino numerico
+  iOS) — un interruttore Deposita/Preleva esplicito.
+- **Dialoghi e Azioni separati per davvero**: la nuvoletta mostra solo le Frasi Ricorrenti,
+  ancorata correttamente (`bottom-full` invece del calcolo che si tagliava); le Azioni sono
+  ora una riga di testo in corsivo dentro la card, con dissolvenza incrociata — mai più nella
+  nuvoletta, mai più sovrapposte a nulla.
+- **Home ripulita**: niente più nuvolette né Azioni nei riquadri Casa/Fuori Casa (il problema
+  era `overflow-hidden` sulle GlassCard, che le tagliava): lo spazio resta pronto per "Ho Fame"
+  degli animali, che arriverà con il modulo Animali, con un badge piccolo come lo Zzz — non una
+  nuvoletta che rischierebbe lo stesso taglio.
+- **Indirizzi con suggerimenti reali** (OpenStreetMap/Nominatim): "Dove Ha Studiato" e "Dove Ha
+  Lavorato" non chiedono più un nome senza senso geografico — cerchi, scegli dal menu, il
+  marker si crea da solo sulla mappa con le coordinate vere. Stesso trattamento per l'indirizzo
+  in "Collega La Tua Casa" e in "Aggiungi Luogo" (lì la mappa resta solo per una rifinitura
+  manuale del pin, non più per posizionarlo da zero).
+- **Il refactor più importante**: Utente e Persona condividono ora lo stesso modello dati
+  (`PersonalDetails`) e le stesse identiche sezioni del wizard (Identità, Istruzione E Lavoro,
+  Corpo, Casa, Interessi). La scheda Scoperte di una persona non è più una lista di campi "+"
+  generici: sono gli stessi campi ricchi e curati del wizard utente (Valori, Stile Di Vita,
+  Stress, Stato Civile, tutto), esclusi solo Nome, Cognome e immagine — già chiesti alla
+  creazione. Un marker creato da "Dove Ha Lavorato" nella scheda di una persona ora si attribuisce
+  a quella persona, non più sempre all'utente.
+
+Build verificata da zero dopo ogni pezzo, non solo alla fine.
+
+## Checkpoint 8 — Animali e Albero Genealogico, dentro Rapporti
+
+Come confermato: entrambi sono schede della pagina **Rapporti**, non moduli a sé.
+
+- **Scheda Animali**: elenco degli animali con "Aggiungi Animale" (lo stesso wizard delle
+  persone, ma limitato a Cane/Gatto). Ogni animale ha Carattere, Interessi e Abitudini
+  proprie — tre liste curate da zero apposta per cani e gatti (~50 voci ciascuna), non le
+  liste umane riciclate.
+- **Meccanica Della Pappa**: orari configurabili, badge "Ho Fame" quando un orario è passato
+  senza pasto registrato — piccolo come lo Zzz, mai una nuvoletta, per non rischiare lo stesso
+  taglio già corretto. In Home resta solo indicativo; nella scheda Animali (dove c'è spazio
+  sicuro) apre un menu del cibo ancorato al badge stesso, con 10 tipi di alimento. Dare da
+  mangiare alza l'amicizia dell'1%, come richiesto.
+- **Scheda Albero**: vero albero genealogico — card rettangolari e linee curve calcolate (non
+  l'ennesimo bagliore, come promesso). Genitori si scelgono nella scheda "Casa" del wizard o
+  delle Scoperte (nuovo campo, accanto a Partner e Amici); l'albero calcola da solo le
+  generazioni, raggruppa i partner fianco a fianco e traccia i collegamenti.
+- **Corretto un dettaglio rimasto indietro**: la lista "In Costruzione" in Home elencava ancora
+  Finanze, Rapporti e Animali come se non esistessero — erano già tutti fatti. Ora sono vere
+  scorciatoie cliccabili verso quei moduli.
+
+## Checkpoint 9 — Impegni: l'ultimo pezzo del brief originale
+
+- Scheda "Impegni" reale nella Finestra Persona (era "Presto", ora funziona), con lo stesso
+  linguaggio grafico delle Task: titolo, note, data, ora inizio/fine, luogo collegato,
+  "Avvisami Quando Inizia/Finisce" — inline, non l'ennesimo foglio dal basso.
+- **"Si Trova A [Luogo]" ha davvero la precedenza sulle Azioni**, esattamente come richiesto:
+  se un impegno è in corso, la riga sotto le informazioni della persona mostra quello; le
+  Azioni tornano a comparire solo quando non c'è nessun impegno attivo.
+- **Icona del luogo sull'avatar** quando una persona è impegnata da qualche parte — riuso lo
+  stesso badge già costruito per la posizione automatica dell'utente, sia nelle card di
+  Persone sia nei riquadri Casa/Fuori Casa di Home (con precedenza a "Ho Fame" per gli animali
+  se capitano nello stesso istante — evita la sovrapposizione dei due badge).
+- **Le notifiche funzionano davvero**, non solo come casella spuntata: il permesso del
+  browser viene chiesto solo quando attivi per la prima volta un avviso (non all'apertura
+  dell'app), e un controllo periodico invia la notifica al momento giusto — finché l'app
+  resta aperta, lo stesso limite di piattaforma di cui abbiamo già parlato per la
+  geolocalizzazione.
+
+## Checkpoint 10 — le migliorie che avevo consigliato, tutte fatte (tranne quella esclusa)
+
+**Sicurezza dei dati**, la priorità vera:
+- Conferma prima di ogni eliminazione distruttiva — Persona, Luogo, Task, Attività Di Salute,
+  Spese In Loop/Future/Singole, Obiettivi Di Risparmio.
+- **Esporta/Importa** un backup completo (un file JSON, dati + immagini insieme), raggiungibile
+  dal Resoconto Generale, con conferma esplicita e ricarica automatica dopo un'importazione.
+
+**Il bug latente delle immagini**, risolto alla radice:
+- Le immagini non vivono più come stringhe base64 dentro localStorage (dove saturavano la
+  quota da 5-10MB dopo poche decine di foto): ora vivono in IndexedDB, con solo una chiave
+  breve salvata nei dati strutturati. Un solo punto di scrittura (`ImageCropInput`), un solo
+  hook di lettura (`useResolvedImage`) usato ovunque un'immagine compare in tutta l'app.
+- Ho anche trovato e sistemato un doppione: `AvatarUploader` aveva una sua logica di ritaglio
+  scritta a mano, mai passata dal componente condiviso — quindi bypassava la nuova
+  archiviazione. Ora la usa anche lui.
+- Pulizia automatica: eliminando una persona o un luogo, la sua foto principale si libera da
+  IndexedDB invece di restare orfana per sempre.
+
+**La promessa mancata, mantenuta**: il grafico della cronologia Rapporti — andamento
+cumulativo nel tempo, colore che riflette il trend — non solo la lista testuale.
+
+**Crescita infinita, ora contenuta**: tetto alla cronologia visite dei luoghi (500), ai
+rapporti (300), alla pappa (500), alle streak delle attività quotidiane (400 giorni — ampio
+abbastanza da non alterare mai una serie reale).
+
+**Il wizard, ripensato**: il primo avvio ora chiede solo Nome, Cognome, Compleanno, Sesso e
+avatar — cinque cose, non una quarantina. Tutto il resto (Valori, Stile Di Vita, Istruzione,
+Corpo, Casa, Interessi) si trova in una nuova pagina, "Il Tuo Profilo", raggiungibile da Home,
+con lo stesso spirito delle Scoperte di una persona: nessuna fretta, nessun passo obbligato.
+Il vecchio wizard a tappe (`WizardShell.tsx`) e la sua sezione Identità sono stati rimossi:
+codice morto, non più due strade diverse per la stessa cosa.
+
+**Ricerca persone**, come richiesto al posto di ristrutturare gli ingressi multipli: cerca non
+solo nel nome ma in tutto ciò che hai scoperto — soprannome, occupazione, dove ha
+studiato/lavorato, tag di interessi, ogni campo libero. Ritrovi "quella persona che lavora in
+quel posto" anche se non ricordi il nome.
+
+**Rifiniture minori**: ricerca dentro il selettore delle 100 interazioni in Rapporti (prima
+bisognava scorrerle tutte); il feed "Novità" in Home ora ha un pulsante "Pulisci".
+
+Build verificata dopo ogni pezzo, non solo alla fine.
+
+## Checkpoint 11 — bug nei colori e ultimo pezzo del brief
+
+**Bug reale nel Colore Task, trovato e corretto**: la formula che genera la palette
+convertiva HSL in esadecimale trattando la luminosità come 0-100 in un punto del calcolo e
+come 0-1 in un altro — il risultato erano stringhe come `#-263127632763`, non colori validi.
+Il browser le ignorava in silenzio: gli swatch sembravano vuoti, non mancanti. Ho verificato
+il bug riproducendolo prima di toccare il codice, poi corretto normalizzando saturazione e
+luminosità a 0-1 prima del calcolo, come richiede la formula HSL→RGB standard. Adesso
+produce davvero 50 toni "gioiello" distinti — l'ho verificato anche questo, non solo
+dichiarato.
+
+**L'ultimo pezzo rimasto dal brief originale**: la presenza in Home dettata dalle Task.
+Prima, Casa e Fuori Casa riflettevano solo "Vive Con Te" in modo statico — chiunque non
+vivesse con te restava per sempre nel riquadro Fuori Casa, chiunque vivesse con te restava
+sempre in Casa, a prescindere da qualunque task. Ora, se una tua task coinvolge altre persone
+ed è attiva in questo momento, il luogo collegato decide dove appaiono: a "Casa Di [Te]" li
+vedi in Casa, altrove li vedi in Fuori Casa, finché la task non finisce — esattamente come
+descritto, e con effetto collaterale corretto: chi non vive con te e non ha nessuna task
+attiva ora non compare più in nessuno dei due riquadri, invece di affollare Fuori Casa per
+sempre solo perché esiste come persona.
+
+Con questo, tutto ciò che il README segnava come rimanente e realizzabile (non un limite di
+piattaforma) è stato costruito.
+
+## Checkpoint 12 — bug di sovrapposizione e di maiuscolo
+
+**Il bug vero**: nella Finestra Persona, il contenuto della scheda "Scoperte" (di gran lunga il
+più lungo — cinque sezioni intere) poteva comprimere le righe sopra di sé — pulsante Chiudi,
+avatar, e le schede Scoperte/Impostazioni/Impegni — perché in un contenitore flessibile con
+altezza massima vincolata, senza dichiarare esplicitamente che quelle righe non devono mai
+restringersi, il browser è libero di farlo quando il contenuto sotto è molto più lungo del
+solito. Corretto bloccando ogni intestazione (`shrink-0`) e dandole priorità di sovrapposizione
+esplicita (`relative z-10`), così anche in un caso limite resta sempre sopra, mai coperta.
+
+Non era isolato: ho controllato l'intero codice, non solo il punto segnalato. Lo stesso schema
+(intestazioni fisse + contenuto scrollabile, altezza massima vincolata) esisteva identico in
+altri sette pannelli — Task, Luogo, Aggiungi Luogo, Nuova Task, Registra Attività, Resoconto
+Generale, e il pannello luoghi della Mappa. Il bug lì era solo meno visibile perché il loro
+contenuto è più corto, non perché il rischio non ci fosse. Corretti tutti allo stesso modo,
+non solo quello segnalato.
+
+Un limite onesto da segnalare: la build che uso per verificare (`npm run build`) controlla che
+il codice compili e i tipi siano corretti — non rende visivamente la pagina, quindi non
+intercetta bug di questo tipo. "Build verificata" da qui in avanti significa "compila senza
+errori", non "ho controllato che nulla si sovrapponga a schermo" — sono due cose diverse, e
+è giusto che tu sappia esattamente cosa garantisce e cosa no.
+
+**Maiuscolo**: "Forse Sta"/"Probabilmente Sta" → "Forse sta"/"Probabilmente sta", coerente con
+la regola già stabilita (maiuscola di sola frase). Ho controllato se lo stesso errore si
+ripeteva altrove e ho trovato altri due punti dimenticati nello stesso meccanismo: "Si Trova A
+[Luogo]" (stessa riga di testo di "Forse sta", nella card) e l'interazione generata dal dare
+da mangiare a un animale ("Le Hai Dato Da Mangiare" → "Le hai dato da mangiare", per restare
+coerente con le altre 100 interazioni curate, tutte già in maiuscolo di sola frase).
+
+## Checkpoint 13 — la lista lunga: bug reali, Mondo, animali, Albero rifatto, Impegni identici alle Task
+
+**Bug corretti:**
+- Peso che partiva da 1Kg nel grafico: registrava una pesata a ogni tasto premuto, quindi il
+  primo carattere digitato diventava la prima voce salvata. Ora registra solo quando finisci
+  di scrivere.
+- "Novità" con ID grezzi al posto dei nomi (Partner, Amici): ora risolti nel nome vero.
+- Nuvolette di dialogo che sembravano apparire solo sulla prima card: le card erano troppo
+  vicine (10px), la nuvoletta invadeva quella sopra — spaziatura corretta.
+- Avatar nelle card Task: ingranditi, più sovrapposti, il cerchio scuro ora aderisce davvero
+  al bordo (prima si applicava a un contenitore 4px più largo del cerchio visibile).
+
+**"Persone" è diventata "Mondo"** (rotta, navigazione, testi correlati) — perché contiene sia
+persone che animali, e "Persone" non aveva più senso.
+
+**Le regole di Casa/Fuori Casa, riscritte davvero:**
+- Chi vive con te resta in Casa, a meno che non abbia un proprio Impegno (indipendente
+  dall'utente) in un luogo diverso da Casa in questo momento — allora va in Fuori Casa.
+- Chi NON vive con te non entra mai in Fuori Casa solo perché esiste: ci va solo se ha in
+  corso una task con te (o con chi vive con te) in un luogo diverso da Casa, finché la task
+  non finisce.
+- Chiunque altro — che tu conosca ma con cui non hai in corso nulla di tutto questo — resta
+  solo nella scheda Mondo, con un alone d'aura diverso (azzurro, non rosso: il rosso resta
+  riservato a chi è davvero Fuori Casa).
+- Per l'utente le meccaniche restano invariate (geolocalizzazione, task altrove).
+
+**L'Albero Genealogico, ricostruito da zero.** Non più un albero unico: ora un menu di avatar
+raggruppati per famiglia ("Famiglia Cognome1, Cognome2"), cliccabili per entrare nell'albero
+di ciascuno. Dentro, parentele vere — Padre, Madre, Fratelli, Sorelle, Figli, Figlie, Cugini,
+Cugine, Zii, Zie, a scelta multipla dove previsto — e un motore che deriva da solo Suoceri,
+Generi, Nuore e Cognati leggendo i legami dichiarati (anche al contrario, se dichiarati solo
+dall'altra persona). Rimosso "Genitori" dal wizard e dalle Scoperte: la parentela si sceglie
+solo qui, ora.
+
+**Animali:**
+- Sesso Maschio/Femmina (non più Uomo/Donna/Non Binario/Preferisco Non Specificare).
+- Rimossi dalle Scoperte: Valori, Ambizioni, Obiettivi, Stile Di Vita (restano gli altri campi).
+- "Numero Di Telefono" → "Telefono Di Un Padrone".
+- "Vive Con Te" sostituito da "Chi È Il Padrone?" (scelta tra le persone esistenti o te
+  stesso) — se il padrone vive con te, l'animale appare in Casa, altrimenti no. Modificabile
+  anche dopo la creazione, dentro Cura Dell'Animale.
+- La card in Mondo mostra "Gatto/Cane Di [Nome Cognome Del Padrone]".
+- Rimossa la scheda "Animali" da Rapporti, senza toccare Rapporti o Albero.
+
+**Impegni delle persone, davvero identici alle Task.** Ho estratto tutti i campi di
+creazione — titolo, note, tipo, data/ora, ricorrenza, colore, priorità, tag, persone
+coinvolte, luogo, sub-task, lista della spesa — in un unico modulo condiviso, usato sia dalle
+Task che dagli Impegni: non più un sottoinsieme che finge di essere completo. Aggiunta anche
+la vista Calendario sotto "Aggiungi Impegno", con la stessa striscia di date già usata per le
+Task, che espande correttamente le ricorrenze.
+
+## Checkpoint 14 — la lista più lunga finora: bug, Task ripensate, Albero completo, spesa reale
+
+**Le due risposte che avevi chiesto prima di toccare nulla**: soglia Fuori Casa **500 metri**,
+invariata. La scritta ripetuta sulla mappa veniva dalle tile gratuite di CartoDB, che ora
+richiedono una chiave oltre una certa soglia d'uso — non un bug nostro.
+
+**Bug reali, corretti:**
+- L'indirizzo bloccava la scrittura dopo aver selezionato un suggerimento: un numero civico
+  aggiunto dopo non veniva mai salvato. Ora il testo libero è sempre la fonte di verità, i
+  suggerimenti servono solo a fornire le coordinate.
+- L'utente non appariva mai Fuori Casa per una propria task altrove — mancava del tutto quel
+  collegamento, aggiunto ora con la stessa logica già valida per le altre persone.
+- Le task non erano modificabili — corretto: stesso modulo di creazione, riusato per la modifica.
+- Mappa: passata dalle tile scure di CartoDB (causa anche della scritta) a OpenStreetMap
+  standard — chiare, gratuite, senza chiave.
+
+**Le Task, chiarite come richiesto:**
+- Evento e Appuntamento: orario di inizio e fine, avviso anticipato configurabile (da 5 minuti
+  a 1 settimana prima, o nessuno). Non si spuntano più a mano: si completano da sole quando
+  l'orario di fine coincide con l'ora reale (controllo periodico).
+- Promemoria, Obiettivo e Spesa: orario di inizio, scadenza data+ora, stesso avviso
+  anticipato. Restano spuntabili a mano; se la scadenza passa senza spunta, vanno nella
+  categoria "Non Completate" — nuovo filtro a tre voci (Attive/Non Completate/Completate)
+  nella pagina Task, così la lista attiva resta pulita.
+- Attività Quotidiana: invariata.
+- Impegni delle persone: ora identici a una Task di tipo Evento, stesso modulo di campi
+  condiviso, stesso meccanismo di avviso.
+- La ricorrenza "Personalizzata" ora apre davvero la scelta dei giorni della settimana.
+- **Log Con Countdown in Home**: quando l'avviso anticipato di una task scatta, compare in
+  Home con un countdown live fino all'inizio (o alla scadenza) — la stessa durata scelta come
+  avviso, che scorre a ritroso — più la notifica del browser allo stesso momento.
+
+**L'Albero Genealogico, completato:**
+- Aggiunte Marito, Moglie, Ex Marito, Ex Moglie (etichetta derivata dal sesso) e Partner,
+  integrati anche nella derivazione di suoceri e cognati.
+- **Collegamento bidirezionale automatico**: impostare un fratello, un figlio, un coniuge da
+  un lato scrive anche dall'altro lato, con precisione basata sul sesso — esattamente come
+  descritto, incluso il caso in cui il collegamento era stato fatto solo da un lato.
+- Amici e Migliori Amici: per una persona restano a scelta manuale (nel wizard delle
+  Scoperte); per l'utente sono derivati dai Rapporti (soglia "Amicizia" e "Vera Amicizia").
+  Mostrati nell'Albero in una sezione separata, con intestazione propria, per non fare
+  confusione con i parenti veri.
+- "Stato Civile" e "Partner" eliminati del tutto dal wizard di scoperta — non solo nascosti,
+  rimossi dal codice — perché ora si gestisce tutto qui.
+
+**Animali:**
+- Filtro "Solo Animali" in Rapporti.
+- Avatar squircle (angoli arrotondati invece del cerchio perfetto) per differenziarli dalle
+  persone — scelta ragionata tra alcune alternative (esagono, bordo a zampa, doppio anello) e
+  scelta perché coerente col resto dell'app, che usa angoli arrotondati ovunque tranne che
+  negli avatar. Stessi tre colori Casa/Fuori Casa/Mondo, applicata ovunque un animale mostra
+  il proprio avatar. Trovato e corretto anche un bug di passaggio: la riscrittura del
+  componente aveva perso il colore del bagliore per tutti, non solo per gli animali —
+  individuato e risolto prima di consegnare.
+
+**Spesa reale, non più solo "Cibo":**
+- Supermercato e Negozio: il popup "Quanto Hai Speso" ora permette di dividerla tra più
+  categorie (Cibo, Casa, Abbigliamento, Elettronica...) con "Altro" a nome libero.
+- Bar e Ristorante restano semplici, un unico importo salvato come Cibo, come richiesto.
+- Servizio ha 14 voci dedicate (Meccanico, Elettrauto, Gommista, Banca, Assicurazione,
+  Parrucchiere...), diverse da tutte le altre.
+- Il calcolo mensile di Finanze ora legge questa ripartizione quando c'è, mappando ogni voce
+  libera sulla categoria di budget più vicina, invece di appiattire tutto sul tipo di luogo.
+
+**Grafico Di Frequentazione per persona**: non esisteva, ora sì — quante volte l'hai
+frequentata negli ultimi 6 mesi (task completate insieme + visite ai luoghi insieme),
+mese per mese, nella pagina di dettaglio Rapporti.
+
+Build verificata dopo ogni blocco, non solo alla fine — è stata una sessione lunga, e più di
+una volta ho trovato e corretto un errore che avevo appena introdotto io, prima di consegnare.
+
+## Cosa resta, onestamente
+
+Il brief originale è coperto per intero. Quello che segue non è "mancante" nel senso di
+promesse non mantenute, ma affinamenti che meritano un giro loro quando serviranno:
+
+- **Presenza in Home dettata dalle Task**: se una tua task coinvolge altre persone e si
+  svolge altrove (non a "Casa Di [Te]"), il testo prevede che il loro avatar compaia
+  temporaneamente nel riquadro Fuori Casa finché la task non finisce. Oggi Casa/Fuori Casa
+  riflettono solo `livesAtHome` e gli Impegni personali di ciascuno — non ancora le Task
+  dell'utente. È il pezzo di collegamento rimasto scoperto tra i due moduli.
+- **Notifiche push vere** (anche ad app chiusa): richiedono un servizio lato server con
+  chiavi VAPID. Le notifiche degli Impegni funzionano già, ma solo ad app aperta.
+- **Vibrazione**: solo su Android — Safari/iOS non supporta l'API, è un limite della
+  piattaforma.
+- **Geolocalizzazione**: precisa solo ad app aperta, sia per Casa/Fuori Casa sia per il
+  rilevamento di prossimità ai luoghi — limite delle web app, non di questa implementazione.
+- Le tre liste da ~50 voci (Valori, Stile Di Vita, Categorie D'Interesse, Carattere/Interessi/
+  Abitudini Animali) sono curate a mano, non le 100 originariamente richieste per ciascuna —
+  scelta di qualità sulla quantità, dichiarata fin dall'inizio.
+
+## Sviluppo in locale
+
+```bash
+npm install
+npm run dev
+```
+
+Apri http://localhost:3000
+
+## Pubblicazione su Vercel
+
+1. Crea un repository su GitHub e caricaci questo progetto (`git init`, `git add .`,
+   `git commit -m "Prima versione: fondamenta + wizard"`, poi collega il repository remoto e fai `git push`).
+2. Vai su https://vercel.com, scegli "Add New Project" e importa il repository.
+   Vercel riconosce automaticamente Next.js: non serve configurare nulla.
+3. Premi "Deploy". In circa un minuto avrai un URL pubblico (tipo `vitae.vercel.app`).
+4. Da telefono, apri quell'URL in Safari (iOS) o Chrome (Android) e scegli
+   "Aggiungi a Home" per installarla come app.
+
+Ogni volta che invii nuovi commit al repository, Vercel ripubblica automaticamente.

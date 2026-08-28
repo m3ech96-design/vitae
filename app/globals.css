@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  min-height: 100%;
+  background: #07080D;
+  color: #E8EAF6;
+}
+
+body {
+  font-family: var(--font-body);
+  min-height: 100vh;
+  position: relative;
+}
+
+/*
+ * BUG CORRETTO — lo sfondo si "rompeva" scendendo con lo scroll: prima i tre gradienti
+ * radiali erano sul `background` di `body`, che aveva `height: 100%` (un solo schermo).
+ * Su qualunque pagina più alta di uno schermo, oltre quel limite non c'era più nulla a
+ * dipingere lo sfondo, e si vedeva il colore pieno `#07080D` di `html` sotto — percepito
+ * come "si spezza, resta nero". Qui lo sfondo è invece un elemento SEPARATO, agganciato
+ * al viewport (`position: fixed`, `inset: 0`, dietro a tutto con `z-index: -1`): copre
+ * sempre l'intero schermo indipendentemente da quanto è alto il contenuto scrollabile,
+ * senza i problemi di resa di `background-attachment: fixed` su Safari iOS.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgba(124,92,255,0.16), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(0,229,199,0.10), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(255,107,157,0.08), transparent 60%),
+    #07080D;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,92,255,0.35); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124,92,255,0.55); }
+
+@layer utilities {
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%), rgba(21,26,44,0.66);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .glass-strong {
+    background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%), rgba(15,18,32,0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .sheen-top::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 45%);
+    pointer-events: none;
+  }
+  .text-gradient-aura {
+    background: linear-gradient(120deg, #B7A6FF 0%, #7C5CFF 35%, #00E5C7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px #07080D, 0 0 0 4px #7C5CFF;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Leaflet: adattamento al tema scuro/neon dell'app */
+.leaflet-container {
+  background: #0B0D14 !important;
+  font-family: var(--font-body);
+  z-index: 0;
+}
+.leaflet-control-zoom {
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 30px -10px rgba(0,0,0,0.6) !important;
+}
+.leaflet-control-zoom a {
+  background: rgba(15,18,32,0.85) !important;
+  backdrop-filter: blur(16px);
+  color: #E8EAF6 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: rgba(124,92,255,0.25) !important;
+}
+.leaflet-control-attribution {
+  background: rgba(7,8,13,0.75) !important;
+  color: #8B90A8 !important;
+  border-radius: 8px 0 0 0;
+}
+.leaflet-control-attribution a {
+  color: #B7BBD9 !important;
+}
+.aura-marker {
+  background: transparent !important;
+  border: none !important;
+}
+/* Grana per la malattia — sovrapposta SOLO alla foto (mai al bagliore dell'identità, mai al
+   testo): un rumore quasi statico, non un'animazione, "appannato" invece di "in movimento",
+   deliberatamente diverso da ogni altra cosa nell'app, che si muove sempre. */
+.illness-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
