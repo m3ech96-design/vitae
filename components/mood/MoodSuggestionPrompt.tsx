@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Settings } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
+import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
+import { MoodWizardPanel } from "./MoodWizardPanel";
 
 /**
  * Compare solo quando un innesco configurato dall'utente scatta davvero (vedi
@@ -9,8 +12,24 @@ import { useMood } from "@/lib/mood-context";
  * scelto per QUESTA interazione specifica, dalla scheda di gestione.
  */
 export function MoodSuggestionPrompt() {
-  const { pendingSuggestion, allMoods, confirmMood, dismissSuggestion } = useMood();
+  const { pendingSuggestion, allMoods, confirmMood, dismissSuggestion, shareMoodOnVitaecom, setShareMoodOnVitaecom } =
+    useMood();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  if (settingsOpen) {
+    return (
+      <PersonalCardSheet
+        title="Stati D'Animo"
+        onClose={() => {
+          setSettingsOpen(false);
+          dismissSuggestion();
+        }}
+      >
+        <MoodWizardPanel />
+      </PersonalCardSheet>
+    );
+  }
 
   if (!pendingSuggestion) return null;
   const candidates = pendingSuggestion.candidateMoodIds
@@ -89,13 +108,43 @@ export function MoodSuggestionPrompt() {
               </button>
             ))}
           </div>
-          <button
-            onClick={dismissSuggestion}
-            disabled={Boolean(confirmingId)}
-            className="focus-ring mt-7 w-full text-center text-xs text-ink-800 hover:text-ink-400"
-          >
-            Non Ora
-          </button>
+          <div className="mt-7 flex items-stretch">
+            <button
+              onClick={dismissSuggestion}
+              disabled={Boolean(confirmingId)}
+              className="focus-ring flex-1 text-center text-xs text-ink-800 hover:text-ink-400"
+            >
+              Non Ora
+            </button>
+            <span className="w-px shrink-0 bg-white/10" aria-hidden />
+            <button
+              onClick={() => setSettingsOpen(true)}
+              disabled={Boolean(confirmingId)}
+              className="focus-ring flex flex-1 items-center justify-center gap-1.5 text-center text-xs text-ink-800 hover:text-ink-400"
+            >
+              <Settings size={12} /> Impostazioni
+            </button>
+          </div>
+
+          <label className="mt-5 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+            <span className="text-xs text-ink-600">Condividi Stato D&apos;Animo Su Vitaecom</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={shareMoodOnVitaecom}
+              onClick={() => setShareMoodOnVitaecom(!shareMoodOnVitaecom)}
+              disabled={Boolean(confirmingId)}
+              className={`focus-ring h-5 w-9 shrink-0 rounded-full transition-colors ${
+                shareMoodOnVitaecom ? "bg-aura-violet" : "bg-white/10"
+              }`}
+            >
+              <span
+                className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
+                  shareMoodOnVitaecom ? "translate-x-[18px]" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </label>
         </motion.div>
       </motion.div>
     </AnimatePresence>

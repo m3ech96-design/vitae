@@ -109,10 +109,16 @@ export interface UserProfile extends PersonalDetails {
   onboardingComplete: boolean;
   createdAt: string;
   updatedAt: string;
-  /** Il nome con cui esisti in Vitaegram — univoco (vedi lib/nickname-check.ts), mai
-   * obbligatorio al wizard: se lo lasci vuoto lì, te lo richiede Vitaegram stesso al primo
+  /** Il nome con cui esisti in Vitaecom — univoco (vedi lib/nickname-check.ts), mai
+   * obbligatorio al wizard: se lo lasci vuoto lì, te lo richiede Vitaecom stesso al primo
    * accesso, e non entri finché non ne scegli uno libero. */
   nickname?: string;
+  /** La Vetrina in cima al tuo profilo Vitaecom, visibile a chi ti visita — non un bio
+   * testuale generico: riferimenti (`"favoriteMovies:<id>"`, `"values:Empatia"`, ecc, vedi
+   * lib/vitaecom-showcase.ts) verso dati che hai già scritto altrove nel wizard (film, musica,
+   * valori, luoghi...), scelti a mano tra quelli esistenti invece di duplicare un campo testo
+   * a parte da tenere sincronizzato a mano. */
+  vitaecomShowcase: string[];
 }
 
 export function createEmptyProfile(): UserProfile {
@@ -124,6 +130,7 @@ export function createEmptyProfile(): UserProfile {
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,
+    vitaecomShowcase: [],
   };
 }
 
@@ -201,6 +208,12 @@ export interface Person extends PersonalDetails {
   avatarUrl?: string;
   kind: PersonKind;
   livesAtHome: boolean;
+  /** Creata dal pulsante "Crea Una Persona Di Esempio" in Vitaecom (vedi
+   * components/vitaecom/LinkAccountPanel.tsx), per provare Scoperte/Rapporto/Albero senza
+   * dover prima collegare qualcuno di vero — una vera Persona a tutti gli effetti (si
+   * modifica, si cancella, conta nell'Albero come chiunque altro), solo segnata con un
+   * piccolo badge "Esempio" in Mondo per non confonderla con un contatto reale mesi dopo. */
+  isDemo?: boolean;
   /** Impostato solo alla creazione, dal wizard — vedi AddPersonModal. Cambia il trattamento
    * dell'avatar ovunque compaia (desaturato, respiro che si assesta una volta sola) e fa
    * comparire "Defunto"/"Defunta" come terza riga nell'Albero Genealogico. */

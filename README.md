@@ -529,16 +529,138 @@ mese per mese, nella pagina di dettaglio Rapporti.
 Build verificata dopo ogni blocco, non solo alla fine — è stata una sessione lunga, e più di
 una volta ho trovato e corretto un errore che avevo appena introdotto io, prima di consegnare.
 
-## Cosa resta, onestamente
+## Checkpoint 15 — mega audit: card personale, stati d'animo, Albero, bug veri
+
+Sessione di audit su richiesta esplicita, con una lista lunga di correzioni mirate.
+
+**Card personale, riunificata:**
+- Nuovo pulsante in alto a sinistra, leggermente sovrapposto all'avatar: apre un menù con
+  "Stati D'Animo", "Bisogni", "Malattia", ognuno nella propria finestra. Prima erano sparsi
+  (una pagina intera `/stati`, una sezione dentro Profilo, un bottone testuale in Home) —
+  rimossi da lì, vivono solo qui adesso.
+- Tolta la scritta "Non Ti Senti Bene?"; lo stato d'animo attivo resta visibile com'era.
+- I gradienti di sfondo legati allo stato d'animo ora hanno un "tono" diverso a seconda del
+  tipo di stato (vivido/delicato/cupo/pesante) — un colore acceso come il giallo non stona
+  più a piena forza su un fondo quasi nero.
+- Effetto malattia tolto dal perimetro della card; migliorato (bordo ambra invece di grigio)
+  quello attorno all'avatar, l'unico punto in cui resta.
+
+**Bug reali, corretti:**
+- Sfondo che "si rompeva" scendendo con lo scroll: il gradiente era legato all'altezza del
+  `body` (bloccata a un solo schermo); oltre quel limite si vedeva solo il colore pieno
+  sottostante. Ora è un livello fisso agganciato al viewport, copre sempre tutto.
+- Nome e cognome che tornavano al valore precedente dopo averli corretti: un campo era
+  legato al valore con cui la finestra era stata aperta invece che allo stato in tempo
+  reale — un classico controlled-input bloccato.
+- Finestra di creazione di una persona che finiva oltre il notch, rendendo difficili alcune
+  interazioni: non aveva un'altezza massima con scorrimento interno, ora sì.
+- Il pulsante del menù sulla card personale non rispondeva: era un `<button>` dentro un
+  altro `<button>` (HTML non valido — il click veniva "rubato" da quello esterno, che apriva
+  la scheda utente invece del menù).
+
+**Defunto:**
+- Attivabile ora anche dalle Impostazioni di ogni persona, non solo al momento della
+  creazione. Chiede giorno, mese e anno separatamente — ognuno facoltativo e indipendente
+  dagli altri (puoi sapere solo l'anno, o solo mese e giorno, o nessuno dei tre): quello che
+  manca appare come "????", mai nascosto.
+- Quarta riga nell'Albero sotto l'avatar del defunto, formato "[anno nascita] - [anno
+  morte]"; stesse date anche nella sua scheda.
+- L'alone attorno all'avatar dei defunti è stato tolto — resta solo la foto desaturata.
+
+**Fratellastro/Sorellastra**: eliminato dal vocabolario dell'app su richiesta esplicita —
+resta solo "Fratello"/"Sorella", anche per chi entra in famiglia per il nuovo matrimonio di
+un genitore. Tutti i collegamenti dell'Albero corretti di conseguenza.
+
+**Avatar vuoto**: il pulsante "Esiste, Ma Non So Chi È" ora crea davvero un avatar senza
+nome (non più un nome segnaposto come "Padre Sconosciuto") — contorno tratteggiato, "?" al
+posto delle iniziali, diverso apposta dall'avatar di un defunto. Pienamente funzionale in
+ogni altra parte dell'app (Scoperte, Impostazioni, Impegni) come qualsiasi altra persona;
+torna un avatar normale da solo al primo nome o cognome scritto. Su richiesta successiva,
+questi due campi — finché resta vuoto — si scrivono nel wizard Scoperte, sezione Identità
+(scoprire chi è è una Scoperta a tutti gli effetti), e tornano in Impostazioni non appena
+smette di esserlo.
+
+**Filtro Per Parentela**: prima un'unica voce di menù per ogni famiglia allargata, con
+potenzialmente troppi cognomi ammassati insieme. Ora una voce per ogni coppia sposata
+("Famiglia Fioretti, Gentile" mostra solo chi porta uno dei due cognomi) — voci diverse
+anche quando sotto è lo stesso identico grafo esteso: aprendo il dettaglio di una qualsiasi
+delle famiglie coinvolte si vedono comunque tutti i ponti verso le altre. Chi non ha un
+proprio coniuge registrato ma resta comunque connesso a una famiglia finisce in un gruppo di
+riserva a cognome singolo, mai perso; solo chi non ha alcun legame familiare resta "Senza
+Famiglia Collegata", come prima.
+
+**Parenti Vs Amici**: chi è già un parente (a qualunque grado, anche alla lontana) non
+compare più come "Amico"/"Migliore Amico" nell'Albero — prima poteva capitare che un genitore
+con cui hai un ottimo rapporto finisse duplicato anche sotto "Amicizie — Non Parentela". Il
+legame forte resta comunque visibile: un anello più intenso e un piccolo cuore sulla riga che
+quella persona ha già nell'Albero, mai una seconda card.
+
+**Costellazione**: tolti nomi ed etichetta di rapporto sotto ogni avatar; esclusi i
+familiari (stessa regola di sopra) e chi ha rapporto "Indifferenza".
+
+## Checkpoint 16 — Vitaecom
+
+La funzione più grande costruita finora: un vero social network, non solo una scheda in
+più. Attenzione: le prime due direzioni esplorate insieme (un "erbario" con illustrazioni
+botaniche generate, poi un diario privato con foto Polaroid) sono state entrambe scartate
+durante la discussione, su indicazione esplicita — quello che segue è solo la versione
+finale, quella davvero costruita.
+
+**Nickname**: nuovo campo nel wizard di creazione (facoltativo lì), con verifica di
+disponibilità in tempo reale. Se lasciato vuoto, un cancello dedicato blocca l'accesso a
+ogni pagina di Vitaecom finché non se ne sceglie uno valido e libero.
+
+**Due barre di navigazione**: quella consueta ("offline") e una nuova ("online") che la
+sostituisce solo dentro le pagine di Vitaecom, stessa posizione e dimensione — Home,
+Profilo, Vitaeworld, Chat. La scheda "Home" non è una scheda di Vitaecom: è l'uscita, e
+riporta alla barra consueta da sola.
+
+**Il post**, esattamente come descritto: bordo del colore dello stato d'animo scelto;
+avatar, nickname e stato d'animo in alto; corpo del post in un riquadro proprio; sotto,
+a sinistra la Gemma (si riempie del colore dello stato d'animo al tocco, si svuota al
+secondo), la Nuvoletta dei commenti, la freccia di Condivisione; a destra gli avatar
+taggati sovrapposti, senza nome, che si espandono in un elenco al tocco.
+
+**Commenti**: un livello di risposta con leggera rientranza (mai più in profondità, per
+reggere centinaia di commenti senza restringersi all'infinito); il primo commento
+dell'autore del post e il primo di ogni account taggato risultano "Posizionato In Alto",
+il resto resta cronologico. Ogni commento ha la propria Gemma e può essere inoltrato: il
+testo si copia nel formato "Commento Del Post Di [nickname] Del [data] Alle [ora]:" seguito
+dal testo, con un bottone che apre la condivisione reale del telefono (WhatsApp e tutto il
+resto) oltre a un elenco di account recenti.
+
+**Imprimi Momento**: raccoglie lo stato d'animo attivo e le task completate nell'ultima
+ora, l'utente sceglie cosa includere davvero; didascalia scritta a mano oppure da
+un'intelligenza artificiale vera (non finta — gira su una route server dedicata, tono
+intonato allo stato d'animo scelto), sempre e solo una foto propria, mai generata; si
+possono taggare account nel post.
+
+**Notifiche**: pallino del colore dello stato d'animo sulla barra di navigazione (sia
+offline che online) quando arriva un'interazione su un tuo post; una scheda "Messaggi"
+dentro Chat le elenca tutte.
+
+**Bozza conservata**: se esci da Vitaecom con "Home" mentre stai scrivendo un post o un
+commento, quella bozza resta pronta e si riapre da sola al ritorno — chiuderla apposta con
+la X, invece, la scarta.
+
+**Onestamente simulato, e dichiarato come tale nel codice stesso**: l'app non ha (per
+scelta, vedi sopra) un database né un server con altri utenti veri. Finché non ci sarà:
+- il controllo di unicità del nickname e i "commenti"/"like" che arrivano sui tuoi post sono
+  generati da tre account dimostrativi locali, sempre segnalati come tali nell'interfaccia;
+- la scheda Chat mostra come si presenterà, ma non manda messaggi veri;
+- inoltrare un commento a un account Vitaecom copia solo il testo — non esiste ancora un
+  posto dove recapitarlo davvero (condividerlo fuori dall'app, quello sì, è reale).
+
+L'assistente di scrittura in Imprimi Momento è invece già una vera integrazione: le
+richieste `POST /api/vitaecom-caption` chiamano l'API di Anthropic sul server, non nel
+browser — va solo aggiunta una variabile d'ambiente `ANTHROPIC_API_KEY` nelle impostazioni
+del progetto su Vercel perché risponda davvero, invece di segnalare che manca.
+
+
 
 Il brief originale è coperto per intero. Quello che segue non è "mancante" nel senso di
 promesse non mantenute, ma affinamenti che meritano un giro loro quando serviranno:
 
-- **Presenza in Home dettata dalle Task**: se una tua task coinvolge altre persone e si
-  svolge altrove (non a "Casa Di [Te]"), il testo prevede che il loro avatar compaia
-  temporaneamente nel riquadro Fuori Casa finché la task non finisce. Oggi Casa/Fuori Casa
-  riflettono solo `livesAtHome` e gli Impegni personali di ciascuno — non ancora le Task
-  dell'utente. È il pezzo di collegamento rimasto scoperto tra i due moduli.
 - **Notifiche push vere** (anche ad app chiusa): richiedono un servizio lato server con
   chiavi VAPID. Le notifiche degli Impegni funzionano già, ma solo ad app aperta.
 - **Vibrazione**: solo su Android — Safari/iOS non supporta l'API, è un limite della
@@ -548,6 +670,169 @@ promesse non mantenute, ma affinamenti che meritano un giro loro quando serviran
 - Le tre liste da ~50 voci (Valori, Stile Di Vita, Categorie D'Interesse, Carattere/Interessi/
   Abitudini Animali) sono curate a mano, non le 100 originariamente richieste per ciascuna —
   scelta di qualità sulla quantità, dichiarata fin dall'inizio.
+- **Vitaecom è vincolato dall'assenza di un vero backend** (vedi Checkpoint 16): finché
+  resta un'app solo-locale, l'unicità del nickname, le interazioni sui post e la Chat non
+  possono diventare reali — sono simulate con account dimostrativi, sempre segnalati come
+  tali. L'assistente di scrittura è invece già collegato per davvero all'API di Anthropic.
+- **Allegato video** in Imprimi Momento: non implementato, solo la foto per ora.
+- **Card della Chat**: mostrano solo avatar e nickname; la struttura più ricca descritta
+  (anteprima dell'ultimo messaggio, frasi azioni, nuvoletta di dialogo) non è stata costruita
+  perché, senza una chat reale dietro, non c'era ancora nulla di vero da mostrarci.
+
+## Checkpoint 17 — le due segnalazioni, e un audit vero dietro a quelle
+
+Due bug segnalati, entrambi confermati e corretti — ma stavolta, invece di limitarmi ai due
+punti esatti, ho riletto il codice intorno a ciascuno per capire se lo stesso errore si
+ripeteva altrove, come nei checkpoint passati. Ecco cosa ho trovato.
+
+**La barra "online" non era davvero identica a quella "offline".** Il commento nel codice
+lo dichiarava ("stessa posizione e dimensione"), ma il markup era stato scritto da zero
+invece di riusare quello vero: una barra piena larghezza ancorata al fondo con un bordo
+superiore, non la pillola fluttuante e vetrosa di `BottomNav`; icone da 20px invece di 18,
+etichette da 10px invece di 9; la scheda attiva segnata solo da un cambio di colore del
+testo, non dalla pillola violetta con bagliore. Un commento che descrive l'intenzione giusta
+non è la stessa cosa del codice che la rispetta — ho ricopiato contenitore, padding,
+dimensioni e stato attivo esattamente da `BottomNav.tsx`: ora cambia solo la sequenza delle
+schede (Home/Profilo/Vitaeworld/Chat), come da richiesta originale, non anche la forma.
+
+**Il menù della card personale, tagliato per davvero.** La card è una `GlassCard` con
+`overflow-hidden` — le serve, non è un errore in sé: senza, il bagliore dello stato d'animo
+e la sfumatura "sheen" sporgerebbero oltre gli angoli arrotondati (lo stesso motivo per cui
+in Checkpoint 7 avevo spostato le nuvolette invece di togliere quell'overflow). Il menù a
+tendina però non ha nessun bisogno di vivere dentro quella scatola: ora esce dal DOM della
+card con un portal su `document.body` e si posiziona da solo in coordinate reali (misurate
+al momento dell'apertura, ricalcolate se ridimensioni la finestra, il menù si richiude da
+solo se scrolli — la stessa cosa farebbe qualunque popover quando il suo ancoraggio si
+sposta sotto di lui).
+
+**Cercando lo stesso schema altrove, ho trovato un secondo caso — non ancora un bug visibile,
+ma una funzione promessa e mai raggiungibile.** `HungryBadge` (il badge "Ho Fame" degli
+animali) ha davvero un menu del cibo interattivo già scritto, con tanto di commento che ne
+spiega la cautela ("interattivo solo dove c'è spazio sicuro, nella scheda Animali"). Ma
+`HungryBadge` risultava importato in un solo punto di tutto il codice — `HouseholdAvatarCell`
+di Home — sempre senza la prop `interactive`. La "scheda Animali dove c'è spazio sicuro" di
+cui parla il commento non esisteva più: era diventata la scheda **Mondo** nel Checkpoint 13,
+e nessuno aveva mai ricollegato lì il badge interattivo. Risultato: la meccanica "dare da
+mangiare alza l'amicizia dell'1%", dichiarata completa fin dal Checkpoint 8, non era
+raggiungibile da nessuna schermata dell'app. L'ho collegata davvero in `PersonCard` (la card
+di ogni animale in Mondo), con la stessa precedenza già stabilita in Home tra "Ho Fame" e
+l'icona del luogo, per evitare che i due badge finiscano sovrapposti nello stesso angolo.
+Collegarlo lì significava mettere un `<button>` (quello del badge) dentro un altro `<button>`
+(la card stessa) — esattamente il bug HTML non valido già corretto nella card personale nel
+Checkpoint 15 — quindi ho convertito anche la card di `PersonCard` in un `<div role="button">`
+accessibile, com'era già stato fatto lì.
+
+**Corretta anche una frase del README stesso, non solo codice.** In fondo al Checkpoint 16 era
+rimasta una riga che segnava come mancante la "presenza in Home dettata dalle Task
+dell'utente" — ma quella funzione era già stata costruita e verificata nel Checkpoint 11
+(`userTaskDrivenLocation`, tuttora usata in `app/home/page.tsx`). Era una frase rimasta
+indietro rispetto al codice, non un gap reale: rimossa, per non far ripartire da capo un
+lavoro già fatto.
+
+Build verificata da zero (`npm install` + `npm run build`) dopo tutte le modifiche, non solo
+dichiarata: compila ed è tipizzata correttamente.
+
+## Checkpoint 18 — Vitaecom (rinominato), il popup dello stato d'animo, e il vero sistema di profilo
+
+**Rinominato Vitaegram in Vitaecom, per intero.** Non solo il testo a schermo: cartelle,
+file, tipi (`VitaecomPost`, `VitaecomAccount`...), rotte (`/vitaecom`, `/vitaecom/chat`,
+`/vitaecom/profilo`, `/api/vitaecom-caption`), chiavi di storage. Trovati e tolti due residui
+morti nello stesso giro: `lib/vitaegram-develop.ts` (mai importato da nessuna parte, avanzo
+della direzione "diario Polaroid" scartata al Checkpoint 16) e la cartella vuota
+`app/api/vitaegram-reflect` (nessun `route.ts` dentro — non era nemmeno una vera rotta).
+
+**Popup "Ti Senti Così?"**: "Non Ora" e "Impostazioni" ora sono due metà simmetriche dello
+stesso pulsante, separate da un filo verticale — "Impostazioni" apre il wizard degli stati
+d'animo vero (`MoodWizardPanel`), non una scorciatoia diversa. Sotto, un interruttore
+"Condividi Stato D'Animo Su Vitaecom" (acceso di serie): quando è spento, il profilo Vitaecom
+mostra sempre "Normale" a prescindere da come stai davvero — l'ho messo anche dentro il
+wizard stesso, non solo nel popup transitorio, perché altrimenti l'unico modo di riaccenderlo
+sarebbe aspettare un altro innesco a caso.
+
+**La durata dello stato d'animo, da 1 a 12 ore.** Passata quella soglia ricade su "Normale" —
+già succedeva così ovunque nell'app grazie al ripiego `mood ?? normale` già in uso in Home
+(non ho dovuto inventare un meccanismo nuovo, solo estenderlo anche a Vitaecom).
+
+**Sfondo Vitaecom più chiaro di quello offline**: un nuovo layout (`app/vitaecom/layout.tsx`)
+aggiunge un velo ambra sopra la base scura comune a tutta l'app — stessa tecnica già
+corretta al Checkpoint 15 per non "rompersi" scorrendo (un livello fisso agganciato al
+viewport, non legato all'altezza del contenuto).
+
+**Il sistema di profilo, il pezzo grosso.** In cima, un riquadro — la Vetrina — che rompe
+davvero la larghezza della pagina (un vero *breakout* a schermo intero, tecnica CSS mai usata
+prima in questo progetto: margini negativi calcolati sul viewport, non un contenitore più
+largo). Non è un campo di testo libero da un'altra scheda da tenere sincronizzata a mano:
+pesca — con una selezione a scelta dell'utente, fino a 8 voci — da quello che hai già scritto
+in "Il Tuo Profilo" (film, musica, libri, giochi, valori, luoghi, cibi, categorie, carattere,
+stile di vita), con le miniature vere dove esistono. Sotto, l'avatar centrato e cliccabile,
+con l'alone del colore del tuo stato d'animo attuale (rispettando l'interruttore appena
+descritto); sotto ancora il nickname preceduto da "@", poi genere e stato d'animo in piccolo,
+separati da un punto, il nome dello stato colorato del suo colore.
+
+**Toccare l'avatar fa due cose diverse, a seconda di chi guarda**:
+- **Il proprietario** finisce dritto nel proprio wizard delle scoperte — la pagina "Il Tuo
+  Profilo" già esistente offline, non una copia.
+- **Un ospite** (chiunque visiti un profilo che non è il proprio) apre "Ultime Scoperte Su
+  [nickname]": le ultime informazioni scoperte, con "Esplora Altro" in fondo che apre una
+  finestra a tre schede — Scoperte, Rapporto, Albero — ciascuna con un "+" in alto a
+  sinistra per continuare ad aggiungere, come richiesto (un solo pulsante, cambia solo cosa
+  apre a seconda della scheda attiva).
+
+**La scelta architetturale sotto tutto questo**: l'app non ha un vero backend (vedi
+Checkpoint 16) — "Scoperte", "Rapporto" e "Albero" su un account altrui hanno bisogno di dati
+veri da qualche parte, e l'unico posto dove esistono davvero è il tuo Mondo. Un account
+Vitaecom (oggi solo quelli dimostrativi) si può quindi **collegare a una Persona vera** che
+conosci — una scelta esplicita tua, mai indovinata per nome. Una volta collegato, le tre
+schede diventano vere per davvero, riusando i componenti offline esistenti invece di
+duplicarli con dati finti: `PersonWindow` (la scheda Scoperte vera, "+" ci apre proprio
+quella), `RelationshipGauge` + `RelationshipChart` (la scheda Rapporto, con le stesse ultime
+interazioni e lo stesso grafico "Andamento Nel Tempo" di offline), `FamilyRelationEditor` con
+la stessa logica di scrittura reciproca (`enrichParentPatch`/`computeReciprocalWrites`) già
+usata nell'Albero vero. La scheda Albero qui mostra i legami diretti in un elenco compatto
+(non il layout SVG intero, troppo per stare in un foglio) più un pulsante che apre l'Albero
+Genealogico completo, quello vero, quando serve la vista intera. In più, cercando il nickname
+di un altro account dentro l'editor dell'Albero, se ne può creare al volo una Persona
+collegata e usarla subito come ruolo — come richiesto esplicitamente.
+
+**Perché "l'ospite non condivide ciò che scopre col proprietario" non ha richiesto nessun
+meccanismo apposta**: è già vero per costruzione. Scoperte/Rapporto/Albero restano dati sul
+tuo dispositivo, mai su quello di nessun altro — lo stesso principio già dichiarato per tutto
+il resto dell'app, qui semplicemente si applica anche a questo.
+
+**Semplificazioni dichiarate**, per restare onesti su cosa è stato davvero costruito:
+- La Vetrina esiste oggi solo per il proprietario: un account dimostrativo non ha un vero
+  profilo `PersonalDetails` dietro da cui pescare, quindi non gli si finge una vetrina vuota.
+- Una Persona creata al volo dal nickname di un account parte con sesso "Uomo" come valore
+  neutro di comodo — si corregge in un tocco dalle Scoperte vere, non l'ho lasciato a un
+  ripiego più fragile (indovinare dal nome, per esempio).
+- Trovato durante la scrittura e corretto prima di consegnare, non dopo: il raggruppamento
+  dei campi delle Scoperte per sezione (Identità/Istruzione E Lavoro/Corpo) inizialmente
+  confrontava le etichette tradotte in italiano invece delle chiavi originali del dato — un
+  campo con l'etichetta scritta diversa da come compariva nel secondo elenco sarebbe
+  sparito in silenzio (è successo davvero a "Compleanno" e "Sesso" mentre scrivevo, prima di
+  accorgermene). Ora il raggruppamento è per chiave, non per stringa — un solo elenco da
+  tenere aggiornato, non due.
+- Peso e Altezza (numeri, non testo) inizialmente non comparivano mai tra le Scoperte
+  dell'ospite per lo stesso tipo di errore (un controllo che accettava solo stringhe) —
+  corretto insieme al punto sopra.
+
+**Chiesto subito dopo — "hai creato dei campioni per simulare le funzioni?"**: no, non
+all'inizio, di proposito: iniettare una Persona finta nel tuo Mondo reale senza chiedertelo
+avrebbe sporcato dati che in tutta l'app sono sempre stati onestamente tuoi. Ora "Non Hai
+Ancora Collegato" ha una seconda scelta, esplicita, sotto un separatore "Oppure": "Crea Una
+Persona Di Esempio Per Provare Subito" — solo per i tre account dimostrativi, con una manciata
+di Scoperte e due interazioni vere scritte a mano (coerenti col personaggio già suggerito dai
+suoi post — Nina e il caffè lungo, Leo e la corsa, Sara e le foto vecchie), non generate a
+caso. Crea una Persona vera in Mondo, marcata `isDemo` — un badge "Esempio" la segna nella
+lista (vedi PersonCard) per non confonderla con un contatto vero mesi dopo, ma resta a tutti
+gli effetti una Persona normale: si modifica, si cancella, conta nell'Albero. Mai creata da
+sola all'avvio, solo con questo tocco esplicito.
+
+Build verificata da zero (`npm install` + `npm run build`) dopo ogni blocco, non solo alla
+fine — compila ed è tipizzata correttamente. Non ho potuto verificarla a schermo (nessun
+browser in questa sessione): "build verificata" resta, come sempre dichiarato da qui in
+avanti, "compila senza errori", non "ho controllato che nulla si sovrapponga o si tagli a
+schermo".
 
 ## Sviluppo in locale
 

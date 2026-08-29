@@ -1,4 +1,4 @@
-import { DEMO_ACCOUNTS } from "./vitaegram-demo-data";
+import { DEMO_ACCOUNTS } from "./vitaecom-demo-data";
 
 const RULE = /^[a-z0-9._]{3,24}$/;
 
@@ -16,7 +16,7 @@ export function nicknameFormatError(raw: string): string | undefined {
 /**
  * Non esiste ancora un vero server (vedi README: l'app oggi vive solo sul dispositivo).
  * Qui il controllo è quindi solo locale — contro gli account dimostrativi di
- * vitaegram-demo-data.ts, e contro il proprio nickname già impostato — abbastanza per far
+ * vitaecom-demo-data.ts, e contro il proprio nickname già impostato — abbastanza per far
  * vedere davvero sia il messaggio di errore sia quello di successo come richiesto, ma non
  * un vero controllo globale finché non esiste un database. Il giorno che ci sarà, questa
  * funzione — e solo questa — dovrà interrogare l'API al suo posto: NicknameField non

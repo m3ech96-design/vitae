@@ -4,6 +4,7 @@ import { Person, PERSON_KIND_LABEL, ANIMAL_KINDS } from "@/lib/types";
 import { currentEngagement } from "@/lib/presence";
 import { personWorldStatus } from "@/lib/task-presence";
 import { totalOutings } from "@/lib/frequency";
+import { isHungry } from "@/lib/feeding";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -12,6 +13,7 @@ import { AuraAvatar } from "../ui/AuraAvatar";
 import { PlaceIconBadge } from "../ui/PlaceIconBadge";
 import { DialogueBubble } from "./DialogueBubble";
 import { ActionLine } from "./ActionLine";
+import { HungryBadge } from "../animali/HungryBadge";
 
 export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => void }) {
   const { places } = usePlaces();
@@ -39,9 +41,22 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
 
   const subtitle = isAnimal && ownerName ? `${PERSON_KIND_LABEL[person.kind]} Di ${ownerName}` : PERSON_KIND_LABEL[person.kind];
 
+  // "Ho Fame" ha precedenza su "Sei Qui" quando capitano nello stesso istante, esattamente
+  // come nei riquadri Casa/Fuori Casa di Home (vedi HouseholdAvatarCell) — evita che i due
+  // badge finiscano sovrapposti nello stesso angolo dell'avatar.
+  const showHungryBadge = isAnimal && isHungry(person);
+
   return (
-    <button
+    // Prima era un <button>: un <button> dentro l'altro (qui sotto, il badge "Ho Fame"
+    // interattivo ne rende uno suo) non è HTML valido — lo stesso bug già corretto nella
+    // card personale di Home (vedi PersonalCardMenu), qui non ancora capitato solo perché
+    // "Ho Fame" non era mai stato reso interattivo in questa card. Un <div> col ruolo
+    // giusto risolve senza perdere accessibilità né toccare le icone Chiama/WhatsApp.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}
       className="focus-ring flex w-full items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-white/15"
     >
       <div className="relative shrink-0">
@@ -56,7 +71,15 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
           layoutId={`person-avatar-${person.id}`}
           deceased={person.deceased}
         />
-        <PlaceIconBadge place={engagementPlace} size={52} />
+        {showHungryBadge ? (
+          // Qui c'è davvero spazio sicuro (la card non ha overflow-hidden): a differenza
+          // di Home, dove lo stesso badge resta solo indicativo, qui il tocco apre per
+          // davvero il menu del cibo — la promessa del Checkpoint 8, che restava scritta
+          // ma irraggiungibile: nessuna schermata la rendeva mai interattiva.
+          <HungryBadge person={person} interactive />
+        ) : (
+          <PlaceIconBadge place={engagementPlace} size={52} />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate font-display text-sm text-ink-100">
@@ -65,6 +88,11 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
         <p className="truncate text-xs text-ink-800">
           {subtitle}
           {outings > 0 && ` · ${outings} Uscite`}
+          {person.isDemo && (
+            <span className="ml-1.5 rounded-full bg-[#B79A6B]/15 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-[#B79A6B]">
+              Esempio
+            </span>
+          )}
         </p>
         <ActionLine person={person} />
       </div>
@@ -90,6 +118,6 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
           )}
         </div>
       )}
-    </button>
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { computeAge, capitalizeWords } from "@/lib/text";
 import { AvatarUploader } from "./AvatarUploader";
-import { NicknameField } from "../vitaegram/NicknameField";
+import { NicknameField } from "../vitaecom/NicknameField";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { Reveal } from "../ui/Reveal";

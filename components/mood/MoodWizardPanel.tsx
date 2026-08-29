@@ -107,6 +107,8 @@ export function MoodWizardPanel() {
     activeMoodIntensity,
     setMoodManually,
     clearMood,
+    shareMoodOnVitaecom,
+    setShareMoodOnVitaecom,
   } = useMood();
   const [newMoodLabel, setNewMoodLabel] = useState("");
   const [addingMood, setAddingMood] = useState(false);
@@ -130,6 +132,30 @@ export function MoodWizardPanel() {
         Fissa: Aggiungi, Togli, O Ignora Del Tutto Le Interazioni Che Non Ti Interessano.
       </p>
 
+      <label className="mt-5 flex items-center justify-between gap-3 rounded-xl2 border border-white/10 px-4 py-3.5">
+        <span>
+          <span className="block text-sm text-ink-200">Condividi Stato D&apos;Animo Su Vitaecom</span>
+          <span className="mt-0.5 block text-[11px] text-ink-800">
+            Spenta, Il Tuo Profilo Mostra Sempre &quot;Normale&quot;, Qualunque Cosa Tu Provi Davvero.
+          </span>
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={shareMoodOnVitaecom}
+          onClick={() => setShareMoodOnVitaecom(!shareMoodOnVitaecom)}
+          className={`focus-ring h-5 w-9 shrink-0 rounded-full transition-colors ${
+            shareMoodOnVitaecom ? "bg-aura-violet" : "bg-white/10"
+          }`}
+        >
+          <span
+            className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
+              shareMoodOnVitaecom ? "translate-x-[18px]" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </label>
+
       {current && (
         <div
           className="mt-5 flex items-center justify-between rounded-xl2 border p-4"
@@ -142,7 +168,7 @@ export function MoodWizardPanel() {
             />
             <div>
               <p className="text-sm text-ink-100">Ti Senti {current.label}</p>
-              <p className="text-[11px] text-ink-800">Sfuma Da Solo Nella Prossima Ora — Al {Math.round(activeMoodIntensity * 100)}%</p>
+              <p className="text-[11px] text-ink-800">Sfuma Da Solo Nelle Prossime 12 Ore — Al {Math.round(activeMoodIntensity * 100)}%</p>
             </div>
           </div>
           <button onClick={clearMood} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Spegni Ora">

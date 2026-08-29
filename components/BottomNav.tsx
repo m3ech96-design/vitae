@@ -17,12 +17,12 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
-import { useVitaegramSocial } from "@/lib/vitaegram-social-context";
+import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 
 const MAIN_ITEMS = [
   { href: "/home", label: "Home", icon: HomeIcon },
   { href: "/task", label: "Task", icon: ListChecks },
-  { href: "/vitaegram", label: "Vitaegram", icon: Aperture },
+  { href: "/vitaecom", label: "Vitaecom", icon: Aperture },
   { href: "/mondo", label: "Mondo", icon: Users },
 ];
 
@@ -39,7 +39,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
-  const { hasUnreadNotification } = useVitaegramSocial();
+  const { hasUnreadNotification } = useVitaecomSocial();
   if (HIDDEN_ON.includes(pathname)) return null;
 
   const moreActive = MORE_ITEMS.some((m) => m.enabled && pathname.startsWith(m.href));
@@ -74,7 +74,7 @@ export function BottomNav() {
                 )}
               >
                 <Icon size={18} />
-                {href === "/vitaegram" && hasUnreadNotification && (
+                {href === "/vitaecom" && hasUnreadNotification && (
                   <span
                     className="absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
                     style={{ background: notifDotColor }}
