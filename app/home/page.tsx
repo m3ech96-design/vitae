@@ -26,9 +26,8 @@ import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
 import { RapportNudgeCard } from "@/components/home/RapportNudgeCard";
 import { WeeklyNeedsCard } from "@/components/home/WeeklyNeedsCard";
-import { IllnessCheckInCard } from "@/components/home/IllnessCheckInCard";
+import { VitaecomNotificationsCard } from "@/components/home/VitaecomNotificationsCard";
 import { PersonalCardMenu } from "@/components/home/PersonalCardMenu";
-import { useIllness } from "@/lib/illness-context";
 import { useMood } from "@/lib/mood-context";
 import { moodBackgroundLayers, moodBackgroundOpacity } from "@/lib/mood-tone";
 
@@ -48,7 +47,6 @@ const SHORTCUTS = [
 export default function HomePage() {
   const { profile, hydrated: profileHydrated } = useProfile();
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
-  const { illness } = useIllness();
   const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
   const normalMood = allMoods.find((m) => m.id === "normale");
   const displayMood = mood ?? normalMood ?? null;
@@ -139,7 +137,6 @@ export default function HomePage() {
                 lastName={profile.lastName}
                 size={72}
                 ring={userIsHome ? "home" : "away"}
-                illness={Boolean(illness)}
               />
               <PlaceIconBadge place={currentPlaceIcon} size={72} />
               <PersonalCardMenu />
@@ -268,7 +265,7 @@ export default function HomePage() {
         <TaskCountdownLog />
         <RapportNudgeCard />
         <WeeklyNeedsCard />
-        <IllnessCheckInCard />
+        <VitaecomNotificationsCard />
       </Reveal>
 
       <Reveal delay={0.2}>

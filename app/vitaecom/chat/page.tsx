@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
-import { MessageSquare, Bell, X, Gem } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { MessageSquare, Bell, Gem, UserPlus, UserCheck } from "lucide-react";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { useVitaecomChat } from "@/lib/vitaecom-chat-context";
 import { resolveAccount } from "@/lib/vitaecom-resolve";
 import { useProfile } from "@/lib/profile-context";
 import { NicknameGate } from "@/components/vitaecom/NicknameGate";
@@ -16,11 +19,26 @@ function timeAgo(iso: string): string {
   return `${Math.floor(mins / 60)}h Fa`;
 }
 
+/**
+ * "Messaggi" è diventato "Notifiche" — non solo il nome: tutta l'attività che genera una
+ * notifica in Vitaecom (Mi Piace, commenti, richieste "Inizia A Conoscere", accettazioni)
+ * finisce qui, non solo i commenti/Mi Piace di prima. La lista sotto non è più "tutti gli
+ * account dimostrativi come anteprima morta" — sono le conversazioni vere (anche se
+ * semplici) con chi conosci davvero, vedi lib/vitaecom-chat-context.tsx.
+ */
 function ChatList() {
+  const router = useRouter();
   const { profile } = useProfile();
-  const { notifications, hasUnreadNotification, markNotificationsRead } = useVitaecomSocial();
+  const { notifications, hasUnreadNotification, markNotificationsRead, knownAccountIds } = useVitaecomSocial();
+  const { messagesWith } = useVitaecomChat();
   const [notifOpen, setNotifOpen] = useState(false);
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
+  const knownAccounts = DEMO_ACCOUNTS.filter((a) => knownAccountIds.includes(a.id));
+
+  const goToNotification = (fromAccountId: string) => {
+    setNotifOpen(false);
+    router.push(`/vitaecom/u/${fromAccountId}`);
+  };
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
@@ -36,38 +54,44 @@ function ChatList() {
           }}
           className="focus-ring relative flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-200"
         >
-          <Bell size={13} /> Messaggi
+          <Bell size={13} /> Notifiche
           {hasUnreadNotification && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#B79A6B]" />}
         </button>
       </div>
       <h1 className="mt-1 font-display text-2xl text-ink-100">Conversazioni</h1>
-      <p className="mt-1.5 text-xs text-ink-800">
-        Senza Un Vero Account Dall&apos;Altra Parte, La Chat Vera Non Può Ancora Funzionare — Ecco Come Si Presenterà.
-      </p>
 
       <div className="mt-6 space-y-2.5">
-        {DEMO_ACCOUNTS.map((a) => (
-          <div
-            key={a.id}
-            className="flex items-center gap-3 rounded-xl2 border p-3 opacity-60"
-            style={{ borderColor: "rgba(183,154,107,0.35)" }}
-          >
-            <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={48} ring="idle" glowColor="#B79A6B" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-ink-100">{a.nickname}</p>
-              <p className="truncate text-xs text-ink-800">Anteprima — Nessun Messaggio Vero Ancora</p>
-            </div>
-          </div>
-        ))}
+        {knownAccounts.length === 0 && (
+          <p className="mt-10 text-center text-sm text-ink-800">
+            Non Conosci Ancora Nessuno Con Cui Chattare — Vedi La Scheda &quot;Persone&quot;.
+          </p>
+        )}
+        {knownAccounts.map((a) => {
+          const thread = messagesWith(a.id);
+          const last = thread[thread.length - 1];
+          return (
+            <Link key={a.id} href={`/vitaecom/chat/${a.id}`} className="focus-ring flex items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] p-3">
+              <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={48} ring="idle" glowColor="#B79A6B" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-ink-100">@{a.nickname}</p>
+                <p className="truncate text-xs text-ink-800">{last ? last.text : "Nessun Messaggio Ancora — Scrivi Tu Per Primo."}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {notifOpen && (
-        <PersonalCardSheet title="Messaggi" onClose={() => setNotifOpen(false)}>
+        <PersonalCardSheet title="Notifiche" onClose={() => setNotifOpen(false)}>
           {notifications.length === 0 && <p className="text-sm text-ink-800">Nessuna Notifica Ancora.</p>}
           {notifications.map((n) => {
             const account = resolveAccount(n.fromAccountId, userAccount);
             return (
-              <div key={n.id} className="mt-3 flex items-center gap-3 first:mt-0">
+              <button
+                key={n.id}
+                onClick={() => goToNotification(n.fromAccountId)}
+                className="focus-ring mt-3 flex w-full items-center gap-3 text-left first:mt-0"
+              >
                 <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={36} ring="idle" glowColor="#B79A6B" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-ink-200">
@@ -76,13 +100,21 @@ function ChatList() {
                       <>
                         <Gem size={10} className="mb-0.5 inline" /> Ha Messo Mi Piace Al Tuo Post
                       </>
-                    ) : (
+                    ) : n.kind === "comment" ? (
                       "Ha Commentato Il Tuo Post"
+                    ) : n.kind === "know_request" ? (
+                      <>
+                        <UserPlus size={10} className="mb-0.5 inline" /> Vuole Conoscerti
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck size={10} className="mb-0.5 inline" /> Ha Accettato!
+                      </>
                     )}
                   </p>
                   <p className="text-[10px] text-ink-800">{timeAgo(n.createdAt)}</p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </PersonalCardSheet>

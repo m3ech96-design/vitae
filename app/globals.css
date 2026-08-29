@@ -16,25 +16,33 @@
 
 html, body {
   min-height: 100%;
-  background: #07080D;
   color: #E8EAF6;
 }
 
+html {
+  background: #0D101B;
+}
+
 body {
+  background: transparent;
   font-family: var(--font-body);
   min-height: 100vh;
   position: relative;
 }
 
 /*
- * BUG CORRETTO — lo sfondo si "rompeva" scendendo con lo scroll: prima i tre gradienti
- * radiali erano sul `background` di `body`, che aveva `height: 100%` (un solo schermo).
- * Su qualunque pagina più alta di uno schermo, oltre quel limite non c'era più nulla a
- * dipingere lo sfondo, e si vedeva il colore pieno `#07080D` di `html` sotto — percepito
- * come "si spezza, resta nero". Qui lo sfondo è invece un elemento SEPARATO, agganciato
- * al viewport (`position: fixed`, `inset: 0`, dietro a tutto con `z-index: -1`): copre
- * sempre l'intero schermo indipendentemente da quanto è alto il contenuto scrollabile,
- * senza i problemi di resa di `background-attachment: fixed` su Safari iOS.
+ * BUG CORRETTO (di nuovo) — la correzione precedente qui sotto spostava già il gradiente su
+ * un elemento fisso separato per non "romperlo" scendendo con lo scroll, ma lasciava anche
+ * un colore pieno sulla regola condivisa `html, body { background: #07080D }`: quello di
+ * BODY, essendo un box normale (non fisso) alto quanto il contenuto scrollabile, si dipinge
+ * SOPRA gli elementi con z-index negativo dello stesso contesto di stacking — l'ordine di
+ * pittura CSS mette lo sfondo di un box normale DAVANTI ai discendenti con z-index negativo,
+ * non dietro. Una parete scura, praticamente dello stesso colore del gradiente sotto, che lo
+ * copriva ovunque scrollando oltre il primo schermo — invisibile perché letteralmente
+ * coperta, non perché sbagliata. Il colore pieno ora vive solo su `html` (il vero sfondo di
+ * canvas, dietro a tutto per definizione): `body` resta trasparente, e il gradiente fisso qui
+ * sotto è finalmente libero di vedersi sempre. Sfondo anche più chiaro (`#0D101B` invece di
+ * `#07080D`) e gradiente più acceso — stessi tre colori Aura, solo più saturi e più larghi.
  */
 body::before {
   content: "";
@@ -42,10 +50,10 @@ body::before {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1200px 600px at 12% -10%, rgba(124,92,255,0.16), transparent 60%),
-    radial-gradient(900px 500px at 90% 0%, rgba(0,229,199,0.10), transparent 55%),
-    radial-gradient(700px 700px at 50% 120%, rgba(255,107,157,0.08), transparent 60%),
-    #07080D;
+    radial-gradient(1300px 680px at 12% -10%, rgba(124,92,255,0.26), transparent 62%),
+    radial-gradient(950px 560px at 90% 0%, rgba(0,229,199,0.19), transparent 58%),
+    radial-gradient(780px 760px at 50% 118%, rgba(255,107,157,0.16), transparent 62%),
+    #0D101B;
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -130,15 +138,4 @@ body::before {
 .aura-marker {
   background: transparent !important;
   border: none !important;
-}
-/* Grana per la malattia — sovrapposta SOLO alla foto (mai al bagliore dell'identità, mai al
-   testo): un rumore quasi statico, non un'animazione, "appannato" invece di "in movimento",
-   deliberatamente diverso da ogni altra cosa nell'app, che si muove sempre. */
-.illness-grain {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }

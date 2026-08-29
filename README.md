@@ -834,6 +834,145 @@ browser in questa sessione): "build verificata" resta, come sempre dichiarato da
 avanti, "compila senza errori", non "ho controllato che nulla si sovrapponga o si tagli a
 schermo".
 
+## Checkpoint 19 — sfondo, malattia rimossa, tre bug veri trovati con un audit, Studia/Lavora
+
+Una lista lunghissima di correzioni e richieste in un solo messaggio — questo checkpoint copre
+la prima metà, la più tecnica; il resto (post, gemma, il sistema Persone/Sconosciuto) segue nei
+prossimi.
+
+**Sfondo, per davvero stavolta.** Il gradiente restava invisibile perché `body` aveva ancora
+un colore pieno accanto a quello di `html` — e per l'ordine di pittura CSS, lo sfondo di un
+box normale (non `fixed`) si dipinge SOPRA i discendenti con z-index negativo, non dietro:
+una parete scura praticamente identica al gradiente sotto, che lo copriva ovunque oltre il
+primo schermo. Il colore pieno ora vive solo su `html`; `body` resta trasparente. Sfondo anche
+più chiaro (`#0D101B`) e gradiente più acceso, stessi tre colori Aura.
+
+**Malattia, rimossa per intero.** Sei file cancellati (`IllnessSheet`, `IllnessVignette`,
+`IllnessFilterDefs`, `FrayedRing`, `IllnessCheckInCard`, `illness-context.tsx`), ogni
+riferimento in `AuraAvatar`, Home, `layout.tsx`, `PersonalCardMenu`, la classe CSS
+`.illness-grain`. Il wizard degli Stati D'Animo/Bisogni ora ha due voci, non tre.
+
+**Tre bug veri trovati con un audit, non solo dichiarati:**
+- Le finestre Stati D'Animo/Bisogni restavano intrappolate dentro la card personale di Home,
+  impossibili da scorrere davvero: la card è dentro un `<Reveal>` (framer-motion,
+  `animate={{y:0}}`), che lascia un `transform` inline anche a riposo — e un discendente con
+  `position:fixed` dentro un antenato con `transform` non è più relativo al viewport, ma a
+  quell'antenato. Corretto alla radice in `PersonalCardSheet` (condivisa da sei punti
+  dell'app) con un portal su `document.body`, non solo nel punto segnalato.
+- La pallina del toggle "Condividi Stato D'Animo Su Vitaecom" era disallineata — e lo stesso
+  identico difetto (un `translate-x` calcolato sulla posizione naturale nel flusso invece che
+  `position:absolute` ancorata) c'era già in altri **quattro** punti dell'app (Vive Con Te e
+  Defunto/A in `AddPersonModal`). Estratto un componente `Switch`/`SwitchVisual` condiviso,
+  sostituite tutte e cinque le occorrenze.
+- Aprendo l'Albero di un account demo dentro "Esplora Altro", l'utente vero compariva come
+  "Parente Alla Lontana" senza alcun legame dichiarato: `relationshipInfo` presuppone che chi
+  la chiama abbia già scartato le persone non collegate (il suo ultimo ramo di ripiego
+  etichetta chiunque non rientri nelle regole sopra come "Parente Alla Lontana", **sempre** —
+  lo dice il suo stesso commento, ma non lo verifica lei). La pagina Albero offline si
+  protegge filtrando prima con `connectedFamilyIds`; la mia scheda "Albero" non lo faceva.
+  Corretto con lo stesso filtro.
+
+**Scoperte nel profilo altrui, completate davvero.** Mancava più di metà del wizard —
+Carattere, Valori, Stile Di Vita, Materie Conosciute, Competenze, Abilità, Lingue Conosciute,
+Film/Musica/Libri/Videogiochi Preferiti (con le loro miniature vere), Cibi Preferiti, Luoghi
+D'Interesse, Categoria Preferita, Partner/Amici/Migliori Amici (risolti in nomi veri) — tutti
+campi lista (`string[]`/`ThumbItem[]`) che la mappa delle etichette scalari non copriva
+affatto. Corretta anche un'etichetta trovata incoerente nel farlo ("Giochi Preferiti" →
+"Videogiochi Preferiti", per combaciare col wizard vero).
+
+**Studia/Lavora.** "Dove Ha Studiato"/"Dove Ha Lavorato" (sempre visibili, come se chiunque
+fosse sempre sia studente che lavoratore) sono diventati due spunte indipendenti — non si
+escludono a vicenda, chi studia e lavora insieme esiste. Studia espande "Quale Scuola
+Frequenta", "Obiettivi Di Studio Futuri", "Obiettivi Lavorativi Futuri" (guarda avanti, non
+ancora un risultato). Lavora espande "Dove Lavora", "Lavori Precedenti" (ora una vera lista,
+non un solo valore), "Dove Ha Studiato" (suggerito da "Quale Scuola Frequenta" solo la prima
+volta che spunti Lavora, poi libero) e "Titolo Di Studio" (guarda anche indietro). Sotto,
+Materie/Competenze/Abilità/Lingue e il resto proseguono uguali per tutti, indipendenti dalle
+due spunte. Campo "Stress" eliminato ovunque (tipo, wizard, Scoperte, feed Novità, ricerca in
+Mondo) — tre punti esterni che leggevano `workedAt` (il Resoconto Generale di Home, la
+creazione automatica del marker Lavoro sulla Mappa, la ricerca testuale in Mondo) aggiornati
+per usare `currentWorkplace`/`previousWorkplaces`.
+
+Build verificata da zero dopo ogni blocco — compila ed è tipizzata correttamente.
+
+## Checkpoint 20 — foto vere nei post, video incorporati, la gemma a due colori
+
+**Le tue foto vere non comparivano mai nei post.** `PostCard` mostrava solo `demoPhotoUrl` —
+un campo che esiste SOLO per i post dimostrativi (un url esterno). Le tue foto vere passano
+invece da `photoKey` (una chiave verso `lib/image-store.ts`, IndexedDB) — mai risolta in
+un'immagine vera, quindi ogni post con una tua foto reale la perdeva del tutto. Corretto con
+lo stesso hook `useResolvedImage` già usato da `AuraAvatar`.
+
+**Link incorporati.** Nessun campo nuovo nel compositore: se scrivi o incolli un link nel
+testo del post, `lib/vitaecom-link-detect.ts` lo riconosce da solo alla visualizzazione, come
+fanno la maggior parte dei social. YouTube e Vimeo diventano un vero player incorporato,
+riproducibile sul posto. Qualunque altro link (Facebook compreso) diventa una card pulita col
+dominio e un pulsante per aprirlo — una vera embed di Facebook richiederebbe il loro SDK e una
+pagina pubblica raggiungibile in tempo reale, che qui non esiste: dichiarato, non un tentativo
+di embed rotto che sembra un bug invece di un limite onesto.
+
+**La gemma, due colori invece di uno.** Il contorno resta sempre il colore dello stato
+d'animo DEL POST (di chi l'ha scritto); il riempimento, quando la metti tu, è il colore del
+TUO stato d'animo attuale — rispetta lo stesso interruttore "Condividi Stato D'Animo Su
+Vitaecom" del profilo, per coerenza: spento, il riempimento resta quello di "Normale" invece
+di rivelare comunque come ti senti.
+
+Build verificata da zero — compila ed è tipizzata correttamente.
+
+## Checkpoint 21 — Persone, Sconosciuto/Persona Conosciuta, "Inizia A Conoscere", Chat vera
+
+Il pezzo più grande di tutti in un solo checkpoint — un vero grafo sociale sopra Vitaecom,
+costruito interamente sui dati locali di sempre (nessun backend, come dichiarato fin dal
+Checkpoint 16).
+
+**Ogni account, ora "Persona Conosciuta" o "Sconosciuto".** Un nuovo riquadro largo quasi
+quanto lo schermo (stesso *breakout* della Vetrina) sotto la riga stato/genere di ogni
+profilo altrui — non subito sotto, un margine apposta a separarlo dall'identità sopra — lo
+dichiara e agisce di conseguenza: "Persona Conosciuta" con "Chat" accanto, simmetrici;
+"Sconosciuto" resta centrale, con un pulsante — l'icona stessa di Vitaecom (`Aperture`) — a
+sinistra che si espande in "Inizia A Conoscere" quando lo tocchi la prima volta, e manda
+davvero la richiesta la seconda. Un account demo che l'accetta da solo dopo una manciata di
+secondi (stessa idea già usata per Mi Piace/commenti sui post nuovi) è l'unico modo di
+provare il flusso fino in fondo senza un vero account dall'altra parte — e una richiesta in
+arrivo esiste già seminata al primo avvio, per provare subito anche "Accetta"/"Accetta E
+Conosci Anche Tu" senza aspettare nulla.
+
+**Per privacy, uno Sconosciuto non mostra i suoi post da nessuna parte** — né su Vitaeworld
+né sul proprio profilo, non solo "non nel posto più ovvio". Cliccando il suo avatar (non più
+il "..." che ora vive in alto a sinistra separato — vedi sotto) compare "Non Conosci Ancora
+Questa Persona", ancorata e con un timer di 5 secondi che la richiude da sola.
+
+**Il "..." al posto dell'avatar per Scoperte/Rapporto/Albero.** Tutto ciò che prima si apriva
+cliccando l'avatar di un account altrui (il menù "Ultime Scoperte"/"Esplora Altro") ora si
+apre da un piccolo pulsante a tre puntini in alto a sinistra dell'avatar — l'avatar stesso è
+libero per il nuovo comportamento sopra (il pop-up "Non Conosci Ancora").
+
+**Scheda "Persone" in navigazione**, tra Vitaeworld e Chat — identica a Mondo nel taglio
+visivo, ma popolata solo dagli account che conosci davvero su Vitaecom (fonte diversa da
+Mondo, mai confusa con quella). Le card hanno l'icona Chat al posto di WhatsApp, il telefono
+solo se l'hai scoperto tramite la Persona eventualmente collegata (vedi Checkpoint 18).
+
+**"Messaggi" è diventato "Notifiche"**, e non solo di nome: Mi Piace, commenti, richieste
+"Inizia A Conoscere" e accettazioni finiscono tutti lì, oltre che in una nuova card in Home
+(solo le non lette, al massimo 3). Le conversazioni sono ora vere (per chi conosci — vedi
+`lib/vitaecom-chat-context.tsx`), non più un'anteprima spenta di tutti gli account demo:
+scrivi, e dopo una manciata di secondi arriva una risposta simulata.
+
+**Un altro bug della stessa famiglia, trovato scrivendo la card di Persone**: la card aveva
+un `<Link>` (quindi un `<a>`) come contenitore esterno, con altri due `<a>`/`<Link>` annidati
+dentro (telefono, chat) — un `<a>` dentro un altro `<a>` non è HTML valido, lo stesso identico
+bug già corretto più volte in questa sessione per `<button>` annidati (PersonCard,
+PersonalCardMenu). Stesso rimedio: un `<div role="button">` con la navigazione via router al
+posto del `<Link>` esterno.
+
+**Semplificazioni dichiarate**: "Accetta" e "Accetta E Conosci Anche Tu" portano allo stesso
+risultato (la conoscenza reciproca) — con un solo utente vero in questa app, non c'è modo di
+dare loro conseguenze davvero diverse senza inventarne una; restano due modi simmetrici di
+dire sì, non due esiti diversi. La scheda Persone non ha filtri/ordinamento come Mondo: con
+solo tre account dimostrativi possibili oggi, la lista è già corta abbastanza.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 18 rotte.
+
 ## Sviluppo in locale
 
 ```bash

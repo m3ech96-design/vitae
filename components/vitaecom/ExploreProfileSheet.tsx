@@ -18,7 +18,7 @@ import {
   ANIMAL_NEGATIVE_INTERACTIONS,
 } from "@/lib/interactions";
 import { toFamilyEntities } from "@/lib/family-entities";
-import { relationshipInfo, isFemale, FamilyEntity, RelationshipInfo } from "@/lib/family-relations";
+import { connectedFamilyIds, relationshipInfo, isFemale, FamilyEntity, RelationshipInfo } from "@/lib/family-relations";
 import { enrichParentPatch, computeReciprocalWrites } from "@/lib/family-reciprocal";
 import { allDiscoverySections } from "@/lib/vitaecom-discoveries";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
@@ -32,11 +32,12 @@ import { LinkAccountPanel } from "./LinkAccountPanel";
 type Tab = "scoperte" | "rapporto" | "albero";
 
 function ScoperteTab({ person }: { person: Person }) {
-  const sections = allDiscoverySections(person);
+  const { people } = useHousehold();
+  const sections = allDiscoverySections(person, people);
   return (
     <div className="space-y-7">
       {sections.length === 0 && (
-        <p className="text-sm text-ink-800">Non Hai Ancora Scoperto Nulla Su Di {isFemale(person) ? "Lei" : "Lui"}.</p>
+        <p className="text-sm text-ink-800">Non hai ancora scoperto nulla su di {isFemale(person) ? "lei" : "lui"}.</p>
       )}
       {sections.map((s) => (
         <div key={s.title}>
@@ -45,10 +46,16 @@ function ScoperteTab({ person }: { person: Person }) {
             {s.lines.map((l, i) => (
               <div
                 key={`${l.label}-${i}`}
-                className="flex items-start justify-between gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5"
               >
                 <span className="text-xs text-ink-600">{l.label}</span>
-                <span className="text-right text-xs text-ink-200">{l.value}</span>
+                <span className="flex items-center gap-2 text-right text-xs text-ink-200">
+                  {l.value}
+                  {l.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.imageUrl} alt="" className="h-7 w-7 shrink-0 rounded-lg object-cover" />
+                  )}
+                </span>
               </div>
             ))}
           </div>
@@ -123,8 +130,17 @@ function AlberoTab({ person, adding }: { person: Person; adding: boolean }) {
 
   const directRelatives = useMemo(() => {
     if (!focus) return [] as { entity: FamilyEntity; info: RelationshipInfo }[];
+    // Bug corretto — `relationshipInfo` presuppone che chi lo chiama abbia già scartato le
+    // persone non collegate: la sua ultima riga di ripiego etichetta chiunque non rientri
+    // nelle regole sopra come "Parente Alla Lontana", SEMPRE, anche senza alcun legame
+    // dichiarato (lo dice il suo stesso commento — "comunque connesso, lo trova il BFS" — un
+    // presupposto, non una verifica che fa lei). La pagina Albero offline lo filtra prima con
+    // `connectedFamilyIds`; qui mancava lo stesso filtro, e ogni Persona del Mondo finiva
+    // marcata come parente di chiunque non avesse ancora una vera famiglia dichiarata —
+    // compreso te.
+    const connected = new Set(connectedFamilyIds(focus.id, entities));
     return entities
-      .filter((e) => e.id !== focus.id)
+      .filter((e) => e.id !== focus.id && connected.has(e.id))
       .map((e) => ({ entity: e, info: relationshipInfo(focus.id, e.id, byId) }))
       .filter((x): x is { entity: FamilyEntity; info: RelationshipInfo } => Boolean(x.info));
   }, [entities, byId, focus]);
@@ -195,7 +211,7 @@ function AlberoTab({ person, adding }: { person: Person; adding: boolean }) {
       </button>
 
       {directRelatives.length === 0 && !adding && (
-        <p className="text-sm text-ink-800">Non Hai Ancora Scoperto Nessun Legame Di Famiglia.</p>
+        <p className="text-sm text-ink-800">Non hai ancora scoperto nessun legame di famiglia.</p>
       )}
 
       {directRelatives.length > 0 && (
@@ -242,7 +258,7 @@ function AlberoTab({ person, adding }: { person: Person; adding: boolean }) {
               </div>
             )}
             <p className="mt-1.5 text-[10px] text-ink-800">
-              Crea Una Nuova Persona Collegata A Quell&apos;Account — Poi Sceglila Qui Sotto Come Ruolo.
+              Crea una nuova persona collegata a quell&apos;account — poi sceglila qui sotto come ruolo.
             </p>
           </div>
           <FamilyRelationEditor

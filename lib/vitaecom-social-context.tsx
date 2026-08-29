@@ -7,6 +7,10 @@ import { newId } from "./id";
 const POSTS_KEY = "vitae:vitaecom-posts";
 const NOTIF_KEY = "vitae:vitaecom-notifications";
 const LINKS_KEY = "vitae:vitaecom-account-links";
+const KNOWN_KEY = "vitae:vitaecom-known";
+const SENT_KEY = "vitae:vitaecom-sent-requests";
+const RECEIVED_KEY = "vitae:vitaecom-received-requests";
+const KNOW_SEEDED_KEY = "vitae:vitaecom-know-seeded";
 
 interface NewPostInput {
   caption: string;
@@ -18,9 +22,10 @@ interface NewPostInput {
 
 export interface VitaecomNotification {
   id: string;
-  postId: string;
+  /** Assente per le notifiche non legate a un post (richieste di conoscenza). */
+  postId?: string;
   fromAccountId: string;
-  kind: "like" | "comment";
+  kind: "like" | "comment" | "know_request" | "know_accepted";
   createdAt: string;
   read: boolean;
 }
@@ -43,6 +48,20 @@ interface VitaecomSocialContextValue {
   accountLinks: Record<string, string>;
   linkAccountToPerson: (accountId: string, personId: string) => void;
   unlinkAccount: (accountId: string) => void;
+  /**
+   * "Persona Conosciuta" o "Sconosciuto" (vedi ProfileHeader) — conoscersi è sempre
+   * reciproco una volta accettato, non due stati separati da tenere in sincrono a mano.
+   * Senza un vero backend, l'unico modo di provare ENTRAMBI i sensi del flusso (mandare una
+   * richiesta E riceverne una) è simularli: mandarne una a un account demo la fa accettare
+   * da sola dopo una manciata di secondi (come già succede per Mi Piace/commenti sui tuoi
+   * post); una richiesta in arrivo da un account demo esiste già seminata, così puoi provare
+   * subito anche "Accetta"/"Accetta E Conosci Anche Tu" senza aspettare nulla.
+   */
+  knownAccountIds: string[];
+  sentRequests: string[];
+  receivedRequests: string[];
+  sendKnowRequest: (accountId: string) => void;
+  acceptKnowRequest: (accountId: string) => void;
 }
 
 const VitaecomSocialContext = createContext<VitaecomSocialContextValue | null>(null);
@@ -59,8 +78,14 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   const [posts, setPosts] = useState<VitaecomPost[]>([]);
   const [notifications, setNotifications] = useState<VitaecomNotification[]>([]);
   const [accountLinks, setAccountLinks] = useState<Record<string, string>>({});
+  const [knownAccountIds, setKnownAccountIds] = useState<string[]>([]);
+  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<string[]>([]);
   const postsRef = useRef<VitaecomPost[]>([]);
   const notifRef = useRef<VitaecomNotification[]>([]);
+  const knownRef = useRef<string[]>([]);
+  const sentRef = useRef<string[]>([]);
+  const receivedRef = useRef<string[]>([]);
 
   useEffect(() => {
     postsRef.current = posts;
@@ -68,6 +93,15 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     notifRef.current = notifications;
   }, [notifications]);
+  useEffect(() => {
+    knownRef.current = knownAccountIds;
+  }, [knownAccountIds]);
+  useEffect(() => {
+    sentRef.current = sentRequests;
+  }, [sentRequests]);
+  useEffect(() => {
+    receivedRef.current = receivedRequests;
+  }, [receivedRequests]);
 
   const persistPosts = useCallback((next: VitaecomPost[]) => {
     setPosts(next);
@@ -82,6 +116,33 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     setNotifications(next);
     try {
       window.localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
+  const persistKnown = useCallback((next: string[]) => {
+    setKnownAccountIds(next);
+    try {
+      window.localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
+  const persistSent = useCallback((next: string[]) => {
+    setSentRequests(next);
+    try {
+      window.localStorage.setItem(SENT_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
+  const persistReceived = useCallback((next: string[]) => {
+    setReceivedRequests(next);
+    try {
+      window.localStorage.setItem(RECEIVED_KEY, JSON.stringify(next));
     } catch {
       // storage non disponibile: continua solo in memoria
     }
@@ -103,6 +164,41 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       if (rawNotif) setNotifications(JSON.parse(rawNotif) as VitaecomNotification[]);
       const rawLinks = window.localStorage.getItem(LINKS_KEY);
       if (rawLinks) setAccountLinks(JSON.parse(rawLinks) as Record<string, string>);
+
+      const rawKnown = window.localStorage.getItem(KNOWN_KEY);
+      if (rawKnown) setKnownAccountIds(JSON.parse(rawKnown) as string[]);
+      const rawSent = window.localStorage.getItem(SENT_KEY);
+      if (rawSent) setSentRequests(JSON.parse(rawSent) as string[]);
+
+      // Una richiesta in arrivo già seminata, una volta sola alla primissima apertura — per
+      // poter provare subito "Accetta"/"Accetta E Conosci Anche Tu" senza dover prima capire
+      // come farsene mandare una vera (impossibile, senza un secondo account reale).
+      if (!window.localStorage.getItem(KNOW_SEEDED_KEY)) {
+        const seededAccount = DEMO_ACCOUNTS[DEMO_ACCOUNTS.length - 1];
+        const seededReceived = [seededAccount.id];
+        setReceivedRequests(seededReceived);
+        window.localStorage.setItem(RECEIVED_KEY, JSON.stringify(seededReceived));
+        const seededNotif: VitaecomNotification = {
+          id: newId(),
+          fromAccountId: seededAccount.id,
+          kind: "know_request",
+          createdAt: new Date().toISOString(),
+          read: false,
+        };
+        setNotifications((prev) => {
+          const merged = [seededNotif, ...prev];
+          try {
+            window.localStorage.setItem(NOTIF_KEY, JSON.stringify(merged));
+          } catch {
+            // storage non disponibile: continua solo in memoria
+          }
+          return merged;
+        });
+        window.localStorage.setItem(KNOW_SEEDED_KEY, "1");
+      } else {
+        const rawReceived = window.localStorage.getItem(RECEIVED_KEY);
+        if (rawReceived) setReceivedRequests(JSON.parse(rawReceived) as string[]);
+      }
     } catch {
       setPosts(buildDemoPosts());
     }
@@ -241,6 +337,41 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   const removePost = useCallback((postId: string) => persistPosts(posts.filter((p) => p.id !== postId)), [posts, persistPosts]);
 
+  /**
+   * Un account demo che accetta da solo dopo una manciata di secondi — stessa idea già usata
+   * per Mi Piace/commenti sui tuoi post nuovi (vedi simulateDemoEngagement): senza un vero
+   * account dall'altra parte, è l'unico modo di rendere il flusso "manda una richiesta"
+   * davvero provabile fino in fondo, non solo fino al "richiesta inviata" e basta.
+   */
+  const sendKnowRequest = useCallback(
+    (accountId: string) => {
+      if (sentRef.current.includes(accountId) || knownRef.current.includes(accountId)) return;
+      persistSent([...sentRef.current, accountId]);
+      const delay = 3000 + Math.random() * 4000;
+      setTimeout(() => {
+        persistSent(sentRef.current.filter((id) => id !== accountId));
+        persistKnown([...knownRef.current, accountId]);
+        const notif: VitaecomNotification = {
+          id: newId(),
+          fromAccountId: accountId,
+          kind: "know_accepted",
+          createdAt: new Date().toISOString(),
+          read: false,
+        };
+        persistNotifications([notif, ...notifRef.current]);
+      }, delay);
+    },
+    [persistSent, persistKnown, persistNotifications]
+  );
+
+  const acceptKnowRequest = useCallback(
+    (accountId: string) => {
+      persistReceived(receivedRef.current.filter((id) => id !== accountId));
+      persistKnown([...knownRef.current, accountId]);
+    },
+    [persistReceived, persistKnown]
+  );
+
   const markNotificationsRead = useCallback(() => {
     persistNotifications(notifications.map((n) => ({ ...n, read: true })));
   }, [notifications, persistNotifications]);
@@ -284,6 +415,11 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         accountLinks,
         linkAccountToPerson,
         unlinkAccount,
+        knownAccountIds,
+        sentRequests,
+        receivedRequests,
+        sendKnowRequest,
+        acceptKnowRequest,
       }}
     >
       {children}

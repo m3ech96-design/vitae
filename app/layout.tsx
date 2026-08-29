@@ -8,11 +8,9 @@ import { HealthProvider } from "@/lib/health-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
-import { IllnessProvider } from "@/lib/illness-context";
 import { VitaecomSocialProvider } from "@/lib/vitaecom-social-context";
+import { VitaecomChatProvider } from "@/lib/vitaecom-chat-context";
 import { VitaecomDraftProvider } from "@/lib/vitaecom-draft-context";
-import { IllnessFilterDefs } from "@/components/illness/IllnessFilterDefs";
-import { IllnessVignette } from "@/components/illness/IllnessVignette";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DayRhythm } from "@/components/DayRhythm";
 import { NavSwitcher } from "@/components/NavSwitcher";
@@ -51,7 +49,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-body antialiased">
         <ServiceWorkerRegister />
         <DayRhythm />
-        <IllnessFilterDefs />
         <ProfileProvider>
           <PlacesProvider>
             <HouseholdProvider>
@@ -61,19 +58,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
-                          <IllnessProvider>
-                            <VitaecomSocialProvider>
-                              <VitaecomDraftProvider>
-                              {children}
-                              <NavSwitcher />
-                              <NearbyPlacePrompt />
-                              <EngagementNotifier />
-                              <TaskNotifier />
-                              <MoodSuggestionPrompt />
-                              <IllnessVignette />
-                            </VitaecomDraftProvider>
-                            </VitaecomSocialProvider>
-                          </IllnessProvider>
+                          <VitaecomSocialProvider>
+                            <VitaecomChatProvider>
+                            <VitaecomDraftProvider>
+                            {children}
+                            <NavSwitcher />
+                            <NearbyPlacePrompt />
+                            <EngagementNotifier />
+                            <TaskNotifier />
+                            <MoodSuggestionPrompt />
+                          </VitaecomDraftProvider>
+                          </VitaecomChatProvider>
+                          </VitaecomSocialProvider>
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>

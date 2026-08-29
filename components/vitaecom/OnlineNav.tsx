@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home as HomeIcon, User, Globe2, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, User, Globe2, Users, MessageSquare } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/home", label: "Home", icon: HomeIcon, exits: true },
   { href: "/vitaecom/profilo", label: "Profilo", icon: User },
   { href: "/vitaecom", label: "Vitaeworld", icon: Globe2 },
+  { href: "/vitaecom/persone", label: "Persone", icon: Users },
   { href: "/vitaecom/chat", label: "Chat", icon: MessageSquare },
 ];
 

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
+import { Switch } from "@/components/ui/Switch";
 import { MoodWizardPanel } from "./MoodWizardPanel";
 
 /**
@@ -128,22 +129,7 @@ export function MoodSuggestionPrompt() {
 
           <label className="mt-5 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
             <span className="text-xs text-ink-600">Condividi Stato D&apos;Animo Su Vitaecom</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={shareMoodOnVitaecom}
-              onClick={() => setShareMoodOnVitaecom(!shareMoodOnVitaecom)}
-              disabled={Boolean(confirmingId)}
-              className={`focus-ring h-5 w-9 shrink-0 rounded-full transition-colors ${
-                shareMoodOnVitaecom ? "bg-aura-violet" : "bg-white/10"
-              }`}
-            >
-              <span
-                className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
-                  shareMoodOnVitaecom ? "translate-x-[18px]" : "translate-x-0.5"
-                }`}
-              />
-            </button>
+            <Switch checked={shareMoodOnVitaecom} onChange={setShareMoodOnVitaecom} disabled={Boolean(confirmingId)} />
           </label>
         </motion.div>
       </motion.div>

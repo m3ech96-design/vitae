@@ -22,20 +22,20 @@ const SAMPLE_PROFILES: Record<
   "demo-nina": {
     firstName: "Nina",
     kind: "donna",
-    occupation: "Illustratrice Freelance",
+    occupation: "Illustratrice freelance",
     identity: [
-      { label: "Bevanda Del Mattino", value: "Caffè Lungo, Sempre" },
-      { label: "Posto Preferito In Città", value: "Il Tavolino Vicino Alla Finestra Del Bar Sotto Casa" },
+      { label: "Bevanda Del Mattino", value: "Caffè lungo, sempre" },
+      { label: "Posto Preferito In Città", value: "Il tavolino vicino alla finestra del bar sotto casa" },
     ],
     interactions: ["Avete riso fino alle lacrime insieme", "Avete fatto una lunga passeggiata parlando di tutto"],
   },
   "demo-leo": {
     firstName: "Leo",
     kind: "uomo",
-    occupation: "Personal Trainer",
+    occupation: "Personal trainer",
     identity: [
-      { label: "Sport", value: "Corsa, Tre Volte A Settimana" },
-      { label: "Obiettivo Di Quest'Anno", value: "Finire La Sua Prima Mezza Maratona" },
+      { label: "Sport", value: "Corsa, tre volte a settimana" },
+      { label: "Obiettivo Di Quest'Anno", value: "Finire la sua prima mezza maratona" },
     ],
     interactions: ["Hai festeggiato un suo successo come fosse tuo", "Avete cucinato insieme"],
   },
@@ -44,8 +44,8 @@ const SAMPLE_PROFILES: Record<
     kind: "donna",
     occupation: "Archivista",
     identity: [
-      { label: "Passione", value: "Fotografie Vecchie E Storie Di Famiglia" },
-      { label: "Città Del Cuore", value: "Dove È Cresciuta, Non Dove Vive Ora" },
+      { label: "Passione", value: "Fotografie vecchie e storie di famiglia" },
+      { label: "Città Del Cuore", value: "Dove è cresciuta, non dove vive ora" },
     ],
     interactions: ["Hai ascoltato i suoi problemi senza giudicare", "Le hai scritto solo per dirle che ti mancava"],
   },
@@ -102,10 +102,10 @@ export function LinkAccountPanel({ accountId, nickname }: { accountId: string; n
   return (
     <div className="rounded-xl2 border border-dashed border-white/15 p-5 text-center">
       <Link2 size={18} className="mx-auto text-ink-800" />
-      <p className="mt-2.5 text-sm text-ink-200">Non Hai Ancora Collegato @{nickname} A Nessuna Persona</p>
+      <p className="mt-2.5 text-sm text-ink-200">Non hai ancora collegato @{nickname} a nessuna persona</p>
       <p className="mt-1 text-xs text-ink-800">
-        Scoperte, Rapporto E Albero Sono Dati Tuoi, Sul Tuo Dispositivo — Collega Questo Account Alla Persona Vera Che
-        Conosci Per Vederli Qui.
+        Scoperte, Rapporto e Albero sono dati tuoi, sul tuo dispositivo — collega questo account alla persona vera che
+        conosci per vederli qui.
       </p>
       <div className="mt-4 text-left">
         <PersonPicker
@@ -117,7 +117,7 @@ export function LinkAccountPanel({ accountId, nickname }: { accountId: string; n
         />
       </div>
       {people.length === 0 && (
-        <p className="mt-2 text-[11px] text-ink-800">Non Hai Ancora Creato Nessuna Persona In Mondo.</p>
+        <p className="mt-2 text-[11px] text-ink-800">Non hai ancora creato nessuna persona in Mondo.</p>
       )}
       {sample && (
         <>
@@ -132,8 +132,8 @@ export function LinkAccountPanel({ accountId, nickname }: { accountId: string; n
             <Sparkles size={13} /> Crea Una Persona Di Esempio Per Provare Subito
           </button>
           <p className="mt-1.5 text-[10px] text-ink-800">
-            Crea Una Vera Persona In Mondo (Marcata &quot;Esempio&quot;), Già Con Qualche Scoperta E Un Paio Di
-            Interazioni — Da Cancellare Quando Vuoi.
+            Crea una vera persona in Mondo (marcata &quot;Esempio&quot;), già con qualche scoperta e un paio di
+            interazioni — da cancellare quando vuoi.
           </p>
         </>
       )}

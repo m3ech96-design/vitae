@@ -6,8 +6,11 @@ import { resolveAccount, resolveTaggedAccounts } from "@/lib/vitaecom-resolve";
 import { useMood } from "@/lib/mood-context";
 import { useProfile } from "@/lib/profile-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { useResolvedImage } from "@/lib/use-resolved-image";
+import { detectLink } from "@/lib/vitaecom-link-detect";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { TaggedAvatars } from "./TaggedAvatars";
+import { LinkEmbed } from "./LinkEmbed";
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -19,15 +22,26 @@ function timeAgo(iso: string): string {
 }
 
 export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost; onOpenComments: () => void; onShare: () => void }) {
-  const { allMoods } = useMood();
+  const { allMoods, activeMood, shareMoodOnVitaecom } = useMood();
   const { profile } = useProfile();
   const { toggleLike } = useVitaecomSocial();
+  const resolvedPhotoUrl = useResolvedImage(post.photoKey);
 
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const account = resolveAccount(post.authorId, userAccount);
   const mood = allMoods.find((m) => m.id === post.moodId);
   const color = mood?.color ?? "#565B77";
   const taggedAccounts = resolveTaggedAccounts(post.tags, userAccount);
+  const photoUrl = resolvedPhotoUrl || post.demoPhotoUrl;
+  const link = !photoUrl ? detectLink(post.caption) : null;
+
+  // La gemma: il contorno resta il colore dello stato d'animo DEL POST (di chi l'ha
+  // scritto), ma il riempimento — quando l'hai messa tu — è il colore del TUO stato
+  // d'animo attuale, non quello del post: due persone diverse che guardano lo stesso Mi
+  // Piace vedrebbero comunque lo stesso contorno, ma il riempimento racconta come si sente
+  // CHI lo sta guardando in questo momento, non chi ha scritto il post.
+  const myMood = shareMoodOnVitaecom && activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : undefined;
+  const myMoodColor = myMood?.color ?? allMoods.find((m) => m.id === "normale")?.color ?? "#565B77";
 
   return (
     <div className="overflow-hidden rounded-xl2" style={{ border: `1.5px solid ${color}88`, background: "rgba(255,255,255,0.02)" }}>
@@ -47,12 +61,13 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
       </div>
 
       <div className="mx-4 rounded-xl2 border border-white/[0.06] bg-white/[0.015] p-4">
-        {post.demoPhotoUrl && (
+        {photoUrl && (
           <div className="relative -mx-4 -mt-4 mb-3 aspect-[4/3] overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.demoPhotoUrl} alt="" className="h-full w-full object-cover" />
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
           </div>
         )}
+        {link && <LinkEmbed link={link} />}
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-200">{post.caption}</p>
         {post.captionByAI && <p className="mt-2 text-[10px] uppercase tracking-wide text-ink-800">Descritto Dall&apos;IA</p>}
       </div>
@@ -60,7 +75,7 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
           <button onClick={() => toggleLike(post.id)} className="focus-ring flex items-center gap-1.5" aria-label="Mi Piace">
-            <Gem size={18} color={post.likedByUser ? color : "#2A2E42"} fill={post.likedByUser ? color : "transparent"} strokeWidth={1.6} />
+            <Gem size={18} color={color} fill={post.likedByUser ? myMoodColor : "transparent"} strokeWidth={1.6} />
             {post.likeCount > 0 && <span className="text-xs text-ink-600">{post.likeCount}</span>}
           </button>
           <button onClick={onOpenComments} className="focus-ring flex items-center gap-1.5" aria-label="Commenta">

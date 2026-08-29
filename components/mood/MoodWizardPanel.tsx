@@ -4,6 +4,7 @@ import { Plus, X, PowerOff } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { TRIGGER_CATALOG, TriggerCategory, MoodDefinition } from "@/lib/mood-catalog";
 import { Button } from "../ui/Button";
+import { Switch } from "../ui/Switch";
 
 const CATEGORY_ORDER: TriggerCategory[] = [
   "Task",
@@ -136,24 +137,10 @@ export function MoodWizardPanel() {
         <span>
           <span className="block text-sm text-ink-200">Condividi Stato D&apos;Animo Su Vitaecom</span>
           <span className="mt-0.5 block text-[11px] text-ink-800">
-            Spenta, Il Tuo Profilo Mostra Sempre &quot;Normale&quot;, Qualunque Cosa Tu Provi Davvero.
+            Spenta, il tuo profilo mostra sempre &quot;Normale&quot;, qualunque cosa tu provi davvero.
           </span>
         </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={shareMoodOnVitaecom}
-          onClick={() => setShareMoodOnVitaecom(!shareMoodOnVitaecom)}
-          className={`focus-ring h-5 w-9 shrink-0 rounded-full transition-colors ${
-            shareMoodOnVitaecom ? "bg-aura-violet" : "bg-white/10"
-          }`}
-        >
-          <span
-            className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
-              shareMoodOnVitaecom ? "translate-x-[18px]" : "translate-x-0.5"
-            }`}
-          />
-        </button>
+        <Switch checked={shareMoodOnVitaecom} onChange={setShareMoodOnVitaecom} />
       </label>
 
       {current && (
@@ -168,7 +155,7 @@ export function MoodWizardPanel() {
             />
             <div>
               <p className="text-sm text-ink-100">Ti Senti {current.label}</p>
-              <p className="text-[11px] text-ink-800">Sfuma Da Solo Nelle Prossime 12 Ore — Al {Math.round(activeMoodIntensity * 100)}%</p>
+              <p className="text-[11px] text-ink-800">Sfuma da solo nelle prossime 12 ore — al {Math.round(activeMoodIntensity * 100)}%</p>
             </div>
           </div>
           <button onClick={clearMood} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Spegni Ora">

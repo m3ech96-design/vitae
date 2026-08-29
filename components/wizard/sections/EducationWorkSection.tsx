@@ -1,5 +1,7 @@
 "use client";
-import { PersonalDetails, StressLevel, STRESS_LABEL } from "@/lib/types";
+import { useEffect } from "react";
+import { Check } from "lucide-react";
+import { PersonalDetails } from "@/lib/types";
 import { capitalizeWords, capitalizeSentence } from "@/lib/text";
 import { usePlaces } from "@/lib/places-context";
 import { AddressSuggestion } from "@/lib/geocode";
@@ -8,8 +10,30 @@ import { AddressAutocomplete } from "../../ui/AddressAutocomplete";
 import { TagListField } from "../TagListField";
 import { DynamicFieldList } from "../DynamicFieldList";
 
-const STRESS_LEVELS: StressLevel[] = ["basso", "medio", "alto"];
+function CheckToggle({ label, checked, onClick }: { label: string; checked: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`focus-ring flex flex-1 items-center justify-center gap-1.5 rounded-xl2 border px-4 py-3 text-sm transition-all ${
+        checked ? "border-aura-violet/60 bg-aura-violet/15 text-ink-100" : "border-white/10 text-ink-600"
+      }`}
+    >
+      {checked && <Check size={14} />}
+      {label}
+    </button>
+  );
+}
 
+/**
+ * Prima "Dove Ha Studiato" e "Dove Ha Lavorato" erano due campi sempre visibili, come se
+ * chiunque fosse sempre sia studente che lavoratore. Ora due spunte indipendenti — Studia e
+ * Lavora NON si escludono a vicenda, chi studia e lavora insieme esiste — aprono ciascuna il
+ * proprio gruppo di campi, con un taglio diverso: Studia guarda avanti (obiettivi futuri, non
+ * ancora un risultato), Lavora guarda anche indietro (dove hai già studiato, che titolo hai
+ * preso). Sotto, la lista prosegue uguale per tutti — materie/competenze/abilità/lingue non
+ * dipendono da nessuna delle due spunte.
+ */
 export function EducationWorkSection({
   data,
   onUpdate,
@@ -25,9 +49,10 @@ export function EducationWorkSection({
   const { places, addPlace } = usePlaces();
   const saved = (key: string) => Boolean(justSavedKeys?.includes(key));
 
-  const onPickAddress = (suggestion: AddressSuggestion, kind: "studio" | "lavoro") => {
-    if (kind === "studio") onUpdate({ studiedAt: suggestion.label });
-    else onUpdate({ workedAt: suggestion.label });
+  const onPickAddress = (suggestion: AddressSuggestion, kind: "scuola" | "lavoro" | "studiato") => {
+    if (kind === "scuola") onUpdate({ currentSchool: suggestion.label });
+    else if (kind === "lavoro") onUpdate({ currentWorkplace: suggestion.label });
+    else onUpdate({ studiedAt: suggestion.label });
 
     const alreadyExists = places.some((p) => p.address === suggestion.label);
     if (!alreadyExists) {
@@ -42,37 +67,82 @@ export function EducationWorkSection({
     }
   };
 
+  // Suggerisce "Dove Ha Studiato" da "Quale Scuola Frequenta" solo la prima volta che si
+  // spunta Lavora, non ad ogni ridigitazione — dopo resta un campo di testo libero come
+  // qualunque altro, cancellabile e riscrivibile senza che nulla lo sovrascriva più.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (data.works && !data.studiedAt && data.currentSchool) onUpdate({ studiedAt: data.currentSchool });
+  }, [data.works]);
+
   return (
     <div className="space-y-6">
-      <AddressAutocomplete
-        label="Dove Ha Studiato"
-        placeholder="Es. Via Zamboni 33, Bologna"
-        value={data.studiedAt || ""}
-        onChange={(text) => onUpdate({ studiedAt: text })}
-        onSelect={(s) => onPickAddress(s, "studio")}
-      />
+      <div className="flex gap-2">
+        <CheckToggle label="Studia" checked={Boolean(data.studies)} onClick={() => onUpdate({ studies: !data.studies })} />
+        <CheckToggle label="Lavora" checked={Boolean(data.works)} onClick={() => onUpdate({ works: !data.works })} />
+      </div>
 
-      <TextField
-        label="Titolo Di Studio"
-        placeholder="Es. Laurea In Ingegneria Gestionale"
-        value={data.educationTitle || ""}
-        onChange={(e) => onUpdate({ educationTitle: capitalizeWords(e.target.value) })}
-        justSaved={saved("educationTitle")}
-      />
+      {data.studies && (
+        <div className="space-y-6 rounded-xl2 border border-aura-violet/20 bg-aura-violet/[0.04] p-4">
+          <AddressAutocomplete
+            label="Quale Scuola Frequenta"
+            placeholder="Es. Università Di Bologna"
+            value={data.currentSchool || ""}
+            onChange={(text) => onUpdate({ currentSchool: text })}
+            onSelect={(s) => onPickAddress(s, "scuola")}
+          />
+          <TextArea
+            label="Obiettivi Di Studio Futuri"
+            value={data.futureStudyGoals || ""}
+            onChange={(e) => onUpdate({ futureStudyGoals: capitalizeSentence(e.target.value) })}
+            justSaved={saved("futureStudyGoals")}
+          />
+          <TextArea
+            label="Obiettivi Lavorativi Futuri"
+            value={data.futureWorkGoals || ""}
+            onChange={(e) => onUpdate({ futureWorkGoals: capitalizeSentence(e.target.value) })}
+            justSaved={saved("futureWorkGoals")}
+          />
+        </div>
+      )}
 
-      <TagListField label="Materie Conosciute" tags={data.subjects} onChange={(subjects) => onUpdate({ subjects })} placeholder="Aggiungi..." />
-      <TagListField label="Competenze" tags={data.competencies} onChange={(competencies) => onUpdate({ competencies })} placeholder="Aggiungi..." />
-      <TagListField label="Abilità" tags={data.abilities} onChange={(abilities) => onUpdate({ abilities })} placeholder="Aggiungi..." />
-      <TagListField label="Lingue Conosciute" tags={data.languages} onChange={(languages) => onUpdate({ languages })} placeholder="Aggiungi..." />
+      {data.works && (
+        <div className="space-y-6 rounded-xl2 border border-aura-violet/20 bg-aura-violet/[0.04] p-4">
+          <AddressAutocomplete
+            label="Dove Lavora"
+            placeholder="Es. Corso Italia 4, Torino"
+            value={data.currentWorkplace || ""}
+            onChange={(text) => onUpdate({ currentWorkplace: text })}
+            onSelect={(s) => onPickAddress(s, "lavoro")}
+          />
+          <TagListField
+            label="Lavori Precedenti"
+            tags={data.previousWorkplaces}
+            onChange={(previousWorkplaces) => onUpdate({ previousWorkplaces })}
+            placeholder="Aggiungi..."
+          />
+          <AddressAutocomplete
+            label="Dove Ha Studiato"
+            placeholder="Es. Via Zamboni 33, Bologna"
+            value={data.studiedAt || ""}
+            onChange={(text) => onUpdate({ studiedAt: text })}
+            onSelect={(s) => onPickAddress(s, "studiato")}
+          />
+          <TextField
+            label="Titolo Di Studio"
+            placeholder="Es. Laurea In Ingegneria Gestionale"
+            value={data.educationTitle || ""}
+            onChange={(e) => onUpdate({ educationTitle: capitalizeWords(e.target.value) })}
+            justSaved={saved("educationTitle")}
+          />
+        </div>
+      )}
 
       <div className="space-y-6 border-t border-white/[0.06] pt-6">
-        <AddressAutocomplete
-          label="Dove Ha Lavorato"
-          placeholder="Es. Corso Italia 4, Torino"
-          value={data.workedAt || ""}
-          onChange={(text) => onUpdate({ workedAt: text })}
-          onSelect={(s) => onPickAddress(s, "lavoro")}
-        />
+        <TagListField label="Materie Conosciute" tags={data.subjects} onChange={(subjects) => onUpdate({ subjects })} placeholder="Aggiungi..." />
+        <TagListField label="Competenze" tags={data.competencies} onChange={(competencies) => onUpdate({ competencies })} placeholder="Aggiungi..." />
+        <TagListField label="Abilità" tags={data.abilities} onChange={(abilities) => onUpdate({ abilities })} placeholder="Aggiungi..." />
+        <TagListField label="Lingue Conosciute" tags={data.languages} onChange={(languages) => onUpdate({ languages })} placeholder="Aggiungi..." />
 
         <TextField
           label="Occupazione Attuale"
@@ -81,24 +151,6 @@ export function EducationWorkSection({
           onChange={(e) => onUpdate({ occupation: capitalizeWords(e.target.value) })}
           justSaved={saved("occupation")}
         />
-
-        <label className="block">
-          <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">Stress</span>
-          <div className="flex gap-2">
-            {STRESS_LEVELS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => onUpdate({ stress: s })}
-                className={`focus-ring rounded-full border px-4 py-2 text-sm transition-all ${
-                  data.stress === s ? "border-aura-violet/60 bg-aura-violet/15 text-ink-100" : "border-white/10 text-ink-600"
-                }`}
-              >
-                {STRESS_LABEL[s]}
-              </button>
-            ))}
-          </div>
-        </label>
 
         <TextArea
           label="Ambizione Professionale"

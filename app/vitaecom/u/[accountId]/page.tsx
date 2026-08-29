@@ -14,7 +14,7 @@ import { ProfileHeader } from "@/components/vitaecom/ProfileHeader";
 function GuestProfile({ accountId }: { accountId: string }) {
   const router = useRouter();
   const { profile, hydrated: profileHydrated } = useProfile();
-  const { hydrated, posts, publish } = useVitaecomSocial();
+  const { hydrated, posts, publish, knownAccountIds } = useVitaecomSocial();
   const [commentsFor, setCommentsFor] = useState<VitaecomPost | null>(null);
   const isSelf = accountId === "user";
 
@@ -31,7 +31,10 @@ function GuestProfile({ accountId }: { accountId: string }) {
 
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const account = resolveAccount(accountId, userAccount);
-  const accountPosts = posts.filter((p) => p.authorId === accountId);
+  // Per privacy, uno "Sconosciuto" non ti mostra i suoi post nemmeno sul proprio profilo —
+  // vedi KnowPanel: qui, non solo su Vitaeworld.
+  const known = knownAccountIds.includes(accountId);
+  const accountPosts = known ? posts.filter((p) => p.authorId === accountId) : [];
 
   const share = (post: VitaecomPost) => {
     publish({ caption: `Condiviso Da @${post.authorId}: ${post.caption}`, moodId: post.moodId, tags: post.tags });
@@ -48,7 +51,12 @@ function GuestProfile({ accountId }: { accountId: string }) {
       </div>
 
       <div className="mt-7 space-y-5">
-        {accountPosts.length === 0 && (
+        {accountPosts.length === 0 && !known && (
+          <p className="mt-10 text-center text-sm text-ink-800">
+            Conosci Prima @{account.nickname} Per Vedere I Suoi Post.
+          </p>
+        )}
+        {accountPosts.length === 0 && known && (
           <p className="mt-10 text-center text-sm text-ink-800">@{account.nickname} Non Ha Ancora Pubblicato Nulla.</p>
         )}
         {accountPosts.map((post) => (

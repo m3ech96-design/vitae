@@ -80,14 +80,14 @@ function ShowcaseEditor({ onClose }: { onClose: () => void }) {
   return (
     <PersonalCardSheet title="Vetrina Del Profilo" onClose={onClose}>
       <p className="text-xs text-ink-800">
-        Scegli Fino A {MAX_SHOWCASE_ITEMS} Cose Da Mostrare A Chi Visita Il Tuo Profilo — Pescate Da Ciò Che Hai Già
-        Scritto In &quot;Il Tuo Profilo&quot;, Non Un Campo Nuovo Da Compilare Da Capo. {selected.length}/{MAX_SHOWCASE_ITEMS}{" "}
-        Scelte.
+        Scegli fino a {MAX_SHOWCASE_ITEMS} cose da mostrare a chi visita il tuo profilo — pescate da ciò che hai già
+        scritto in &quot;Il Tuo Profilo&quot;, non un campo nuovo da compilare da capo. {selected.length}/{MAX_SHOWCASE_ITEMS}{" "}
+        scelte.
       </p>
       {!hasAnyCandidate && (
         <p className="mt-5 text-sm text-ink-600">
-          Non Hai Ancora Compilato Nulla Da Mostrare — Aggiungi Qualcosa In &quot;Il Tuo Profilo&quot; (Film, Musica,
-          Valori, Luoghi...) E Torna Qui.
+          Non hai ancora compilato nulla da mostrare — aggiungi qualcosa in &quot;Il Tuo Profilo&quot; (film, musica,
+          valori, luoghi...) e torna qui.
         </p>
       )}
       <div className="mt-5 space-y-6">

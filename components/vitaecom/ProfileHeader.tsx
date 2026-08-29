@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Compass } from "lucide-react";
+import { ChevronRight, Compass, MoreHorizontal } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useMood } from "@/lib/mood-context";
 import { useHousehold } from "@/lib/household-context";
@@ -13,8 +13,10 @@ import { latestDiscoveries } from "@/lib/vitaecom-discoveries";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { ShowcaseDrawer } from "./ShowcaseDrawer";
 import { ExploreProfileSheet } from "./ExploreProfileSheet";
+import { KnowPanel } from "./KnowPanel";
 
 const MENU_WIDTH = 240;
+const UNKNOWN_TIP_MS = 5000;
 
 export function ProfileHeader({
   account,
@@ -29,7 +31,7 @@ export function ProfileHeader({
   const { profile } = useProfile();
   const { activeMood, activeMoodIntensity, allMoods, shareMoodOnVitaecom } = useMood();
   const { people } = useHousehold();
-  const { accountLinks } = useVitaecomSocial();
+  const { accountLinks, knownAccountIds } = useVitaecomSocial();
 
   const normale = allMoods.find((m) => m.id === "normale");
 
@@ -58,9 +60,15 @@ export function ProfileHeader({
   const [discoveriesOpen, setDiscoveriesOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [unknownTipOpen, setUnknownTipOpen] = useState(false);
+  const [unknownTipPos, setUnknownTipPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLButtonElement>(null);
+  const unknownTipTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const known = knownAccountIds.includes(account.id);
 
   useEffect(() => setMounted(true), []);
 
@@ -106,8 +114,19 @@ export function ProfileHeader({
       router.push("/profilo");
       return;
     }
-    setDiscoveriesOpen((v) => !v);
+    if (known) return;
+    // "Non Conosci Ancora Questa Persona" — ancorata all'avatar, si chiude da sola dopo 5
+    // secondi (o subito, se tocchi di nuovo l'avatar). Stessa tecnica del portal già usata
+    // per il menù "..." qui sotto, per non farsi tagliare dalla card che scorre.
+    const rect = avatarRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setUnknownTipPos({ top: rect.bottom + 10, left: Math.max(8, Math.min(rect.left, window.innerWidth - 220 - 8)) });
+    setUnknownTipOpen(true);
+    if (unknownTipTimer.current) clearTimeout(unknownTipTimer.current);
+    unknownTipTimer.current = setTimeout(() => setUnknownTipOpen(false), UNKNOWN_TIP_MS);
   };
+
+  useEffect(() => () => unknownTipTimer.current && clearTimeout(unknownTipTimer.current), []);
 
   const recent = linkedPerson ? latestDiscoveries(linkedPerson, 3) : [];
 
@@ -116,9 +135,28 @@ export function ProfileHeader({
       {isOwner && <ShowcaseDrawer isOwner />}
 
       <div className="mt-7 flex flex-col items-center">
-        <button ref={triggerRef} onClick={handleAvatarClick} className="focus-ring relative rounded-full" aria-label={isOwner ? "Il Tuo Profilo Completo" : `Ultime Scoperte Su ${account.nickname}`}>
-          <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={92} ring="idle" glowColor={mood?.color} glowIntensity={auraIntensityValue} />
-        </button>
+        <span className="relative inline-flex">
+          {!isOwner && (
+            <button
+              ref={triggerRef}
+              onClick={() => setDiscoveriesOpen((v) => !v)}
+              className="focus-ring absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-[#B79A6B]/50 hover:text-ink-100"
+              aria-label={`Ultime Scoperte Su ${account.nickname}`}
+              aria-haspopup="menu"
+              aria-expanded={discoveriesOpen}
+            >
+              <MoreHorizontal size={14} />
+            </button>
+          )}
+          <button
+            ref={avatarRef}
+            onClick={handleAvatarClick}
+            className="focus-ring relative rounded-full"
+            aria-label={isOwner ? "Il Tuo Profilo Completo" : known ? account.nickname : "Non Conosci Ancora Questa Persona"}
+          >
+            <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={92} ring="idle" glowColor={mood?.color} glowIntensity={auraIntensityValue} />
+          </button>
+        </span>
 
         <p className="mt-3.5 font-display text-lg text-ink-100">@{account.nickname}</p>
 
@@ -129,10 +167,21 @@ export function ProfileHeader({
         </p>
       </div>
 
+      {/* Non subito sotto la riga di stato/genere, ma nemmeno lontano — il "riquadro
+         centrale" (vedi KnowPanel) che decide se sei "Persona Conosciuta" o "Sconosciuto"
+         per questo account, e cosa puoi farci. Solo sui profili altrui: il tuo non ha
+         bisogno di dichiarare se conosci te stesso. */}
+      {!isOwner && (
+        <div className="mt-5">
+          <KnowPanel accountId={account.id} />
+        </div>
+      )}
+
       {mounted &&
         createPortal(
-          <AnimatePresence>
-            {discoveriesOpen && menuPos && (
+          <>
+            <AnimatePresence>
+              {discoveriesOpen && menuPos && (
               <motion.div
                 ref={menuRef}
                 initial={{ opacity: 0, scale: 0.94, y: -6 }}
@@ -147,11 +196,11 @@ export function ProfileHeader({
                 </p>
                 {!linkedPerson ? (
                   <p className="px-3 py-3 text-xs text-ink-800">
-                    Non Hai Ancora Collegato @{account.nickname} A Nessuna Persona — Tocca &quot;Esplora Altro&quot; Per
-                    Farlo.
+                    Non hai ancora collegato @{account.nickname} a nessuna persona — tocca &quot;Esplora Altro&quot; per
+                    farlo.
                   </p>
                 ) : recent.length === 0 ? (
-                  <p className="px-3 py-3 text-xs text-ink-800">Non Hai Ancora Scoperto Nulla.</p>
+                  <p className="px-3 py-3 text-xs text-ink-800">Non hai ancora scoperto nulla.</p>
                 ) : (
                   recent.map((d, i) => (
                     <div key={i} className="flex items-start gap-1 px-3 py-2 text-xs">
@@ -170,8 +219,24 @@ export function ProfileHeader({
                   <Compass size={13} /> Esplora Altro <ChevronRight size={13} className="ml-auto" />
                 </button>
               </motion.div>
-            )}
-          </AnimatePresence>,
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {unknownTipOpen && unknownTipPos && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.94, y: -6 }}
+                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ position: "fixed", top: unknownTipPos.top, left: unknownTipPos.left, width: 220 }}
+                  className="glass-strong z-50 rounded-xl2 px-3.5 py-3 text-center text-xs text-ink-200"
+                >
+                  Non Conosci Ancora Questa Persona
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>,
           document.body
         )}
 

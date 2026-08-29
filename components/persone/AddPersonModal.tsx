@@ -9,6 +9,7 @@ import { useProfile } from "@/lib/profile-context";
 import { AvatarUploader } from "../wizard/AvatarUploader";
 import { TextField } from "../ui/TextField";
 import { PersonPicker } from "../ui/PersonPicker";
+import { SwitchVisual } from "../ui/Switch";
 import { Button } from "../ui/Button";
 import { DeceasedDateFields } from "./DeceasedDateFields";
 
@@ -155,13 +156,7 @@ export function AddPersonModal({
               }`}
             >
               Vive Con Te
-              <span className={`h-5 w-9 rounded-full transition-colors ${livesAtHome ? "bg-aura-violet" : "bg-white/10"}`}>
-                <span
-                  className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
-                    livesAtHome ? "translate-x-[18px]" : "translate-x-0.5"
-                  }`}
-                />
-              </span>
+              <SwitchVisual checked={livesAtHome} />
             </button>
           )
         )}
@@ -177,13 +172,7 @@ export function AddPersonModal({
             <Skull size={14} className={deceased ? "text-ink-400" : "text-ink-800"} />
             {kind === "donna" || kind === "bambina" ? "Defunta" : "Defunto"}
           </span>
-          <span className={`h-5 w-9 rounded-full transition-colors ${deceased ? "bg-ink-600" : "bg-white/10"}`}>
-            <span
-              className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
-                deceased ? "translate-x-[18px]" : "translate-x-0.5"
-              }`}
-            />
-          </span>
+          <SwitchVisual checked={deceased} tone="ink" />
         </button>
 
         {deceased && (

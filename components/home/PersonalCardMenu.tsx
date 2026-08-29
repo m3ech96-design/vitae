@@ -2,29 +2,27 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Wand2, Smile, Heart, HeartPulse } from "lucide-react";
-import { useIllness } from "@/lib/illness-context";
-import { IllnessSheet } from "../illness/IllnessSheet";
+import { Wand2, Smile, Heart } from "lucide-react";
 import { MoodWizardPanel } from "../mood/MoodWizardPanel";
 import { WeeklyNeedsSection } from "../wizard/sections/WeeklyNeedsSection";
 import { PersonalCardSheet } from "./PersonalCardSheet";
 
-type WizardKey = "mood" | "needs" | "illness";
+type WizardKey = "mood" | "needs";
 
 const MENU_ITEMS: { key: WizardKey; label: string; icon: typeof Smile }[] = [
   { key: "mood", label: "Stati D'Animo", icon: Smile },
   { key: "needs", label: "Bisogni", icon: Heart },
-  { key: "illness", label: "Malattia", icon: HeartPulse },
 ];
 
 // In pixel, deve combaciare con "w-48" nella classe del pannello qui sotto.
 const MENU_WIDTH = 192;
 
 /**
- * Unico punto d'accesso ai tre wizard di scelta (Stati D'Animo, Bisogni, Malattia): un
- * pulsante in alto a sinistra, leggermente sovrapposto all'avatar della card personale.
- * Prima erano sparsi (una pagina intera, una sezione del Profilo, un bottone testuale in
- * Home) — ora vivono tutti qui, e solo qui.
+ * Unico punto d'accesso ai due wizard di scelta (Stati D'Animo, Bisogni): un pulsante in
+ * alto a sinistra, leggermente sovrapposto all'avatar della card personale. Prima erano
+ * sparsi (una pagina intera, una sezione del Profilo, un bottone testuale in Home) — ora
+ * vivono tutti qui, e solo qui. (Malattia è stata rimossa dall'app per intero — vedi la
+ * voce dedicata nel README: non è più uno dei wizard qui dentro.)
  *
  * Bug corretto — il menù veniva tagliato dalla card personale: la card è una GlassCard
  * con `overflow-hidden`, e le serve davvero (senza, il bagliore dello stato d'animo e la
@@ -44,7 +42,6 @@ export function PersonalCardMenu() {
   const [activeWizard, setActiveWizard] = useState<WizardKey | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
-  const { illness } = useIllness();
   const triggerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -96,7 +93,7 @@ export function PersonalCardMenu() {
             e.stopPropagation();
             setOpen((v) => !v);
           }}
-          aria-label="Stati D'Animo, Bisogni, Malattia"
+          aria-label="Stati D'Animo, Bisogni"
           aria-haspopup="menu"
           aria-expanded={open}
           className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-aura-violet/50 hover:text-ink-100"
@@ -132,9 +129,6 @@ export function PersonalCardMenu() {
                   >
                     <Icon size={14} className="text-aura-cyan" />
                     {label}
-                    {key === "illness" && illness && (
-                      <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-aura-amber" />
-                    )}
                   </button>
                 ))}
               </motion.div>
@@ -142,8 +136,6 @@ export function PersonalCardMenu() {
           </AnimatePresence>,
           document.body
         )}
-
-      {activeWizard === "illness" && <IllnessSheet onClose={() => setActiveWizard(null)} />}
 
       {activeWizard === "mood" && (
         <PersonalCardSheet title={wizardTitle} onClose={() => setActiveWizard(null)}>

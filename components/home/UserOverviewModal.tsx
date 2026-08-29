@@ -63,13 +63,13 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-          {(profile.educationTitle || profile.studiedAt || profile.workedAt || profile.occupation) && (
+          {(profile.educationTitle || profile.studiedAt || profile.currentWorkplace || profile.occupation) && (
             <div className="space-y-1 text-sm">
               <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">Istruzione E Lavoro</p>
               {profile.educationTitle && <p className="text-ink-300">{profile.educationTitle}</p>}
               {profile.occupation && <p className="text-ink-300">{profile.occupation}</p>}
               {profile.studiedAt && <p className="text-ink-600">Ha Studiato A {profile.studiedAt}</p>}
-              {profile.workedAt && <p className="text-ink-600">Lavora A {profile.workedAt}</p>}
+              {profile.currentWorkplace && <p className="text-ink-600">Lavora A {profile.currentWorkplace}</p>}
             </div>
           )}
 

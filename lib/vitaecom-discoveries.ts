@@ -1,47 +1,85 @@
-import { Person, PersonalDetails } from "./types";
+import { Person, PersonalDetails, ThumbItem } from "./types";
 import { FIELD_LABELS } from "./discovery-feed";
 import { allCustomDiscoveredFields } from "./discovery-lookup";
 
 export interface DiscoveryLine {
   label: string;
   value: string;
+  /** Solo per Film/Musica/Libri/Videogiochi Preferiti (vedi ThumbGridField) — la stessa
+   * miniatura del wizard, non solo il titolo in chiaro. */
+  imageUrl?: string;
 }
 
 const SCALAR_ORDER = Object.keys(FIELD_LABELS) as (keyof typeof FIELD_LABELS)[];
 
-/** Campi che contengono l'id di un'ALTRA persona (Partner, Amici, Migliori Amici) — senza
- * risolverli in un nome vero mostrerebbero solo un id grezzo e illeggibile. Risolverli
- * richiederebbe l'elenco delle Persone qui dentro, che questa funzione non ha (e non deve
- * avere, per restare una semplice lettura): restano fuori, li si scopre nell'editor vero. */
-const PERSON_REF_FIELDS: (keyof PersonalDetails)[] = ["partnerPersonId", "friendPersonIds", "bestFriendPersonIds"];
-
 /** Quale sezione del wizard appartiene ogni campo scalare — per CHIAVE, non per l'etichetta
  * tradotta: un raggruppamento per stringa italiana rischia di lasciar fuori in silenzio un
  * campo la cui label non hai ricopiato identica in un secondo elenco (è già capitato una
- * volta scrivendo questo file, corretto prima di consegnare). Ogni chiave di FIELD_LABELS
- * (tranne i riferimenti a un'altra persona) deve comparire esattamente una volta qui sotto —
- * un test implicito che la build verifica da sola, se uno resta fuori TypeScript non si
- * lamenta ma il campo semplicemente non compare mai: controllato a mano, non solo dichiarato.
- */
+ * volta scrivendo questo file, corretto prima di consegnare — vedi Checkpoint 18). */
 const SECTION_FIELDS: Record<"identity" | "eduWork" | "body", (keyof PersonalDetails)[]> = {
   identity: ["nickname", "phone", "birthPlace", "birthday", "gender", "strengths", "weaknesses", "fears", "ambitions", "goals"],
-  eduWork: ["studiedAt", "workedAt", "educationTitle", "occupation", "stress", "professionalAmbition"],
+  eduWork: [
+    "studies",
+    "currentSchool",
+    "futureStudyGoals",
+    "futureWorkGoals",
+    "works",
+    "currentWorkplace",
+    "studiedAt",
+    "educationTitle",
+    "occupation",
+    "professionalAmbition",
+  ],
   body: ["weight", "height", "physicalGoal"],
 };
 
 /** I campi scalari delle Scoperte (Soprannome, Peso, Occupazione...) che sono davvero
- * compilati su questa persona — nell'ordine dichiarato in FIELD_LABELS, non a caso. Coprono
- * sia testo libero (stringhe non vuote) sia numeri (Peso, Altezza — anche uno zero tecnico
- * conta come "compilato", diverso da "mai impostato"). */
+ * compilati su questa persona. Coprono sia testo libero (stringhe non vuote) sia numeri
+ * (Peso, Altezza — anche uno zero tecnico conta come "compilato", diverso da "mai
+ * impostato"). I riferimenti a un'altra persona (Partner, Amici) sono gestiti a parte da
+ * `resolvedPersonRefs`, non qui: senza l'elenco delle Persone questa funzione mostrerebbe
+ * solo un id grezzo e illeggibile. */
 export function filledScalarDiscoveries(person: Person, keys: (keyof PersonalDetails)[] = SCALAR_ORDER): DiscoveryLine[] {
   return keys
-    .filter((key) => !PERSON_REF_FIELDS.includes(key))
     .filter((key) => {
       const value = person[key as keyof Person];
       if (typeof value === "string") return value.trim().length > 0;
+      if (typeof value === "boolean") return value === true;
       return typeof value === "number";
     })
-    .map((key) => ({ label: FIELD_LABELS[key as keyof typeof FIELD_LABELS]!, value: String(person[key as keyof Person]) }));
+    .map((key) => {
+      const value = person[key as keyof Person];
+      return { label: FIELD_LABELS[key as keyof typeof FIELD_LABELS]!, value: typeof value === "boolean" ? "Sì" : String(value) };
+    });
+}
+
+/** Una riga per etichetta, tag uniti in un'unica frase leggibile ("Carattere: Empatico,
+ * Curioso, Testardo") invece di una riga per singolo tag — così una lista lunga di
+ * competenze o materie non affoga il resto della scheda. */
+function tagListLine(label: string, tags: string[]): DiscoveryLine[] {
+  return tags.length > 0 ? [{ label, value: tags.join(", ") }] : [];
+}
+
+function thumbLines(label: string, items: ThumbItem[]): DiscoveryLine[] {
+  return items.map((t) => ({ label, value: t.title, imageUrl: t.imageUrl }));
+}
+
+/** Partner/Amici/Migliori Amici puntano all'id di un'altra Persona — senza risolverlo qui
+ * mostrerebbero solo un id grezzo. Richiede l'elenco delle Persone: solo chi chiama da un
+ * punto con `useHousehold()` può fornirlo, per questo è una funzione a parte invece che
+ * dentro `filledScalarDiscoveries`. */
+function resolvedPersonRefs(person: Person, people: Person[]): DiscoveryLine[] {
+  const nameOf = (id?: string) => people.find((p) => p.id === id);
+  const lines: DiscoveryLine[] = [];
+  if (person.partnerPersonId) {
+    const p = nameOf(person.partnerPersonId);
+    if (p) lines.push({ label: "Partner", value: `${p.firstName} ${p.lastName}`.trim() });
+  }
+  const friends = person.friendPersonIds.map(nameOf).filter((p): p is Person => Boolean(p));
+  if (friends.length > 0) lines.push({ label: "Amici", value: friends.map((p) => p.firstName).join(", ") });
+  const bestFriends = person.bestFriendPersonIds.map(nameOf).filter((p): p is Person => Boolean(p));
+  if (bestFriends.length > 0) lines.push({ label: "Migliori Amici", value: bestFriends.map((p) => p.firstName).join(", ") });
+  return lines;
 }
 
 /** Nessun campo scoperto porta con sé una data — non è mai stata tracciata per singolo
@@ -66,9 +104,20 @@ export interface DiscoverySection {
   lines: DiscoveryLine[];
 }
 
-/** Tutto ciò che è stato scoperto su questa persona, raggruppato con le stesse sezioni del
- * wizard — la vista di sola lettura per chi non è il proprietario del profilo. */
-export function allDiscoverySections(person: Person): DiscoverySection[] {
+/**
+ * Tutto ciò che è stato scoperto su questa persona, raggruppato con le stesse sezioni del
+ * wizard — la vista di sola lettura per chi non è il proprietario del profilo.
+ *
+ * Bug corretto — mancava più di metà del wizard: Carattere, Valori, Stile Di Vita (sezione
+ * Identità), Materie Conosciute/Competenze/Abilità/Lingue Conosciute (Istruzione E Lavoro),
+ * Film/Musica/Libri/Videogiochi Preferiti con le loro miniature, Cibi Preferiti, Luoghi
+ * D'Interesse, Categoria Preferita (Interessi) — tutti campi `string[]`/`ThumbItem[]` che
+ * `FIELD_LABELS` non copre affatto (quella mappa è solo per i campi scalari), quindi la
+ * prima stesura di questo file non li vedeva proprio. `people` serve solo per risolvere
+ * Partner/Amici/Migliori Amici in nomi veri invece di lasciarli fuori — passalo da chi ha
+ * `useHousehold()` a disposizione.
+ */
+export function allDiscoverySections(person: Person, people: Person[]): DiscoverySection[] {
   const identity = filledScalarDiscoveries(person, SECTION_FIELDS.identity);
   const eduWork = filledScalarDiscoveries(person, SECTION_FIELDS.eduWork);
   const body = filledScalarDiscoveries(person, SECTION_FIELDS.body);
@@ -80,11 +129,44 @@ export function allDiscoverySections(person: Person): DiscoverySection[] {
   const interestsCustom = person.interestsCustomFields.map((f) => ({ label: f.label, value: f.value }));
 
   const sections: DiscoverySection[] = [
-    { title: "Identità", lines: [...identity, ...identityCustom] },
-    { title: "Istruzione E Lavoro", lines: [...eduWork, ...eduWorkCustom] },
+    {
+      title: "Identità",
+      lines: [
+        ...identity,
+        ...tagListLine("Carattere", person.traits),
+        ...tagListLine("Valori", person.values),
+        ...tagListLine("Stile Di Vita", person.lifestyle),
+        ...identityCustom,
+      ],
+    },
+    {
+      title: "Istruzione E Lavoro",
+      lines: [
+        ...eduWork,
+        ...tagListLine("Lavori Precedenti", person.previousWorkplaces),
+        ...tagListLine("Materie Conosciute", person.subjects),
+        ...tagListLine("Competenze", person.competencies),
+        ...tagListLine("Abilità", person.abilities),
+        ...tagListLine("Lingue Conosciute", person.languages),
+        ...eduWorkCustom,
+      ],
+    },
     { title: "Corpo", lines: [...body, ...bodyCustom] },
     { title: "Casa", lines: homeCustom },
-    { title: "Interessi", lines: interestsCustom },
+    {
+      title: "Interessi",
+      lines: [
+        ...thumbLines("Film Preferiti", person.favoriteMovies),
+        ...thumbLines("Musica Preferita", person.favoriteMusic),
+        ...thumbLines("Libri Preferiti", person.favoriteBooks),
+        ...thumbLines("Videogiochi Preferiti", person.favoriteGames),
+        ...tagListLine("Cibi Preferiti", person.favoriteFoods),
+        ...tagListLine("Luoghi D'Interesse", person.placesOfInterest),
+        ...tagListLine("Categoria Preferita", person.favoriteCategories),
+        ...interestsCustom,
+      ],
+    },
+    { title: "Legami", lines: resolvedPersonRefs(person, people) },
     ...person.customSections
       .filter((s) => s.fields.length > 0)
       .map((s) => ({ title: s.title, lines: s.fields.map((f) => ({ label: f.label, value: f.value })) })),
@@ -93,7 +175,6 @@ export function allDiscoverySections(person: Person): DiscoverySection[] {
   return sections.filter((s) => s.lines.length > 0);
 }
 
-export function hasAnyDiscovery(person: Person): boolean {
-  return allDiscoverySections(person).length > 0;
+export function hasAnyDiscovery(person: Person, people: Person[]): boolean {
+  return allDiscoverySections(person, people).length > 0;
 }
-

@@ -71,8 +71,8 @@ export function AddPlaceModal({
     });
     fireTrigger("luogo:nuovo");
 
-    if (type === "lavoro" && linkedPersonId === "user" && !profile.workedAt) {
-      updateProfile({ workedAt: finalName });
+    if (type === "lavoro" && linkedPersonId === "user" && !profile.currentWorkplace) {
+      updateProfile({ currentWorkplace: finalName });
     }
 
     if (needsOwner && linkedPersonId !== "user") {

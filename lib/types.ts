@@ -17,9 +17,6 @@ export interface CustomSection {
   fields: CustomField[];
 }
 
-export type StressLevel = "basso" | "medio" | "alto";
-export const STRESS_LABEL: Record<StressLevel, string> = { basso: "Basso", medio: "Medio", alto: "Alto" };
-
 export interface PersonalDetails {
   gender?: string;
   birthday?: string;
@@ -36,15 +33,28 @@ export interface PersonalDetails {
   lifestyle: string[];
   identityCustomFields: CustomField[];
 
+  /** "Spunta" — non un semplice sì/no isolato: attiva l'espansione dei campi di studio
+   * qui sotto. Studia e Lavora non si escludono a vicenda (chi lavora e studia insieme
+   * esiste), quindi restano due booleani indipendenti, non un'unica scelta esclusiva. */
+  studies?: boolean;
+  works?: boolean;
+  /** Solo se "Studia" è spuntato. */
+  currentSchool?: string;
+  futureStudyGoals?: string;
+  futureWorkGoals?: string;
+  /** Solo se "Lavora" è spuntato. `studiedAt`/`educationTitle` vivono qui sotto (non più
+   * sempre visibili): chi lavora può comunque voler registrare dove ha studiato, con un
+   * suggerimento preso da `currentSchool` se l'ha già scritto — vedi EducationWorkSection. */
+  currentWorkplace?: string;
+  previousWorkplaces: string[];
   studiedAt?: string;
-  workedAt?: string;
   educationTitle?: string;
+
   subjects: string[];
   competencies: string[];
   abilities: string[];
   languages: string[];
   occupation?: string;
-  stress?: StressLevel;
   professionalAmbition?: string;
   eduWorkCustomFields: CustomField[];
 
@@ -84,6 +94,7 @@ export function emptyPersonalDetails(): PersonalDetails {
     competencies: [],
     abilities: [],
     languages: [],
+    previousWorkplaces: [],
     eduWorkCustomFields: [],
     bodyCustomFields: [],
     friendPersonIds: [],

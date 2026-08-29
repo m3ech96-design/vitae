@@ -11,11 +11,15 @@ export const FIELD_LABELS: Partial<Record<keyof PersonalDetails, string>> = {
   fears: "Paure",
   ambitions: "Ambizioni",
   goals: "Obiettivi",
+  studies: "Studia",
+  works: "Lavora",
+  currentSchool: "Quale Scuola Frequenta",
+  futureStudyGoals: "Obiettivi Di Studio Futuri",
+  futureWorkGoals: "Obiettivi Lavorativi Futuri",
+  currentWorkplace: "Dove Lavora",
   studiedAt: "Dove Ha Studiato",
-  workedAt: "Dove Ha Lavorato",
   educationTitle: "Titolo Di Studio",
   occupation: "Occupazione Attuale",
-  stress: "Stress",
   professionalAmbition: "Ambizione Professionale",
   weight: "Peso",
   height: "Altezza",
@@ -27,6 +31,9 @@ export const FIELD_LABELS: Partial<Record<keyof PersonalDetails, string>> = {
 
 const PERSON_ID_SCALAR_FIELDS: (keyof PersonalDetails)[] = ["partnerPersonId"];
 const PERSON_ID_ARRAY_FIELDS: (keyof PersonalDetails)[] = ["friendPersonIds", "bestFriendPersonIds"];
+/** "Studia — True" si legge male: qui il valore diventa una parola vera, non il booleano
+ * grezzo — solo per i due campi con la spunta, tutto il resto del file non li tocca. */
+const BOOLEAN_FIELDS: (keyof PersonalDetails)[] = ["studies", "works"];
 
 function describeArrayAddition(value: unknown[]): string | null {
   const last = value[value.length - 1];
@@ -77,6 +84,10 @@ export function describeDiscoveries(
       if (PERSON_ID_SCALAR_FIELDS.includes(key) && typeof newValue === "string") {
         const name = resolve(newValue);
         if (name) descriptions.push(`${label} — ${name}`);
+        return;
+      }
+      if (BOOLEAN_FIELDS.includes(key) && typeof newValue === "boolean") {
+        if (newValue) descriptions.push(label);
         return;
       }
       descriptions.push(`${label} — ${newValue}`);

@@ -3,7 +3,6 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { pulseDurationSeconds } from "@/lib/day-rhythm";
-import { FrayedRing } from "../illness/FrayedRing";
 
 function initialsOf(first?: string, last?: string) {
   const a = (first || "").trim().charAt(0);
@@ -24,7 +23,6 @@ export function AuraAvatar({
   glowIntensity,
   layoutId,
   deceased,
-  illness,
   empty,
 }: {
   imageUrl?: string;
@@ -59,10 +57,6 @@ export function AuraAvatar({
    * quiete fioca, indipendente dal ring o dal colore identità passati — la desaturazione e
    * la fine del respiro bastano da sole, nessuna icona da lapide sopra. */
   deceased?: boolean;
-  /** Bordo sfilacciato (vedi components/illness/FrayedRing.tsx) e una grana leggera sulla
-   * foto — non tocca il bagliore dell'identità, quello resta il tuo colore: sei ammalato,
-   * non sei un'altra persona. Solo per l'utente, per ora — non per le altre persone. */
-  illness?: boolean;
   /** Avatar "vuoto" (vedi lib/unknown-relative.ts): esiste, ma non ha ancora un nome —
    * niente iniziali (non ce ne sono), niente alone identità: un contorno tratteggiato e un
    * "?" al centro, deliberatamente diverso da `deceased` — lì la persona è nota e mancata,
@@ -166,21 +160,7 @@ export function AuraAvatar({
             {initialsOf(firstName, lastName)}
           </span>
         )}
-        {illness && <span className="illness-grain" />}
       </div>
-      {/* Bordo sfilacciato dell'identità malata: più caldo e un filo più marcato di un
-         semplice grigio, così si legge a colpo d'occhio anche senza la scritta "Non Ti
-         Senti Bene?" sulla card (rimossa) — l'unico posto in cui questo effetto resta ora
-         è proprio qui, intorno all'avatar. */}
-      {illness && (
-        <span
-          className="absolute inset-0 animate-pulseSoft"
-          style={{ borderRadius: shape === "circle" ? "9999px" : radius, opacity: 0.9 }}
-          aria-hidden
-        >
-          <FrayedRing shape={shape === "squircle" ? "rect" : "circle"} radius={radius} />
-        </span>
-      )}
       {ring === "sleep" && (
         <span className="absolute -top-1 -right-1 rounded-full bg-void-800 border border-white/10 px-1.5 text-[10px] text-ink-400 animate-float">
           Zzz

@@ -49,7 +49,7 @@ function Bacheca() {
       </button>
 
       <div className="mt-6 space-y-5">
-        {ownPosts.length === 0 && <p className="mt-10 text-center text-sm text-ink-800">Non Hai Ancora Pubblicato Nulla Qui.</p>}
+        {ownPosts.length === 0 && <p className="mt-10 text-center text-sm text-ink-800">Non hai ancora pubblicato nulla qui.</p>}
         {ownPosts.map((post) => (
           <PostCard key={post.id} post={post} onOpenComments={() => setCommentsFor(post)} onShare={() => share(post)} />
         ))}
