@@ -149,7 +149,7 @@ export function TaskCard({
               ? "border-aura-pink/50 text-transparent hover:border-aura-pink"
               : "border-white/15 text-transparent hover:border-aura-cyan/50"
           }`}
-          aria-label={task.completed ? "Segna Come Da Fare" : "Segna Come Completata"}
+          aria-label={task.completed ? "Segna come da fare" : "Segna Come Completata"}
         >
           <AnimatePresence>
             {burst && (

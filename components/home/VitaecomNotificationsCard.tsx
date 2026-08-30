@@ -8,10 +8,10 @@ import { GlassCard } from "../ui/GlassCard";
 
 const KIND_ICON = { like: Gem, comment: MessageCircle, know_request: UserPlus, know_accepted: UserCheck } as const;
 const KIND_TEXT: Record<string, string> = {
-  like: "Ha Messo Mi Piace Al Tuo Post",
-  comment: "Ha Commentato Il Tuo Post",
-  know_request: "Vuole Conoscerti",
-  know_accepted: "Ha Accettato!",
+  like: "ha messo Mi Piace al tuo post",
+  comment: "ha commentato il tuo post",
+  know_request: "vuole conoscerti",
+  know_accepted: "ha accettato!",
 };
 
 /**

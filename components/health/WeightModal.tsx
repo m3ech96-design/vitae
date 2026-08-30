@@ -31,15 +31,15 @@ export function WeightModal({ onClose }: { onClose: () => void }) {
         className="glass-strong w-full max-w-xs rounded-t-xl3 p-6 sm:rounded-xl3"
       >
         <div className="mb-5 flex items-center justify-between">
-          <p className="font-display text-lg text-ink-100">Registra Peso</p>
+          <p className="font-display text-lg text-ink-100">Registra peso</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
         </div>
         <div className="space-y-3">
-          <TextField label="Peso (Kg)" inputMode="decimal" placeholder="72,5" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
+          <TextField label="Peso (kg)" inputMode="decimal" placeholder="72,5" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
           <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <TextField label="Obiettivo (Facoltativo)" inputMode="decimal" placeholder="Es. 70" value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} />
+          <TextField label="Obiettivo (facoltativo)" inputMode="decimal" placeholder="Es. 70" value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} />
         </div>
         <Button className="mt-6 w-full justify-center" onClick={submit} disabled={!value.trim()}>
           Salva

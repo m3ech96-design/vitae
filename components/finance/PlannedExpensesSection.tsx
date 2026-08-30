@@ -32,10 +32,10 @@ export function PlannedExpensesSection() {
   return (
     <div>
       <p className="mb-3 flex items-center gap-1.5 font-display text-sm text-ink-100">
-        <CalendarClock size={14} className="text-aura-sky" /> Spese Future
+        <CalendarClock size={14} className="text-aura-sky" /> Spese future
       </p>
       <div className="space-y-2">
-        {pending.length === 0 && <p className="text-xs text-ink-800">Nessuna Spesa Futura In Programma.</p>}
+        {pending.length === 0 && <p className="text-xs text-ink-800">Nessuna spesa futura in programma.</p>}
         {pending.map((e) => {
           const meta = EXPENSE_CATEGORY_META[e.category];
           return (
@@ -48,7 +48,7 @@ export function PlannedExpensesSection() {
                 <p className="text-[11px] text-ink-800">Entro Il {formatDateShort(e.dueDate)}</p>
               </div>
               <span className="shrink-0 text-sm text-ink-200">{e.amount.toLocaleString("it-IT")}€</span>
-              <button onClick={() => markPlannedPaid(e.id)} className="focus-ring shrink-0 text-ink-600 hover:text-aura-cyan" aria-label="Segna Come Pagata">
+              <button onClick={() => markPlannedPaid(e.id)} className="focus-ring shrink-0 text-ink-600 hover:text-aura-cyan" aria-label="Segna come pagata">
                 <Check size={15} />
               </button>
               <button onClick={() => setPendingDelete(e.id)} className="focus-ring shrink-0 text-ink-800 hover:text-aura-pink" aria-label="Rimuovi">
@@ -60,19 +60,21 @@ export function PlannedExpensesSection() {
       </div>
 
       <div className="mt-2">
-        <InlineAddPanel label="Aggiungi Spesa Futura" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
+        <InlineAddPanel label="Aggiungi spesa futura" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Nome" placeholder="Es. Bollo Auto" value={label} onChange={(e) => setLabel(e.target.value)} />
             <TextField label="Importo (€)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <TextField label="Entro Il" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Entro il" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
           <CategoryPicker value={category} onChange={setCategory} />
         </InlineAddPanel>
       </div>
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Eliminare Questa Spesa Futura?"
+          title="Eliminare questa spesa futura?"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
             removePlannedExpense(pendingDelete);

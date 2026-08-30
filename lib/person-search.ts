@@ -12,7 +12,7 @@ export function personMatchesQuery(person: Person, query: string): boolean {
   const haystack: string[] = [
     person.firstName,
     person.lastName,
-    person.nickname || "",
+    person.alias || "",
     person.occupation || "",
     person.studiedAt || "",
     person.currentWorkplace || "",

@@ -58,7 +58,7 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
         className="glass-strong flex max-h-[92vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 relative z-10 flex items-center justify-between px-6 pt-6">
-          <p className="font-display text-lg text-ink-100">Registra Attività</p>
+          <p className="font-display text-lg text-ink-100">Registra attività</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
@@ -93,7 +93,7 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cerca Attività..."
+              placeholder="Cerca attività..."
               className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-4 text-sm text-ink-100 placeholder:text-ink-800"
             />
           </div>
@@ -122,18 +122,20 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setMinutes(e.target.value)}
             />
             <TextField
-              label="Calorie Stimate"
+              label="Calorie stimate"
               type="number"
               value={effectiveCalories}
               onChange={(e) => {
                 setCalorieTouched(true);
                 setCalories(e.target.value);
               }}
-              hint={!calorieTouched ? "Suggerita — Puoi Modificarla" : undefined}
+              hint={!calorieTouched ? "Suggerita — puoi modificarla" : undefined}
             />
           </div>
 
-          <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">

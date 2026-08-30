@@ -36,7 +36,7 @@ export function TaskCountdownLog() {
 
   return (
     <div>
-      <p className="mb-3 font-display text-xs uppercase tracking-[0.14em] text-ink-600">In Arrivo</p>
+      <p className="mb-3 font-display text-xs uppercase tracking-[0.14em] text-ink-600">In arrivo</p>
       <div className="space-y-2">
         {active.map((t) => {
           const anchor = taskAnchorDateTime(t);

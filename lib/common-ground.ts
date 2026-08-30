@@ -42,14 +42,14 @@ export function commonGround(profile: PersonalDetails, person: PersonalDetails):
   const groups: CommonGroup[] = [
     { label: "Carattere", items: overlapStrings(profile.traits, person.traits) },
     { label: "Valori", items: overlapStrings(profile.values, person.values) },
-    { label: "Stile Di Vita", items: overlapStrings(profile.lifestyle, person.lifestyle) },
+    { label: "Stile di vita", items: overlapStrings(profile.lifestyle, person.lifestyle) },
     { label: "Film", items: overlapThumbs(profile.favoriteMovies, person.favoriteMovies) },
     { label: "Musica", items: overlapThumbs(profile.favoriteMusic, person.favoriteMusic) },
     { label: "Libri", items: overlapThumbs(profile.favoriteBooks, person.favoriteBooks) },
     { label: "Videogiochi", items: overlapThumbs(profile.favoriteGames, person.favoriteGames) },
-    { label: "Cibi Preferiti", items: overlapStrings(profile.favoriteFoods, person.favoriteFoods) },
-    { label: "Luoghi D'Interesse", items: overlapStrings(profile.placesOfInterest, person.placesOfInterest) },
-    { label: "Categorie Preferite", items: overlapStrings(profile.favoriteCategories, person.favoriteCategories) },
+    { label: "Cibi preferiti", items: overlapStrings(profile.favoriteFoods, person.favoriteFoods) },
+    { label: "Luoghi d'interesse", items: overlapStrings(profile.placesOfInterest, person.placesOfInterest) },
+    { label: "Categorie preferite", items: overlapStrings(profile.favoriteCategories, person.favoriteCategories) },
   ];
   return groups.filter((g) => g.items.length > 0);
 }

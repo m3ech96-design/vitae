@@ -183,10 +183,10 @@ export default function HomePage() {
                     ? "border-aura-cyan/50 text-aura-cyan"
                     : "border-white/10 text-ink-800"
                 }`}
-                title="Attiva Il Rilevamento Della Tua Posizione"
+                title="Attiva il rilevamento della tua posizione"
               >
                 <LocateFixed size={11} />
-                {trackingEnabled ? "Rilevamento Attivo" : "Rilevamento Spento"}
+                {trackingEnabled ? "Rilevamento attivo" : "Rilevamento Spento"}
               </button>
             </div>
 
@@ -229,7 +229,7 @@ export default function HomePage() {
           <GlassCard glow={!userIsHome ? "pink" : "none"} className="p-4">
             <div className="mb-4 flex items-center gap-1.5">
               <DoorOpen size={14} className="text-aura-pink" />
-              <p className="font-display text-xs text-ink-100">Fuori Casa</p>
+              <p className="font-display text-xs text-ink-100">Fuori casa</p>
             </div>
             <div className="flex flex-col items-center gap-4">
               {!userIsHome && (
@@ -252,7 +252,7 @@ export default function HomePage() {
               ))}
               {userIsHome && awayPeople.length === 0 && (
                 <p className="py-3 text-center text-[11px] text-ink-800">
-                  Nessuno È Fuori Casa
+                  Nessuno è fuori casa
                 </p>
               )}
             </div>
@@ -320,7 +320,7 @@ export default function HomePage() {
       )}
 
       {addOpen && (
-        <AddPersonModal onClose={() => setAddOpen(false)} title="Aggiungi Alla Casa" lockLivesAtHome />
+        <AddPersonModal onClose={() => setAddOpen(false)} title="Aggiungi alla casa" lockLivesAtHome />
       )}
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
       {overviewOpen && <UserOverviewModal onClose={() => setOverviewOpen(false)} />}

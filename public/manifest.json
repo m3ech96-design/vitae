@@ -1,7 +1,7 @@
 {
   "name": "Vitae",
   "short_name": "Vitae",
-  "description": "La Tua Vita, Vissuta Due Volte.",
+  "description": "La tua vita, vissuta due volte.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07080D",

@@ -13,7 +13,7 @@ export async function searchAddress(query: string): Promise<AddressSuggestion[]>
   if (query.trim().length < 3) return [];
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=0&limit=5`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error("Ricerca Indirizzo Non Riuscita");
+  if (!res.ok) throw new Error("Ricerca indirizzo non riuscita");
   const data: Array<{ display_name: string; lat: string; lon: string }> = await res.json();
   return data.map((d) => ({ label: d.display_name, lat: parseFloat(d.lat), lng: parseFloat(d.lon) }));
 }

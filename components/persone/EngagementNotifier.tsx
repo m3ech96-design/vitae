@@ -26,7 +26,7 @@ export function EngagementNotifier() {
           const diff = (now.getTime() - remindAt.getTime()) / 60000;
 
           if (diff >= 0 && diff < 2) {
-            new Notification(`${person.firstName}: ${e.title}`, { body: "Sta Per Iniziare" });
+            new Notification(`${person.firstName}: ${e.title}`, { body: "Sta per iniziare" });
             updatePerson(person.id, {
               engagements: person.engagements.map((x) => (x.id === e.id ? { ...x, reminded: true } : x)),
             });

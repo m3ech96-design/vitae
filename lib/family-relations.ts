@@ -65,7 +65,7 @@ function spouseWord(e?: FamilyEntity) {
   return isMale(e) ? "Marito" : isFemale(e) ? "Moglie" : "Coniuge";
 }
 function exSpouseWord(e?: FamilyEntity) {
-  return isMale(e) ? "Ex Marito" : isFemale(e) ? "Ex Moglie" : "Ex Coniuge";
+  return isMale(e) ? "Ex marito" : isFemale(e) ? "Ex moglie" : "Ex coniuge";
 }
 function uncleAuntWord(e?: FamilyEntity) {
   return isMale(e) ? "Zio" : isFemale(e) ? "Zia" : "Zio/A";
@@ -82,7 +82,7 @@ function grandchildLabel(greats: number) {
   return greats <= 0 ? `${base} (Di Figlio/A)` : `${"Pro".repeat(Math.max(1, greats))}nipote`;
 }
 function niblingLabel() {
-  return "Nipote (Di Fratello/Sorella)";
+  return "Nipote (di fratello/sorella)";
 }
 function cousinWord(e?: FamilyEntity) {
   return isMale(e) ? "Cugino" : isFemale(e) ? "Cugina" : "Cugino/A";
@@ -190,7 +190,7 @@ function bloodLabel(
       return { label: removed === 1 ? niblingLabel() : `${niblingLabel()} Alla Lontana`, direction: "collateral" };
     if (focusDist === 3 && otherDist === 1) return { label: greatUncleAuntWord(other), direction: "collateral" };
     if (focusDist === 1 && otherDist === 3) return { label: niblingLabel(), direction: "collateral" };
-    return { label: "Parente Alla Lontana", direction: "collateral" };
+    return { label: "Parente alla lontana", direction: "collateral" };
   }
 
   // Cugini: il grado è quanto sono lontani dall'antenato comune, "removed" è la differenza
@@ -301,7 +301,7 @@ export function relationshipInfo(
 
   // Comunque connesso (BFS lo trova), ma nessuna delle regole sopra riesce a nominarlo con
   // precisione — un ponte troppo lungo per un termine italiano. Non sparisce mai in silenzio.
-  return { label: "Parente Alla Lontana", branch: "lontano" };
+  return { label: "Parente alla lontana", branch: "lontano" };
 }
 
 /** Solo l'etichetta, per chi non ha bisogno del ramo (usato raramente fuori dall'Albero). */

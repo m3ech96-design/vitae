@@ -14,6 +14,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Blocca lo zoom (pizzico e doppio tap) in tutta l'app — nessun browser deve poter
+ * zoomare — tranne che sulla mappa e sulle immagini, dove resta lo zoom nativo. */
+html, body {
+  touch-action: pan-x pan-y;
+}
+
+.leaflet-container,
+.leaflet-container *,
+img {
+  touch-action: auto;
+}
+
 html, body {
   min-height: 100%;
   color: #E8EAF6;

@@ -30,10 +30,10 @@ export default function ProfiloPage() {
         <ArrowLeft size={16} /> Home
       </button>
 
-      <p className="mt-6 font-display text-xs uppercase tracking-[0.28em] text-ink-600">Il Tuo Profilo</p>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Tutto Ciò Che Sai Di Te</h1>
+      <p className="mt-6 font-display text-xs uppercase tracking-[0.28em] text-ink-600">Il tuo profilo</p>
+      <h1 className="mt-1 font-display text-2xl text-ink-100">Tutto ciò che sai di te</h1>
       <p className="mt-1.5 text-sm text-ink-600">
-        Nessuna Fretta — Compila Quello Che Vuoi, Quando Vuoi. Resta Salvato Man Mano.
+        Nessuna fretta — compila quello che vuoi, quando vuoi. resta salvato man mano.
       </p>
 
       <div className="mt-8 space-y-9">
@@ -64,7 +64,7 @@ export default function ProfiloPage() {
           <IdentityCoreFields data={profile} onUpdate={onUpdate} />
         </div>
         <div>
-          <p className="mb-4 font-display text-sm text-ink-100">Istruzione E Lavoro</p>
+          <p className="mb-4 font-display text-sm text-ink-100">Istruzione e lavoro</p>
           <EducationWorkSection data={profile} onUpdate={onUpdate} linkedPersonId="user" />
         </div>
         <div>

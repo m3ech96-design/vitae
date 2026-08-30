@@ -78,7 +78,7 @@ function CommentRow({
             {account.nickname} <span className="ml-1.5 text-ink-800">{timeAgo(comment.createdAt)}</span>
             {pinned && (
               <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] text-[#B79A6B]">
-                <Pin size={9} /> Posizionato In Alto
+                <Pin size={9} /> Posizionato in alto
               </span>
             )}
           </p>
@@ -139,14 +139,14 @@ export function PostComments({ post, onClose }: { post: VitaecomPost; onClose: (
   return (
     <>
     <PersonalCardSheet title="Commenti" onClose={discardAndClose}>
-      {post.comments.length === 0 && <p className="text-sm text-ink-800">Nessun Commento Ancora — Il Primo Tocca A Te.</p>}
+      {post.comments.length === 0 && <p className="text-sm text-ink-800">Nessun commento ancora — il primo tocca a te.</p>}
       {ordered.map(({ comment, pinned }) => (
         <CommentRow key={comment.id} comment={comment} post={post} pinned={pinned} onReply={setReplyTo} onForward={setForwarding} />
       ))}
       <div className="sticky bottom-0 mt-5 -mx-6 border-t border-white/10 bg-void-950/95 px-6 pt-3 backdrop-blur">
         {replyTo && (
           <p className="mb-1.5 flex items-center gap-1 text-[10px] text-ink-800">
-            <CornerDownRight size={10} /> Stai Rispondendo A Un Commento
+            <CornerDownRight size={10} /> Stai rispondendo a un commento
             <button onClick={() => setReplyTo(null)} className="ml-1 text-aura-pink">Annulla</button>
           </p>
         )}
@@ -155,7 +155,7 @@ export function PostComments({ post, onClose }: { post: VitaecomPost; onClose: (
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="Scrivi Un Commento…"
+            placeholder="Scrivi un commento…"
             className="focus-ring flex-1 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-ink-100 placeholder:text-ink-800"
           />
           <button onClick={submit} disabled={!text.trim()} className="focus-ring text-aura-cyan disabled:opacity-30" aria-label="Invia">

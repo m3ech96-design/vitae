@@ -58,9 +58,9 @@ export function SpentPrompt({
       >
         <div className="shrink-0 p-6 pb-0">
           <Wallet size={18} className="mb-3 text-aura-emerald" />
-          <p className="mb-1 font-display text-base text-ink-100">Quanto Hai Speso?</p>
+          <p className="mb-1 font-display text-base text-ink-100">Quanto hai speso?</p>
           <p className="mb-4 text-xs text-ink-600">
-            {splitCategories ? "Facoltativo — Puoi Dividerlo Tra Più Categorie." : "Facoltativo — Servirà Nella Scheda Finanze."}
+            {splitCategories ? "Facoltativo — puoi dividerlo tra più categorie." : "Facoltativo — servirà nella scheda Finanze."}
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export function SpentPrompt({
                 <input
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="Nome Categoria..."
+                  placeholder="Nome categoria..."
                   className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-ink-100 placeholder:text-ink-800"
                 />
               )}

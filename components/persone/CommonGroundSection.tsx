@@ -8,7 +8,7 @@ export function CommonGroundSection({ groups }: { groups: CommonGroup[] }) {
   return (
     <div>
       <p className="mb-3 flex items-center gap-1.5 font-display text-sm text-ink-100">
-        <Sparkles size={14} className="text-aura-cyan" /> In Comune
+        <Sparkles size={14} className="text-aura-cyan" /> In comune
       </p>
       <div className="space-y-3">
         {groups.map((g) => (

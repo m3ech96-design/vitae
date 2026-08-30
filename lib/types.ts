@@ -20,7 +20,11 @@ export interface CustomSection {
 export interface PersonalDetails {
   gender?: string;
   birthday?: string;
-  nickname?: string;
+  /** Il "Soprannome" del wizard identità — un nomignolo informale (persona offline o il tuo
+   * stesso profilo). Chiave diversa da `UserProfile.nickname` apposta: prima si chiamava
+   * anche questo `nickname`, e siccome `UserProfile extends PersonalDetails` le due chiavi
+   * coincidevano — scrivere qui sovrascriveva il vero nickname Vitaecom (bug corretto). */
+  alias?: string;
   phone?: string;
   birthPlace?: string;
   traits: string[];
@@ -316,7 +320,7 @@ export type TaskType =
   | "evento";
 
 export const TASK_TYPE_LABEL: Record<TaskType, string> = {
-  quotidiana: "Attività Quotidiana",
+  quotidiana: "Attività quotidiana",
   spesa: "Spesa",
   appuntamento: "Appuntamento",
   promemoria: "Promemoria",
@@ -327,11 +331,11 @@ export const TASK_TYPE_LABEL: Record<TaskType, string> = {
 export type Recurrence = "nessuna" | "quotidiano" | "settimanale" | "mensile" | "annuale" | "personalizzato";
 
 export const RECURRENCE_LABEL: Record<Recurrence, string> = {
-  nessuna: "Non Si Ripete",
-  quotidiano: "Ogni Giorno",
-  settimanale: "Ogni Settimana",
-  mensile: "Ogni Mese",
-  annuale: "Ogni Anno",
+  nessuna: "Non si ripete",
+  quotidiano: "Ogni giorno",
+  settimanale: "Ogni settimana",
+  mensile: "Ogni mese",
+  annuale: "Ogni anno",
   personalizzato: "Personalizzata",
 };
 
@@ -382,14 +386,14 @@ export const WEEKDAY_LABEL: Record<Weekday, string> = {
 export type ReminderOffset = "5min" | "10min" | "30min" | "1h" | "2h" | "1day" | "1week" | "none";
 
 export const REMINDER_OFFSET_LABEL: Record<ReminderOffset, string> = {
-  "5min": "5 Minuti Prima",
-  "10min": "10 Minuti Prima",
-  "30min": "30 Minuti Prima",
-  "1h": "1 Ora Prima",
-  "2h": "2 Ore Prima",
-  "1day": "1 Giorno Prima",
-  "1week": "1 Settimana Prima",
-  none: "Non Avvisare",
+  "5min": "5 minuti prima",
+  "10min": "10 minuti prima",
+  "30min": "30 minuti prima",
+  "1h": "1 ora prima",
+  "2h": "2 ore prima",
+  "1day": "1 giorno prima",
+  "1week": "1 settimana prima",
+  none: "Non avvisare",
 };
 
 export const REMINDER_OFFSET_MINUTES: Record<ReminderOffset, number | null> = {
@@ -467,9 +471,9 @@ export type ExpenseCategory =
 
 export type ExpenseRecurrence = "settimanale" | "mensile" | "annuale";
 export const EXPENSE_RECURRENCE_LABEL: Record<ExpenseRecurrence, string> = {
-  settimanale: "Ogni Settimana",
-  mensile: "Ogni Mese",
-  annuale: "Ogni Anno",
+  settimanale: "Ogni settimana",
+  mensile: "Ogni mese",
+  annuale: "Ogni anno",
 };
 
 export interface RecurringExpense {

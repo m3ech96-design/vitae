@@ -22,9 +22,9 @@ export function NicknameGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6">
       <p className="font-display text-xs uppercase tracking-[0.28em] text-[#B79A6B]">Vitaecom</p>
-      <h1 className="mt-2 font-display text-2xl text-ink-100">Scegli Il Tuo Nickname</h1>
+      <h1 className="mt-2 font-display text-2xl text-ink-100">Scegli il tuo nickname</h1>
       <p className="mt-1.5 text-sm text-ink-600">
-        Serve Per Esistere Qui Dentro — Univoco, Non Potrai Entrare Finché Non Ne Scegli Uno Libero.
+        Serve per esistere qui dentro — univoco, non potrai entrare finché non ne scegli uno libero.
       </p>
       <div className="mt-7">
         <NicknameField value={draft} onChange={setDraft} onValidityChange={setValid} autoFocus />
@@ -34,7 +34,7 @@ export function NicknameGate({ children }: { children: React.ReactNode }) {
         disabled={!valid}
         onClick={() => updateProfile({ nickname: normalizeNickname(draft) })}
       >
-        Entra In Vitaecom <ArrowRight size={16} />
+        Entra in Vitaecom <ArrowRight size={16} />
       </Button>
     </div>
   );

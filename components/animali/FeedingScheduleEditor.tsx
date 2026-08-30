@@ -27,7 +27,7 @@ export function FeedingScheduleEditor({
     <div className="space-y-4">
       <div>
         <span className="mb-2 flex items-center gap-1.5 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-          <Clock size={12} /> Orari Della Pappa
+          <Clock size={12} /> Orari della pappa
         </span>
         <div className="flex flex-wrap gap-2">
           {times.map((t) => (
@@ -48,7 +48,7 @@ export function FeedingScheduleEditor({
               onChange={(e) => setDraft(e.target.value)}
               className="focus-ring w-20 bg-transparent text-sm text-ink-100 outline-none"
             />
-            <button onClick={add} className="focus-ring rounded-full p-1 text-ink-600 hover:text-aura-cyan" aria-label="Aggiungi Orario">
+            <button onClick={add} className="focus-ring rounded-full p-1 text-ink-600 hover:text-aura-cyan" aria-label="Aggiungi orario">
               <Plus size={14} />
             </button>
           </div>
@@ -57,7 +57,7 @@ export function FeedingScheduleEditor({
 
       {recentLog.length > 0 && (
         <div>
-          <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Cronologia Pappa</p>
+          <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Cronologia pappa</p>
           <div className="space-y-1.5">
             {recentLog.map((f) => (
               <div key={f.id} className="flex items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs">

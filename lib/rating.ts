@@ -1,7 +1,7 @@
 export function ratingLabel(value: number): string {
   if (value < 20) return "Pessimo";
-  if (value < 40) return "Così Così";
-  if (value < 60) return "Nella Media";
+  if (value < 40) return "Così così";
+  if (value < 60) return "Nella media";
   if (value < 80) return "Buono";
   return "Adoro";
 }

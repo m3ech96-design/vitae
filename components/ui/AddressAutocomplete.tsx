@@ -92,8 +92,8 @@ export function AddressAutocomplete({
         </div>
       )}
       <p className="mt-1.5 text-[10px] text-ink-800">
-        Dati Indirizzi © OpenStreetMap Contributors — Se Manca Il Tuo Numero Civico, Scrivilo Comunque:
-        Resta Salvato, E Puoi Sempre Rifinire Il Punto Sulla Mappa Qui Sotto.
+        Dati indirizzi © OpenStreetMap Contributors — se manca il tuo numero civico, scrivilo comunque:
+        resta salvato, e puoi sempre rifinire il punto sulla mappa qui sotto.
       </p>
     </div>
   );

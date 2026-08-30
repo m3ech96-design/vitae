@@ -52,7 +52,7 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Eliminare Questa Attività?"
+          title="Eliminare questa attività?"
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             removeWorkout(workout.id);

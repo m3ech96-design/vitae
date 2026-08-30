@@ -21,7 +21,7 @@ export function BackupSection() {
       setDone("export");
       setTimeout(() => setDone(null), 3000);
     } catch {
-      setError("Non Sono Riuscito A Creare Il Backup.");
+      setError("Non sono riuscito a creare il backup.");
     } finally {
       setExporting(false);
     }
@@ -37,14 +37,14 @@ export function BackupSection() {
       setDone("import");
       window.location.reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Importazione Non Riuscita.");
+      setError(e instanceof Error ? e.message : "Importazione non riuscita.");
       setImporting(false);
     }
   };
 
   return (
     <div className="rounded-xl2 border border-white/[0.08] bg-white/[0.02] p-4">
-      <p className="mb-1 font-display text-sm text-ink-100">Backup Dei Tuoi Dati</p>
+      <p className="mb-1 font-display text-sm text-ink-100">Backup dei tuoi dati</p>
       <p className="mb-4 text-xs text-ink-600">
         Tutto Vive Solo Su Questo Dispositivo. Esporta Ogni Tanto Un Backup, Così Non Perdi Nulla
         Se Cambi Telefono O Cancelli I Dati Del Browser.
@@ -80,8 +80,8 @@ export function BackupSection() {
 
       {pendingFile && (
         <ConfirmDialog
-          title="Importare Questo Backup?"
-          description="Sovrascriverà Tutti I Dati Attuali Su Questo Dispositivo. L'App Si Ricaricherà."
+          title="Importare questo backup?"
+          description="Sovrascriverà tutti i dati attuali su questo dispositivo. L'app si ricaricherà."
           confirmLabel={importing ? "Importazione..." : "Importa E Sovrascrivi"}
           onCancel={() => setPendingFile(null)}
           onConfirm={confirmImport}

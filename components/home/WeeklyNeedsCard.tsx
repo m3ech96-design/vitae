@@ -35,7 +35,7 @@ export function WeeklyNeedsCard() {
     <>
       <GlassCard className="p-4">
         <p className="mb-3 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-          {needs.length === 1 ? "Il Tuo Bisogno" : "I Tuoi Bisogni"} Di Questa Settimana
+          {needs.length === 1 ? "Il tuo bisogno" : "I Tuoi Bisogni"} Di Questa Settimana
         </p>
         <div className="space-y-2">
           {needs.map((n) => (
@@ -46,7 +46,7 @@ export function WeeklyNeedsCard() {
               <div className="min-w-0">
                 <p className="truncate text-sm text-ink-100">{n.label}</p>
                 <p className="text-[10px] text-ink-800">
-                  {daysLeft(n.startedAt) === 0 ? "Ultimo Giorno" : `Ancora ${daysLeft(n.startedAt)} Giorni`}
+                  {daysLeft(n.startedAt) === 0 ? "Ultimo giorno" : `Ancora ${daysLeft(n.startedAt)} Giorni`}
                 </p>
               </div>
               <button

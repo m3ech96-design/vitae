@@ -152,7 +152,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
               onClick={() => setRating(place.id, 50)}
               className="focus-ring flex items-center gap-1.5 text-xs text-ink-600 hover:text-ink-200"
             >
-              <Star size={13} /> Valuta Questo Luogo
+              <Star size={13} /> Valuta questo luogo
             </button>
           )}
 
@@ -161,22 +161,22 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
               {!isCheckedIn ? (
                 <>
                   <Button variant="outline" className="w-full justify-center" onClick={() => checkIn(place.id)}>
-                    <LogIn size={15} /> Sono Qui
+                    <LogIn size={15} /> Sono qui
                   </Button>
                   <p className="mt-1.5 text-center text-[11px] text-ink-800">
-                    Con Il Rilevamento Attivo, Te Lo Chiediamo Da Soli Entro 100 Metri.
+                    Con il rilevamento attivo, te lo chiediamo da soli entro 100 metri.
                   </p>
                 </>
               ) : (
                 <div className="space-y-3 rounded-xl2 border border-aura-cyan/30 bg-aura-cyan/[0.05] p-4">
                   <MultiPersonPicker
-                    label="Con Chi Eri? (Facoltativo)"
+                    label="Con chi eri? (facoltativo)"
                     values={companions}
                     options={people}
                     onChange={setCompanions}
                     trigger={(open) => (
                       <button type="button" onClick={open} className="flex flex-wrap items-center gap-2">
-                        {companions.length === 0 && <span className="text-xs text-ink-800">Tocca Per Scegliere</span>}
+                        {companions.length === 0 && <span className="text-xs text-ink-800">Tocca per scegliere</span>}
                         {companions.slice(0, 8).map((id) => {
                           const p = people.find((x) => x.id === id);
                           if (!p) return null;
@@ -201,7 +201,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
                     )}
                   />
                   <Button className="w-full justify-center" onClick={doCheckOut}>
-                    <LogOut size={15} /> Esci Da Qui
+                    <LogOut size={15} /> Esci da qui
                   </Button>
                 </div>
               )}
@@ -224,7 +224,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
                     </span>
                     <div className="flex -space-x-2">
                       {v.withPersonIds.length === 0 ? (
-                        <span className="text-ink-800">Da Solo</span>
+                        <span className="text-ink-800">Da solo</span>
                       ) : (
                         v.withPersonIds.slice(0, 3).map((id) => {
                           const p = people.find((x) => x.id === id);
@@ -259,7 +259,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
               className="w-full justify-center"
               onClick={() => setConfirmDelete(true)}
             >
-              <Trash2 size={13} /> Rimuovi Luogo
+              <Trash2 size={13} /> Rimuovi luogo
             </Button>
           )}
         </div>
@@ -276,7 +276,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
       {confirmDelete && (
         <ConfirmDialog
           title={`Rimuovere ${place.name}?`}
-          description="Cronologia Visite E Valutazione Andranno Perse Per Sempre."
+          description="Cronologia visite e valutazione andranno perse per sempre."
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             removePlace(place.id);

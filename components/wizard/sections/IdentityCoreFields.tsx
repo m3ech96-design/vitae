@@ -65,12 +65,12 @@ export function IdentityCoreFields({
         <TextField
           label="Soprannome"
           placeholder="Es. Ale"
-          value={data.nickname || ""}
-          onChange={(e) => onUpdate({ nickname: capitalizeWords(e.target.value) })}
-          justSaved={saved("nickname")}
+          value={data.alias || ""}
+          onChange={(e) => onUpdate({ alias: capitalizeWords(e.target.value) })}
+          justSaved={saved("alias")}
         />
         <TextField
-          label={isAnimal ? "Telefono Di Un Padrone" : "Numero Di Telefono"}
+          label={isAnimal ? "Telefono di un padrone" : "Numero Di Telefono"}
           type="tel"
           placeholder="Es. 333 1234567"
           value={data.phone || ""}
@@ -86,10 +86,10 @@ export function IdentityCoreFields({
           value={data.birthday || ""}
           onChange={(e) => onUpdate({ birthday: e.target.value })}
           justSaved={saved("birthday")}
-          hint={age !== null ? `Età Calcolata: ${age} Anni` : undefined}
+          hint={age !== null ? `Età calcolata: ${age} anni` : undefined}
         />
         <TextField
-          label="Luogo Di Nascita"
+          label="Luogo di nascita"
           placeholder="Es. Napoli"
           value={data.birthPlace || ""}
           onChange={(e) => onUpdate({ birthPlace: capitalizeWords(e.target.value) })}
@@ -137,13 +137,13 @@ export function IdentityCoreFields({
 
       <div className="grid grid-cols-2 gap-4">
         <TextArea
-          label="Punti Di Forza"
+          label="Punti di forza"
           value={data.strengths || ""}
           onChange={(e) => onUpdate({ strengths: capitalizeSentence(e.target.value) })}
           justSaved={saved("strengths")}
         />
         <TextArea
-          label="Punti Deboli"
+          label="Punti deboli"
           value={data.weaknesses || ""}
           onChange={(e) => onUpdate({ weaknesses: capitalizeSentence(e.target.value) })}
           justSaved={saved("weaknesses")}
@@ -164,7 +164,7 @@ export function IdentityCoreFields({
           <TextArea label="Obiettivi" value={data.goals || ""} onChange={(e) => onUpdate({ goals: capitalizeSentence(e.target.value) })}
           justSaved={saved("goals")} />
           <TagMultiSelect
-            label="Stile Di Vita"
+            label="Stile di vita"
             options={LIFESTYLE_LIST}
             selected={data.lifestyle}
             onChange={(lifestyle) => onUpdate({ lifestyle })}

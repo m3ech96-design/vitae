@@ -63,7 +63,7 @@ export function WeeklyNeedsSection() {
           value={customLabel}
           onChange={(e) => setCustomLabel(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submitCustom()}
-          placeholder="O Scrivi Il Tuo…"
+          placeholder="O scrivi il tuo…"
           className="focus-ring flex-1 rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-ink-100 placeholder:text-ink-800"
         />
         <button

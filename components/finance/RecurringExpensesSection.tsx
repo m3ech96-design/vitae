@@ -31,7 +31,7 @@ export function RecurringExpensesSection() {
   return (
     <div>
       <p className="mb-3 flex items-center gap-1.5 font-display text-sm text-ink-100">
-        <RefreshCw size={14} className="text-aura-amber" /> Spese In Loop
+        <RefreshCw size={14} className="text-aura-amber" /> Spese in loop
       </p>
       <div className="space-y-2">
         {recurringExpenses.map((e) => {
@@ -65,7 +65,7 @@ export function RecurringExpensesSection() {
       </div>
 
       <div className="mt-2">
-        <InlineAddPanel label="Aggiungi Spesa In Loop" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
+        <InlineAddPanel label="Aggiungi spesa in loop" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Nome" placeholder="Es. Palestra" value={label} onChange={(e) => setLabel(e.target.value)} />
             <TextField label="Importo (€)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -90,7 +90,7 @@ export function RecurringExpensesSection() {
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Eliminare Questa Spesa In Loop?"
+          title="Eliminare questa spesa in loop?"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
             removeRecurringExpense(pendingDelete);

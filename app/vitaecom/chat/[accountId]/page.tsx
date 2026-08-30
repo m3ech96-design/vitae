@@ -58,7 +58,7 @@ function ChatThread({ accountId }: { accountId: string }) {
         <>
           <div className="mt-6 flex-1 space-y-3 overflow-y-auto pb-4">
             {thread.length === 0 && (
-              <p className="mt-10 text-center text-sm text-ink-800">Scrivi Il Primo Messaggio A @{account.nickname}.</p>
+              <p className="mt-10 text-center text-sm text-ink-800">Scrivi il primo messaggio a @{account.nickname}.</p>
             )}
             {thread.map((m) => (
               <div key={m.id} className={`flex ${m.fromUser ? "justify-end" : "justify-start"}`}>
@@ -80,7 +80,7 @@ function ChatThread({ accountId }: { accountId: string }) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="Scrivi Un Messaggio…"
+              placeholder="Scrivi un messaggio…"
               className="focus-ring flex-1 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-ink-100 placeholder:text-ink-800"
             />
             <button

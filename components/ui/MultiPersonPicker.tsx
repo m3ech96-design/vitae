@@ -85,13 +85,13 @@ export function MultiPersonPicker({
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cerca Per Nome…"
+                  placeholder="Cerca per nome…"
                   className="w-full bg-transparent text-sm text-ink-100 placeholder:text-ink-800 focus:outline-none"
                 />
               </div>
             </div>
             <div className="mt-3 flex-1 overflow-y-auto px-5">
-              {filtered.length === 0 && <p className="py-8 text-center text-xs text-ink-800">Nessuna Persona Trovata.</p>}
+              {filtered.length === 0 && <p className="py-8 text-center text-xs text-ink-800">Nessuna persona trovata.</p>}
               {filtered.map((o) => {
                 const isSelected = values.includes(o.id);
                 return (

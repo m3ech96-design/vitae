@@ -48,29 +48,29 @@ export default function SalutePage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Salute</p>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Energia, Settimana Dopo Settimana</h1>
+      <h1 className="mt-1 font-display text-2xl text-ink-100">Energia, settimana dopo settimana</h1>
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         <GlassCard className="p-3.5 text-center">
           <Clock size={16} className="mx-auto text-aura-cyan" />
           <p className="mt-2 font-display text-lg text-ink-100">{weekMinutes}</p>
-          <p className="text-[10px] text-ink-800">Minuti · 7 Giorni</p>
+          <p className="text-[10px] text-ink-800">Minuti · 7 giorni</p>
         </GlassCard>
         <GlassCard className="p-3.5 text-center">
           <Flame size={16} className="mx-auto text-aura-amber" />
           <p className="mt-2 font-display text-lg text-ink-100">{weekCalories}</p>
-          <p className="text-[10px] text-ink-800">Kcal · 7 Giorni</p>
+          <p className="text-[10px] text-ink-800">Kcal · 7 giorni</p>
         </GlassCard>
         <GlassCard className="p-3.5 text-center">
           <Zap size={16} className="mx-auto text-aura-violet" />
           <p className="mt-2 font-display text-lg text-ink-100">{streak}</p>
-          <p className="text-[10px] text-ink-800">Giorni Di Fila</p>
+          <p className="text-[10px] text-ink-800">Giorni di fila</p>
         </GlassCard>
       </div>
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <p className="font-display text-sm text-ink-100">Il Tuo Campo Energetico</p>
+          <p className="font-display text-sm text-ink-100">Il tuo campo energetico</p>
           <button
             onClick={() => setAddWorkoutOpen(true)}
             className="focus-ring flex items-center gap-1.5 rounded-full bg-aura-gradient px-3.5 py-2 text-[11px] font-display text-void-950 shadow-glow"
@@ -81,7 +81,7 @@ export default function SalutePage() {
         {recentWorkouts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl2 border border-dashed border-white/10 py-14 text-center">
             <Zap size={20} className="text-ink-800" />
-            <p className="text-sm text-ink-600">Il Campo È Ancora Spento. Registra La Prima Attività.</p>
+            <p className="text-sm text-ink-600">Il Campo è ancora spento. Registra la prima attività.</p>
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-4 rounded-xl3 border border-white/[0.06] bg-white/[0.015] px-5 py-8">

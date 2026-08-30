@@ -22,7 +22,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Vitae",
-  description: "La Tua Vita, Vissuta Due Volte.",
+  description: "La tua vita, vissuta due volte.",
   manifest: "/manifest.json",
   icons: {
     icon: "/icon-192.png",
@@ -39,7 +39,6 @@ export const viewport: Viewport = {
   themeColor: "#0B0D14",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 

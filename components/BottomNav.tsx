@@ -12,6 +12,7 @@ import {
   HeartPulse,
   Wallet,
   Sparkles,
+  GitBranch,
   Aperture,
   X,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const MORE_ITEMS = [
   { href: "/salute", label: "Salute", icon: HeartPulse, enabled: true },
   { href: "/finanze", label: "Finanze", icon: Wallet, enabled: true },
   { href: "/rapporti", label: "Rapporti", icon: Sparkles, enabled: true },
+  { href: "/albero", label: "Albero", icon: GitBranch, enabled: true },
   { href: "/map", label: "Mappa", icon: MapPinned, enabled: true },
 ];
 

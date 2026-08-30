@@ -63,19 +63,19 @@ export function NicknameField({
         {status === "checking" && (
           <>
             <Loader2 size={12} className="animate-spin text-ink-600" />
-            <span className="text-ink-600">Verifica In Corso…</span>
+            <span className="text-ink-600">Verifica in corso…</span>
           </>
         )}
         {status === "free" && (
           <>
             <Check size={12} className="text-aura-cyan" />
-            <span className="text-aura-cyan">Nickname Libero</span>
+            <span className="text-aura-cyan">Nickname libero</span>
           </>
         )}
         {status === "taken" && (
           <>
             <X size={12} className="text-aura-pink" />
-            <span className="text-aura-pink">Nickname Già In Uso</span>
+            <span className="text-aura-pink">Nickname già in uso</span>
           </>
         )}
         {status === "invalid" && (

@@ -59,7 +59,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
       .filter((t) => taskIds.includes(t.id))
       .forEach((t) => parts.push(`Ha appena completato: ${t.title}.`));
     if (parts.length === 0) {
-      setAiError("Seleziona Almeno Un Elemento Prima Di Chiedere All'IA.");
+      setAiError("Seleziona almeno un elemento prima di chiedere all'IA.");
       setAiLoading(false);
       return;
     }
@@ -71,13 +71,13 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setAiError(data.error || "Qualcosa È Andato Storto.");
+        setAiError(data.error || "Qualcosa è andato storto.");
       } else {
         setCaption(data.caption);
         setCaptionByAI(true);
       }
     } catch {
-      setAiError("Impossibile Contattare Il Servizio.");
+      setAiError("Impossibile contattare il servizio.");
     } finally {
       setAiLoading(false);
     }
@@ -104,9 +104,9 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <PersonalCardSheet title="Imprimi Momento" onClose={discardAndClose}>
+    <PersonalCardSheet title="Imprimi momento" onClose={discardAndClose}>
       <p className="text-xs text-ink-800">
-        Ecco Cosa È Attivo Ora E Nell&apos;Ultima Ora — Scegli Tu Cosa Diventa Davvero Un Post.
+        Ecco cosa è attivo ora e nell&apos;ultima ora — scegli tu cosa diventa davvero un post.
       </p>
 
       {currentMood && (
@@ -126,7 +126,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
 
       {recentTasks.length > 0 && (
         <div className="mt-4">
-          <p className="mb-2 text-xs uppercase tracking-[0.1em] text-ink-800">Completate Nell&apos;Ultima Ora</p>
+          <p className="mb-2 text-xs uppercase tracking-[0.1em] text-ink-800">Completate nell&apos;ultima ora</p>
           <div className="flex flex-wrap gap-2">
             {recentTasks.map((t) => (
               <button
@@ -148,7 +148,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
 
       <div className="mt-4">
         <p className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-[0.1em] text-ink-800">
-          <UserPlus size={12} /> Tagga Persone
+          <UserPlus size={12} /> Tagga persone
         </p>
         <div className="flex flex-wrap gap-2">
           {DEMO_ACCOUNTS.map((a) => (
@@ -167,7 +167,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
           ))}
         </div>
         <p className="mt-1.5 text-[10px] text-ink-800">
-          Solo Account Dimostrativi Per Ora — Non Esiste Ancora Nessun Account Reale Da Taggare.
+          Solo account dimostrativi per ora — non esiste ancora nessun account reale da taggare.
         </p>
       </div>
 
@@ -185,7 +185,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
             setCaptionByAI(false);
           }}
           rows={4}
-          placeholder="Cosa Vuoi Raccontare Di Questo Momento?"
+          placeholder="Cosa vuoi raccontare di questo momento?"
           className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-ink-100 placeholder:text-ink-800"
         />
         {aiError && <p className="mt-1.5 text-xs text-aura-pink">{aiError}</p>}
@@ -200,14 +200,14 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
               onClick={open}
               className="focus-ring flex items-center gap-2 rounded-xl2 border border-dashed border-white/15 px-4 py-3 text-xs text-ink-600"
             >
-              <Camera size={14} /> {photoKey ? "Cambia Foto" : "Aggiungi Una Tua Foto (Facoltativo)"}
+              <Camera size={14} /> {photoKey ? "Cambia foto" : "Aggiungi Una Tua Foto (Facoltativo)"}
             </button>
           )}
         />
       </div>
 
       <Button className="mt-6 w-full justify-center" onClick={submit} disabled={!canPublish}>
-        Pubblica Su Vitaecom
+        Pubblica su Vitaecom
       </Button>
     </PersonalCardSheet>
   );

@@ -17,7 +17,7 @@ const SCALAR_ORDER = Object.keys(FIELD_LABELS) as (keyof typeof FIELD_LABELS)[];
  * campo la cui label non hai ricopiato identica in un secondo elenco (è già capitato una
  * volta scrivendo questo file, corretto prima di consegnare — vedi Checkpoint 18). */
 const SECTION_FIELDS: Record<"identity" | "eduWork" | "body", (keyof PersonalDetails)[]> = {
-  identity: ["nickname", "phone", "birthPlace", "birthday", "gender", "strengths", "weaknesses", "fears", "ambitions", "goals"],
+  identity: ["alias", "phone", "birthPlace", "birthday", "gender", "strengths", "weaknesses", "fears", "ambitions", "goals"],
   eduWork: [
     "studies",
     "currentSchool",
@@ -78,7 +78,7 @@ function resolvedPersonRefs(person: Person, people: Person[]): DiscoveryLine[] {
   const friends = person.friendPersonIds.map(nameOf).filter((p): p is Person => Boolean(p));
   if (friends.length > 0) lines.push({ label: "Amici", value: friends.map((p) => p.firstName).join(", ") });
   const bestFriends = person.bestFriendPersonIds.map(nameOf).filter((p): p is Person => Boolean(p));
-  if (bestFriends.length > 0) lines.push({ label: "Migliori Amici", value: bestFriends.map((p) => p.firstName).join(", ") });
+  if (bestFriends.length > 0) lines.push({ label: "Migliori amici", value: bestFriends.map((p) => p.firstName).join(", ") });
   return lines;
 }
 
@@ -135,19 +135,19 @@ export function allDiscoverySections(person: Person, people: Person[]): Discover
         ...identity,
         ...tagListLine("Carattere", person.traits),
         ...tagListLine("Valori", person.values),
-        ...tagListLine("Stile Di Vita", person.lifestyle),
+        ...tagListLine("Stile di vita", person.lifestyle),
         ...identityCustom,
       ],
     },
     {
-      title: "Istruzione E Lavoro",
+      title: "Istruzione e lavoro",
       lines: [
         ...eduWork,
-        ...tagListLine("Lavori Precedenti", person.previousWorkplaces),
-        ...tagListLine("Materie Conosciute", person.subjects),
+        ...tagListLine("Lavori precedenti", person.previousWorkplaces),
+        ...tagListLine("Materie conosciute", person.subjects),
         ...tagListLine("Competenze", person.competencies),
         ...tagListLine("Abilità", person.abilities),
-        ...tagListLine("Lingue Conosciute", person.languages),
+        ...tagListLine("Lingue conosciute", person.languages),
         ...eduWorkCustom,
       ],
     },
@@ -156,13 +156,13 @@ export function allDiscoverySections(person: Person, people: Person[]): Discover
     {
       title: "Interessi",
       lines: [
-        ...thumbLines("Film Preferiti", person.favoriteMovies),
-        ...thumbLines("Musica Preferita", person.favoriteMusic),
-        ...thumbLines("Libri Preferiti", person.favoriteBooks),
-        ...thumbLines("Videogiochi Preferiti", person.favoriteGames),
-        ...tagListLine("Cibi Preferiti", person.favoriteFoods),
-        ...tagListLine("Luoghi D'Interesse", person.placesOfInterest),
-        ...tagListLine("Categoria Preferita", person.favoriteCategories),
+        ...thumbLines("Film preferiti", person.favoriteMovies),
+        ...thumbLines("Musica preferita", person.favoriteMusic),
+        ...thumbLines("Libri preferiti", person.favoriteBooks),
+        ...thumbLines("Videogiochi preferiti", person.favoriteGames),
+        ...tagListLine("Cibi preferiti", person.favoriteFoods),
+        ...tagListLine("Luoghi d'interesse", person.placesOfInterest),
+        ...tagListLine("Categoria preferita", person.favoriteCategories),
         ...interestsCustom,
       ],
     },

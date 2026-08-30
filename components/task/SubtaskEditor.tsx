@@ -57,7 +57,7 @@ export function SubtaskEditor({
               type="button"
               onClick={() => onChange(subtasks.filter((x) => x.id !== s.id))}
               className="focus-ring text-ink-800 hover:text-aura-pink"
-              aria-label="Rimuovi Sub-Task"
+              aria-label="Rimuovi sub-task"
             >
               <X size={14} />
             </button>
@@ -71,7 +71,7 @@ export function SubtaskEditor({
           onClick={() => setOpen(true)}
           className="focus-ring mt-2 flex w-full items-center justify-center gap-2 rounded-xl2 border border-dashed border-white/15 py-2.5 text-xs text-ink-600 hover:border-aura-violet/50 hover:text-ink-200"
         >
-          <Plus size={14} /> Aggiungi Sub-Task
+          <Plus size={14} /> Aggiungi sub-task
         </button>
       ) : (
         <div className="mt-2 space-y-2 rounded-xl2 border border-aura-violet/30 bg-white/[0.03] p-3">
@@ -79,7 +79,7 @@ export function SubtaskEditor({
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Titolo Sub-Task"
+            placeholder="Titolo sub-task"
             className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ink-100 placeholder:text-ink-800"
           />
           <div className="grid grid-cols-2 gap-2">

@@ -44,7 +44,7 @@ export default function MondoPage() {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Mondo</p>
-          <h1 className="mt-1 font-display text-2xl text-ink-100">Chi Conosci</h1>
+          <h1 className="mt-1 font-display text-2xl text-ink-100">Chi conosci</h1>
         </div>
         <button
           onClick={() => setAddOpen(true)}
@@ -59,14 +59,14 @@ export default function MondoPage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cerca Per Nome, Occupazione, Interessi..."
+          placeholder="Cerca per nome, occupazione, interessi..."
           className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-9 text-sm text-ink-100 placeholder:text-ink-800"
         />
         {query && (
           <button
             onClick={() => setQuery("")}
             className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 text-ink-800 hover:text-ink-200"
-            aria-label="Cancella Ricerca"
+            aria-label="Cancella ricerca"
           >
             <X size={14} />
           </button>
@@ -116,7 +116,7 @@ export default function MondoPage() {
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <Users size={22} className="text-ink-800" />
             <p className="text-sm text-ink-600">
-              {query || filter !== "tutti" ? "Nessun Risultato Per Questa Ricerca." : "Non Hai Ancora Aggiunto Nessuna Persona."}
+              {query || filter !== "tutti" ? "Nessun risultato per questa ricerca." : "Non hai ancora aggiunto nessuna persona."}
             </p>
           </div>
         )}

@@ -136,7 +136,7 @@ export function AddPersonModal({
         {isAnimalKind ? (
           <div className="mt-4">
             <PersonPicker
-              label="Chi È Il Padrone?"
+              label="Chi è il padrone?"
               value={ownerId}
               allowNone={false}
               options={[
@@ -155,7 +155,7 @@ export function AddPersonModal({
                 livesAtHome ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
               }`}
             >
-              Vive Con Te
+              Vive con te
               <SwitchVisual checked={livesAtHome} />
             </button>
           )
@@ -191,7 +191,7 @@ export function AddPersonModal({
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-              Il Vostro Rapporto, Ad Oggi
+              Il vostro rapporto, ad oggi
             </span>
             <span className={`text-xs ${initialRelationship > 0 ? "text-aura-cyan" : initialRelationship < 0 ? "text-aura-pink" : "text-ink-800"}`}>
               {initialRelationship > 0 ? `+${initialRelationship}` : initialRelationship}
@@ -206,8 +206,8 @@ export function AddPersonModal({
             className="w-full accent-aura-violet"
           />
           <p className="mt-1 text-[10px] text-ink-800">
-            Solo Se La Conosci Già — Da Qui In Poi Cambia Solo Interagendo Davvero, Mai Più A
-            Mano.
+            Solo se la conosci già — da qui in poi cambia solo interagendo davvero, mai più a
+            mano.
           </p>
         </div>
 

@@ -24,13 +24,13 @@ function PersoneList() {
         <Users size={16} className="text-[#B79A6B]" />
         <p className="font-display text-xs uppercase tracking-[0.28em] text-[#B79A6B]">Persone</p>
       </div>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Chi Conosci Su Vitaecom</h1>
+      <h1 className="mt-1 font-display text-2xl text-ink-100">Chi conosci su Vitaecom</h1>
 
       <div className="mt-6 space-y-2.5">
         {knownAccounts.length === 0 && (
           <p className="mt-10 text-center text-sm text-ink-800">
-            Non Conosci Ancora Nessuno Qui — Tocca &quot;Inizia A Conoscere&quot; Sul Profilo Di Un Account Per
-            Iniziare.
+            Non conosci ancora nessuno qui — tocca &quot;inizia a conoscere&quot; sul profilo di un account per
+            iniziare.
           </p>
         )}
         {knownAccounts.map((a) => (

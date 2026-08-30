@@ -77,7 +77,7 @@ export default function MapPage() {
             onClick={() => setAddOpen(true)}
             className="focus-ring pointer-events-auto flex items-center gap-1.5 rounded-full bg-aura-gradient px-4 py-2 text-xs font-display text-void-950 shadow-glow"
           >
-            <Plus size={14} /> Aggiungi Luogo
+            <Plus size={14} /> Aggiungi luogo
           </button>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function MapPage() {
           {sorted.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-14 text-center">
               <MapPin size={22} className="text-ink-800" />
-              <p className="text-sm text-ink-600">Non Hai Ancora Registrato Nessun Luogo.</p>
+              <p className="text-sm text-ink-600">Non hai ancora registrato nessun luogo.</p>
             </div>
           )}
           {sorted.map((p) => {

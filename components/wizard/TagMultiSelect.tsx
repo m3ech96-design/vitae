@@ -45,7 +45,7 @@ export function TagMultiSelect({
         {filtered.map((value) => (
           <Chip key={value} label={value} selected={selected.includes(value)} onClick={() => toggle(value)} />
         ))}
-        {filtered.length === 0 && <p className="py-2 text-sm text-ink-800">Nessun Risultato.</p>}
+        {filtered.length === 0 && <p className="py-2 text-sm text-ink-800">Nessun risultato.</p>}
       </div>
     </div>
   );

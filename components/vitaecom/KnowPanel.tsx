@@ -55,12 +55,12 @@ export function KnowPanel({ accountId }: { accountId: string }) {
                 onClick={handleAccept}
                 className="focus-ring flex-1 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 py-2.5 text-center text-sm text-ink-100 transition hover:bg-[#B79A6B]/25"
               >
-                Accetta E Conosci Anche Tu
+                Accetta e conosci anche tu
               </button>
             </motion.div>
           ) : known ? (
             <motion.div key="known" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-between gap-3">
-              <span className="flex-1 text-sm text-ink-200">Persona Conosciuta</span>
+              <span className="flex-1 text-sm text-ink-200">Persona conosciuta</span>
               <button
                 onClick={() => router.push(`/vitaecom/chat/${accountId}`)}
                 className="focus-ring flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 py-2.5 text-sm text-ink-100 transition hover:bg-[#B79A6B]/25"
@@ -75,17 +75,17 @@ export function KnowPanel({ accountId }: { accountId: string }) {
                   onClick={() => (revealed ? sendKnowRequest(accountId) : setRevealed(true))}
                   className="focus-ring flex items-center gap-1.5 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 px-3.5 py-2.5 text-sm text-ink-100 transition hover:bg-[#B79A6B]/25"
                 >
-                  <Aperture size={14} className="shrink-0" />
+                  <Aperture size={20} className="shrink-0" />
                   <motion.span
                     initial={false}
                     animate={{ width: revealed ? "auto" : 0, opacity: revealed ? 1 : 0 }}
                     className="overflow-hidden whitespace-nowrap"
                   >
-                    Inizia A Conoscere
+                    Inizia a conoscere
                   </motion.span>
                 </button>
               )}
-              <span className="text-sm text-ink-600">{pendingSent ? "Richiesta Inviata" : "Sconosciuto"}</span>
+              <span className="text-sm text-ink-600">{pendingSent ? "Richiesta inviata" : "Sconosciuto"}</span>
             </motion.div>
           )}
         </AnimatePresence>

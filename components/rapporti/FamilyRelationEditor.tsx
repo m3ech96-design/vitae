@@ -39,13 +39,13 @@ export function FamilyRelationEditor({
         onChange={(id) => onUpdate({ partnerPersonId: id })}
       />
       <PersonPicker
-        label="Coniuge (Marito / Moglie)"
+        label="Coniuge (marito / moglie)"
         value={focus.spouseId}
         options={options}
         onChange={(id) => onUpdate({ spouseId: id })}
       />
       <MultiPersonPicker
-        label="Ex Coniugi"
+        label="Ex coniugi"
         values={focus.exSpouseIds}
         options={options}
         onChange={(ids) => onUpdate({ exSpouseIds: ids })}
@@ -71,8 +71,8 @@ export function FamilyRelationEditor({
       <div>
         <MultiPersonPicker label="Figli" values={childIds} options={options} onChange={onUpdateChildren} />
         <p className="mt-1.5 text-[10px] text-ink-800">
-          Se Il Genitore Che Aggiungi Qui Ha Già Un Coniuge O Partner, Diventa Figlio Di
-          Entrambi In Automatico.
+          Se il genitore che aggiungi qui ha già un coniuge o partner, diventa figlio di
+          entrambi in automatico.
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ export function FrequencyChart({ points }: { points: FrequencyPoint[] }) {
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between">
-        <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">Quanto Vi Frequentate</p>
+        <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">Quanto vi frequentate</p>
         <p className="text-[11px] text-ink-800">{total} Negli Ultimi 6 Mesi</p>
       </div>
       <div className="flex h-24 items-end gap-2.5">

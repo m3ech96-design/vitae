@@ -18,7 +18,7 @@ export function TaskNotifier() {
         if (!remindAt) return;
         const diff = (now.getTime() - remindAt.getTime()) / 60000;
         if (diff >= 0 && diff < 2) {
-          new Notification(t.title, { body: "Controlla Il Countdown Nella Home" });
+          new Notification(t.title, { body: "Controlla il countdown nella Home" });
           updateTask(t.id, { reminded: true });
         }
       });

@@ -135,7 +135,7 @@ export function MoodWizardPanel() {
 
       <label className="mt-5 flex items-center justify-between gap-3 rounded-xl2 border border-white/10 px-4 py-3.5">
         <span>
-          <span className="block text-sm text-ink-200">Condividi Stato D&apos;Animo Su Vitaecom</span>
+          <span className="block text-sm text-ink-200">Condividi stato d&apos;animo su Vitaecom</span>
           <span className="mt-0.5 block text-[11px] text-ink-800">
             Spenta, il tuo profilo mostra sempre &quot;Normale&quot;, qualunque cosa tu provi davvero.
           </span>
@@ -158,7 +158,7 @@ export function MoodWizardPanel() {
               <p className="text-[11px] text-ink-800">Sfuma da solo nelle prossime 12 ore — al {Math.round(activeMoodIntensity * 100)}%</p>
             </div>
           </div>
-          <button onClick={clearMood} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Spegni Ora">
+          <button onClick={clearMood} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Spegni ora">
             <PowerOff size={16} />
           </button>
         </div>
@@ -166,7 +166,7 @@ export function MoodWizardPanel() {
 
       <div className="mt-7">
         <div className="mb-3 flex items-center justify-between">
-          <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">I Tuoi Stati</p>
+          <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">I tuoi stati</p>
           <button
             onClick={() => setAddingMood((v) => !v)}
             className="focus-ring flex items-center gap-1 text-xs text-aura-cyan"
@@ -214,7 +214,7 @@ export function MoodWizardPanel() {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[10px] text-ink-800">Tocca Uno Stato Per Impostarlo Subito, A Mano.</p>
+        <p className="mt-2 text-[10px] text-ink-800">Tocca uno stato per impostarlo subito, a mano.</p>
       </div>
 
       <div className="mt-8 space-y-8">

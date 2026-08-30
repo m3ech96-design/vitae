@@ -23,12 +23,12 @@ export interface ActivityCategory {
 export const ACTIVITY_CATEGORIES: ActivityCategory[] = [
   { id: "cardio", label: "Cardio", color: "#00E5C7", icon: HeartPulse, kcalPerMinute: 10 },
   { id: "forza", label: "Forza", color: "#FFB454", icon: Dumbbell, kcalPerMinute: 7 },
-  { id: "squadra", label: "Sport Di Squadra", color: "#7C5CFF", icon: Users, kcalPerMinute: 9 },
-  { id: "individuali", label: "Sport Individuali", color: "#FF6B9D", icon: Target, kcalPerMinute: 7 },
+  { id: "squadra", label: "Sport di squadra", color: "#7C5CFF", icon: Users, kcalPerMinute: 9 },
+  { id: "individuali", label: "Sport individuali", color: "#FF6B9D", icon: Target, kcalPerMinute: 7 },
   { id: "outdoor", label: "Outdoor", color: "#34D399", icon: Mountain, kcalPerMinute: 8 },
   { id: "acquatici", label: "Acquatici", color: "#5EC8FF", icon: Waves, kcalPerMinute: 9 },
-  { id: "mente-corpo", label: "Mente-Corpo", color: "#B7A6FF", icon: Flower2, kcalPerMinute: 3 },
-  { id: "combattimento", label: "Danza E Combattimento", color: "#FF4D6D", icon: Swords, kcalPerMinute: 8 },
+  { id: "mente-corpo", label: "Mente-corpo", color: "#B7A6FF", icon: Flower2, kcalPerMinute: 3 },
+  { id: "combattimento", label: "Danza e combattimento", color: "#FF4D6D", icon: Swords, kcalPerMinute: 8 },
   { id: "invernali", label: "Invernali", color: "#8FD8FF", icon: Snowflake, kcalPerMinute: 8 },
   { id: "altro", label: "Altro", color: "#8B90A8", icon: Sparkle, kcalPerMinute: 5 },
 ];

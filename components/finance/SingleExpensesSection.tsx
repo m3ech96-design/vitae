@@ -35,10 +35,10 @@ export function SingleExpensesSection() {
   return (
     <div>
       <p className="mb-3 flex items-center gap-1.5 font-display text-sm text-ink-100">
-        <Receipt size={14} className="text-aura-pink" /> Spese Singole
+        <Receipt size={14} className="text-aura-pink" /> Spese singole
       </p>
       <div className="space-y-2">
-        {recent.length === 0 && <p className="text-xs text-ink-800">Nessuna Spesa Singola Registrata A Mano.</p>}
+        {recent.length === 0 && <p className="text-xs text-ink-800">Nessuna spesa singola registrata a mano.</p>}
         {recent.map((e) => {
           const meta = EXPENSE_CATEGORY_META[e.category];
           return (
@@ -60,19 +60,21 @@ export function SingleExpensesSection() {
       </div>
 
       <div className="mt-2">
-        <InlineAddPanel label="Aggiungi Spesa Singola" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
+        <InlineAddPanel label="Aggiungi spesa singola" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Nome" placeholder="Es. Regalo Compleanno" value={label} onChange={(e) => setLabel(e.target.value)} />
             <TextField label="Importo (€)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
           <CategoryPicker value={category} onChange={setCategory} />
         </InlineAddPanel>
       </div>
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Eliminare Questa Spesa?"
+          title="Eliminare questa spesa?"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
             removeSingleExpense(pendingDelete);

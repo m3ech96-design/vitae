@@ -86,7 +86,7 @@ function RapportoTab({ person, adding, onDonePicking }: { person: Person; adding
 
       {recent.length > 0 && (
         <div>
-          <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Ultime Interazioni</p>
+          <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Ultime interazioni</p>
           <div className="space-y-1.5">
             {recent.map((e) => (
               <div key={e.id} className="flex items-center justify-between gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
@@ -105,7 +105,7 @@ function RapportoTab({ person, adding, onDonePicking }: { person: Person; adding
 
       {adding && (
         <div>
-          <p className="mb-3 font-display text-sm text-ink-100">Nuova Interazione</p>
+          <p className="mb-3 font-display text-sm text-ink-100">Nuova interazione</p>
           <InteractionPicker
             positiveOptions={isAnimal ? ANIMAL_POSITIVE_INTERACTIONS : POSITIVE_INTERACTIONS}
             negativeOptions={isAnimal ? ANIMAL_NEGATIVE_INTERACTIONS : NEGATIVE_INTERACTIONS}
@@ -203,10 +203,10 @@ function AlberoTab({ person, adding }: { person: Person; adding: boolean }) {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => router.push(`/rapporti/albero/${person.id}`)}
+        onClick={() => router.push(`/albero/${person.id}`)}
         className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/10 px-4 py-3 text-sm text-ink-200 hover:border-aura-violet/40"
       >
-        Apri Albero Genealogico Completo
+        Apri albero genealogico completo
         <ArrowUpRight size={15} className="text-ink-600" />
       </button>
 
@@ -232,14 +232,14 @@ function AlberoTab({ person, adding }: { person: Person; adding: boolean }) {
         <div className="space-y-5">
           <div>
             <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-              Cerca Un Nickname Da Aggiungere
+              Cerca un nickname da aggiungere
             </span>
             <div className="relative">
               <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-800" />
               <input
                 value={nickQuery}
                 onChange={(e) => setNickQuery(e.target.value)}
-                placeholder="Cerca Per Nickname…"
+                placeholder="Cerca per nickname…"
                 className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] py-2.5 pl-8 pr-3 text-xs text-ink-100 placeholder:text-ink-800"
               />
             </div>

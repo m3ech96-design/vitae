@@ -22,7 +22,7 @@ interface CompleteResult {
 interface TasksContextValue {
   hydrated: boolean;
   tasks: Task[];
-  addTask: (input: NewTaskInput) => void;
+  addTask: (input: NewTaskInput) => Task;
   updateTask: (id: string, patch: Partial<Task>) => void;
   removeTask: (id: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
@@ -124,6 +124,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       persist([...tasks, task]);
+      return task;
     },
     [tasks, persist]
   );

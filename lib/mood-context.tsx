@@ -78,9 +78,12 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     const loadedMoods = loadJson<MoodDefinition[]>(MOODS_KEY, []);
     // La mappatura parte dai suggerimenti del catalogo solo se non è mai stata salvata
     // nulla — un solo seed, la primissima volta: da lì in poi è scritta solo dall'utente.
+    // Di serie ogni innesco parte su "Nessuno" (disattivato) — anche al primissimo avvio:
+    // `defaultMoodIds` resta nel catalogo solo come suggerimento mostrato nell'editor, non
+    // più applicato in automatico. L'utente attiva a mano solo gli inneschi che vuole.
     const loadedMap = loadJson<Record<string, string[]> | null>(TRIGGER_MAP_KEY, null);
     const seededMap =
-      loadedMap ?? Object.fromEntries(TRIGGER_CATALOG.map((t) => [t.key, t.defaultMoodIds]));
+      loadedMap ?? Object.fromEntries(TRIGGER_CATALOG.map((t) => [t.key, [] as string[]]));
     const loadedActive = loadJson<ActiveMood | null>(ACTIVE_MOOD_KEY, null);
     const loadedShare = loadJson<boolean>(SHARE_ON_VITAECOM_KEY, true);
 

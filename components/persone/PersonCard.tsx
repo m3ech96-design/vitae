@@ -111,7 +111,7 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
               target="_blank"
               rel="noopener noreferrer"
               className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-ink-400 transition hover:border-aura-emerald/50 hover:text-aura-emerald"
-              aria-label={`Scrivi Su WhatsApp A ${person.firstName}`}
+              aria-label={`Scrivi su WhatsApp a ${person.firstName}`}
             >
               <MessageCircle size={14} />
             </a>

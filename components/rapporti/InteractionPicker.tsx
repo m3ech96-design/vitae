@@ -46,7 +46,7 @@ export function InteractionPicker({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cerca Un'Interazione..."
+          placeholder="Cerca un'interazione..."
           className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] py-2 pl-8 pr-3 text-xs text-ink-100 placeholder:text-ink-800"
         />
       </div>
@@ -70,7 +70,7 @@ export function InteractionPicker({
             {label}
           </button>
         ))}
-        {filtered.length === 0 && <p className="py-2 text-xs text-ink-800">Nessuna Interazione Trovata.</p>}
+        {filtered.length === 0 && <p className="py-2 text-xs text-ink-800">Nessuna interazione trovata.</p>}
       </motion.div>
     </div>
   );

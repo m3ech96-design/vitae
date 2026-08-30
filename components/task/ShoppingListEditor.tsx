@@ -31,7 +31,7 @@ export function ShoppingListEditor({
   return (
     <div>
       <span className="mb-2 flex items-center gap-1.5 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-        <ShoppingCart size={12} /> Lista Della Spesa
+        <ShoppingCart size={12} /> Lista della spesa
       </span>
       <div className="space-y-2">
         {items.map((it) => (
@@ -48,7 +48,7 @@ export function ShoppingListEditor({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Aggiungi Voce..."
+          placeholder="Aggiungi voce..."
           className="focus-ring flex-1 bg-transparent text-sm text-ink-100 placeholder:text-ink-800 outline-none"
         />
         <button onClick={add} disabled={!draft.trim()} className="focus-ring rounded-full p-1.5 text-ink-600 hover:text-aura-cyan disabled:opacity-30" aria-label="Aggiungi">

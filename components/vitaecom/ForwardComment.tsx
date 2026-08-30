@@ -58,7 +58,7 @@ export function ForwardComment({
   };
 
   return (
-    <PersonalCardSheet title="Inoltra Commento" onClose={onClose}>
+    <PersonalCardSheet title="Inoltra commento" onClose={onClose}>
       <div className="rounded-xl2 border border-white/10 bg-white/[0.02] p-3">
         <p className="whitespace-pre-wrap text-xs text-ink-600">{text}</p>
       </div>
@@ -68,7 +68,7 @@ export function ForwardComment({
         className="focus-ring mt-4 flex w-full items-center justify-between rounded-xl2 border border-white/10 px-4 py-3 text-sm text-ink-200 transition hover:border-white/25"
       >
         <span className="flex items-center gap-2">
-          <Share2 size={15} /> Condividi Fuori Da Vitaecom
+          <Share2 size={15} /> Condividi fuori da Vitaecom
         </span>
         {copiedFor === "__external__" && (
           <span className="flex items-center gap-1 text-xs text-aura-cyan">
@@ -77,7 +77,7 @@ export function ForwardComment({
         )}
       </button>
 
-      <p className="mb-2 mt-5 text-xs uppercase tracking-[0.1em] text-ink-800">Recenti Su Vitaecom</p>
+      <p className="mb-2 mt-5 text-xs uppercase tracking-[0.1em] text-ink-800">Recenti su Vitaecom</p>
       <div className="space-y-2">
         {recentAccounts.map((a) => (
           <button
@@ -98,7 +98,7 @@ export function ForwardComment({
         ))}
       </div>
       <p className="mt-2 text-[10px] text-ink-800">
-        Senza Una Vera Chat, Qui Copiamo Il Testo Formattato — Non C&apos;è Ancora Un Posto Dove Recapitarlo Davvero.
+        Senza una vera chat, qui copiamo il testo formattato — non c&apos;è ancora un posto dove recapitarlo davvero.
       </p>
     </PersonalCardSheet>
   );

@@ -38,7 +38,7 @@ function VitaeworldFeed() {
         <Globe2 size={16} className="text-[#B79A6B]" />
         <p className="font-display text-xs uppercase tracking-[0.28em] text-[#B79A6B]">Vitaeworld</p>
       </div>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa Sta Succedendo</h1>
+      <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa sta succedendo</h1>
 
       {/* Per privacy, un account "Sconosciuto" non ti mostra i suoi post da nessuna parte
          (vedi KnowPanel) — qui, il posto dove più si nota. I tuoi restano sempre visibili. */}
@@ -47,7 +47,7 @@ function VitaeworldFeed() {
           .filter((post) => post.authorId === "user" || knownAccountIds.includes(post.authorId))
           .map((post) => (
           <div key={post.id}>
-            {post.isDemo && <p className="mb-1.5 text-[9px] uppercase tracking-wide text-ink-800">Anteprima — Post Di Esempio</p>}
+            {post.isDemo && <p className="mb-1.5 text-[9px] uppercase tracking-wide text-ink-800">Anteprima — post di esempio</p>}
             <PostCard post={post} onOpenComments={() => setCommentsFor(post)} onShare={() => share(post)} />
           </div>
         ))}

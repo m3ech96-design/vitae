@@ -141,7 +141,7 @@ export function ProfileHeader({
               ref={triggerRef}
               onClick={() => setDiscoveriesOpen((v) => !v)}
               className="focus-ring absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-[#B79A6B]/50 hover:text-ink-100"
-              aria-label={`Ultime Scoperte Su ${account.nickname}`}
+              aria-label={`Ultime scoperte su ${account.nickname}`}
               aria-haspopup="menu"
               aria-expanded={discoveriesOpen}
             >
@@ -152,7 +152,7 @@ export function ProfileHeader({
             ref={avatarRef}
             onClick={handleAvatarClick}
             className="focus-ring relative rounded-full"
-            aria-label={isOwner ? "Il Tuo Profilo Completo" : known ? account.nickname : "Non Conosci Ancora Questa Persona"}
+            aria-label={isOwner ? "Il tuo profilo completo" : known ? account.nickname : "Non Conosci Ancora Questa Persona"}
           >
             <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={92} ring="idle" glowColor={mood?.color} glowIntensity={auraIntensityValue} />
           </button>
@@ -216,7 +216,7 @@ export function ProfileHeader({
                   }}
                   className="focus-ring mt-1 flex w-full items-center gap-2 rounded-xl border-t border-white/[0.06] px-3 py-2.5 text-left text-xs text-[#B79A6B] hover:bg-white/[0.04]"
                 >
-                  <Compass size={13} /> Esplora Altro <ChevronRight size={13} className="ml-auto" />
+                  <Compass size={13} /> Esplora altro <ChevronRight size={13} className="ml-auto" />
                 </button>
               </motion.div>
               )}
@@ -232,7 +232,7 @@ export function ProfileHeader({
                   style={{ position: "fixed", top: unknownTipPos.top, left: unknownTipPos.left, width: 220 }}
                   className="glass-strong z-50 rounded-xl2 px-3.5 py-3 text-center text-xs text-ink-200"
                 >
-                  Non Conosci Ancora Questa Persona
+                  Non conosci ancora questa persona
                 </motion.div>
               )}
             </AnimatePresence>

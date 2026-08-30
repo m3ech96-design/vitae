@@ -81,7 +81,7 @@ export function DynamicFieldList({
               type="button"
               onClick={() => remove(f.id)}
               className="focus-ring shrink-0 rounded-full p-1.5 text-ink-800 opacity-0 transition hover:text-aura-pink group-hover:opacity-100"
-              aria-label="Rimuovi Campo"
+              aria-label="Rimuovi campo"
             >
               <X size={15} />
             </button>
@@ -105,7 +105,7 @@ export function DynamicFieldList({
         >
           <div className="grid grid-cols-2 gap-3">
             <TextField
-              label="Nome Del Campo"
+              label="Nome del campo"
               placeholder="Es. Sport Preferito"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -128,7 +128,7 @@ export function DynamicFieldList({
                   className="focus-ring flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-600 hover:text-ink-200"
                 >
                   <ImagePlus size={14} />
-                  {thumb ? "Immagine Selezionata (Tocca Per Ricentrare)" : "Aggiungi Miniatura (Facoltativo)"}
+                  {thumb ? "Immagine selezionata (tocca per ricentrare)" : "Aggiungi Miniatura (Facoltativo)"}
                 </button>
               )}
             />

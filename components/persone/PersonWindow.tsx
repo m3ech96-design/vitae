@@ -23,6 +23,7 @@ import { AvatarUploader } from "../wizard/AvatarUploader";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { SwitchVisual } from "../ui/Switch";
 import { IdentityCoreFields } from "../wizard/sections/IdentityCoreFields";
 import { EducationWorkSection } from "../wizard/sections/EducationWorkSection";
 import { CorpoSection } from "../wizard/sections/CorpoSection";
@@ -64,7 +65,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
   const engagement = currentEngagement(person);
   const engagementPlaceId = engagement?.linkedPlaceId ? places.find((p) => p.id === engagement.linkedPlaceId)?.id ?? null : null;
   const status = personWorldStatus(person, tasks, home?.placeId, engagementPlaceId);
-  const statusLabel = status === "casa" ? "In Casa" : status === "fuori-casa" ? "Fuori Casa" : "Nel Mondo";
+  const statusLabel = status === "casa" ? "In casa" : status === "fuori-casa" ? "Fuori casa" : "Nel Mondo";
   const ring = status === "casa" ? "home" : status === "fuori-casa" ? "away" : "world";
   const fullName = `${draft.firstName} ${draft.lastName}`.trim();
   const displayName = isEmptyAvatar(draft) ? emptyAvatarLabel(person.kind) : fullName;
@@ -230,13 +231,13 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
 
               {isAnimal ? (
                 <div>
-                  <p className="mb-4 font-display text-sm text-ink-100">Cura Dell&apos;Animale</p>
+                  <p className="mb-4 font-display text-sm text-ink-100">Cura dell&apos;animale</p>
                   <AnimalCareSection person={draft} onUpdate={updateDraft} />
                 </div>
               ) : (
                 <>
                   <div>
-                    <p className="mb-4 font-display text-sm text-ink-100">Istruzione E Lavoro</p>
+                    <p className="mb-4 font-display text-sm text-ink-100">Istruzione e lavoro</p>
                     <EducationWorkSection data={draft} onUpdate={updateDraft} linkedPersonId={person.id} justSavedKeys={justSavedKeys} />
                   </div>
                   <div>
@@ -297,7 +298,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                 className="space-y-9"
               >
               <div>
-                <p className="mb-4 font-display text-sm text-ink-100">Dati Base</p>
+                <p className="mb-4 font-display text-sm text-ink-100">Dati base</p>
                 <div className="mb-4 flex justify-center">
                   <AvatarUploader
                     imageUrl={person.avatarUrl}
@@ -337,13 +338,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                   }`}
                 >
                   {person.kind === "donna" || person.kind === "bambina" ? "Defunta" : "Defunto"}
-                  <span className={`h-5 w-9 rounded-full transition-colors ${person.deceased ? "bg-ink-600" : "bg-white/10"}`}>
-                    <span
-                      className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${
-                        person.deceased ? "translate-x-[18px]" : "translate-x-0.5"
-                      }`}
-                    />
-                  </span>
+                  <SwitchVisual checked={Boolean(person.deceased)} tone="ink" />
                 </button>
                 {person.deceased && (
                   <DeceasedDateFields
@@ -362,10 +357,8 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                     person.dialogModeEnabled ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
                   }`}
                 >
-                  Modalità Dialogo
-                  <span className={`h-5 w-9 rounded-full transition-colors ${person.dialogModeEnabled ? "bg-aura-violet" : "bg-white/10"}`}>
-                    <span className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${person.dialogModeEnabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
-                  </span>
+                  Modalità dialogo
+                  <SwitchVisual checked={Boolean(person.dialogModeEnabled)} />
                 </button>
                 <p className="mb-3 mt-2 text-xs text-ink-800">
                   Frasi ricorrenti che compaiono a caso vicino all&apos;avatar di {person.firstName}.
@@ -383,10 +376,8 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                     person.liveModeEnabled ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
                   }`}
                 >
-                  Modalità Vivo
-                  <span className={`h-5 w-9 rounded-full transition-colors ${person.liveModeEnabled ? "bg-aura-violet" : "bg-white/10"}`}>
-                    <span className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white transition-transform ${person.liveModeEnabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
-                  </span>
+                  Modalità vivo
+                  <SwitchVisual checked={Boolean(person.liveModeEnabled)} />
                 </button>
                 <p className="mb-3 mt-2 text-xs text-ink-800">
                   Cosa {person.firstName} sta forse facendo, in certi orari o a caso. Compare nella card, non nella nuvoletta.
@@ -403,7 +394,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                 className="w-full justify-center"
                 onClick={() => setConfirmDelete(true)}
               >
-                <Trash2 size={13} /> Elimina Persona
+                <Trash2 size={13} /> Elimina persona
               </Button>
               </motion.div>
             )}
@@ -423,7 +414,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
             </Button>
             {!hasUnsavedChanges && !justSaved && (
               <p className="mt-1.5 text-center text-[10px] text-ink-800">
-                Nessuna Modifica Da Salvare — Le Novità Arrivano Tutte Insieme Quando Salvi.
+                Nessuna modifica da salvare — le novità arrivano tutte insieme quando salvi.
               </p>
             )}
           </div>
@@ -433,7 +424,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
       {confirmDelete && (
         <ConfirmDialog
           title={`Eliminare ${displayName}?`}
-          description="Scoperte, Rapporti E Cronologia Andranno Persi Per Sempre."
+          description="Scoperte, rapporti e cronologia andranno persi per sempre."
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             removePerson(person.id);

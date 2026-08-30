@@ -3,10 +3,7 @@ import { useEffect } from "react";
 import { Check } from "lucide-react";
 import { PersonalDetails } from "@/lib/types";
 import { capitalizeWords, capitalizeSentence } from "@/lib/text";
-import { usePlaces } from "@/lib/places-context";
-import { AddressSuggestion } from "@/lib/geocode";
 import { TextField, TextArea } from "../../ui/TextField";
-import { AddressAutocomplete } from "../../ui/AddressAutocomplete";
 import { TagListField } from "../TagListField";
 import { DynamicFieldList } from "../DynamicFieldList";
 
@@ -46,26 +43,7 @@ export function EducationWorkSection({
   linkedPersonId?: string;
   justSavedKeys?: string[];
 }) {
-  const { places, addPlace } = usePlaces();
   const saved = (key: string) => Boolean(justSavedKeys?.includes(key));
-
-  const onPickAddress = (suggestion: AddressSuggestion, kind: "scuola" | "lavoro" | "studiato") => {
-    if (kind === "scuola") onUpdate({ currentSchool: suggestion.label });
-    else if (kind === "lavoro") onUpdate({ currentWorkplace: suggestion.label });
-    else onUpdate({ studiedAt: suggestion.label });
-
-    const alreadyExists = places.some((p) => p.address === suggestion.label);
-    if (!alreadyExists) {
-      addPlace({
-        name: suggestion.label.split(",")[0],
-        type: kind === "lavoro" ? "lavoro" : "altro",
-        address: suggestion.label,
-        lat: suggestion.lat,
-        lng: suggestion.lng,
-        linkedPersonId,
-      });
-    }
-  };
 
   // Suggerisce "Dove Ha Studiato" da "Quale Scuola Frequenta" solo la prima volta che si
   // spunta Lavora, non ad ogni ridigitazione — dopo resta un campo di testo libero come
@@ -84,21 +62,21 @@ export function EducationWorkSection({
 
       {data.studies && (
         <div className="space-y-6 rounded-xl2 border border-aura-violet/20 bg-aura-violet/[0.04] p-4">
-          <AddressAutocomplete
-            label="Quale Scuola Frequenta"
+          <TextField
+            label="Quale scuola frequenta"
             placeholder="Es. Università Di Bologna"
             value={data.currentSchool || ""}
-            onChange={(text) => onUpdate({ currentSchool: text })}
-            onSelect={(s) => onPickAddress(s, "scuola")}
+            onChange={(e) => onUpdate({ currentSchool: e.target.value })}
+            justSaved={saved("currentSchool")}
           />
           <TextArea
-            label="Obiettivi Di Studio Futuri"
+            label="Obiettivi di studio futuri"
             value={data.futureStudyGoals || ""}
             onChange={(e) => onUpdate({ futureStudyGoals: capitalizeSentence(e.target.value) })}
             justSaved={saved("futureStudyGoals")}
           />
           <TextArea
-            label="Obiettivi Lavorativi Futuri"
+            label="Obiettivi lavorativi futuri"
             value={data.futureWorkGoals || ""}
             onChange={(e) => onUpdate({ futureWorkGoals: capitalizeSentence(e.target.value) })}
             justSaved={saved("futureWorkGoals")}
@@ -108,28 +86,28 @@ export function EducationWorkSection({
 
       {data.works && (
         <div className="space-y-6 rounded-xl2 border border-aura-violet/20 bg-aura-violet/[0.04] p-4">
-          <AddressAutocomplete
-            label="Dove Lavora"
-            placeholder="Es. Corso Italia 4, Torino"
+          <TextField
+            label="Dove lavora"
+            placeholder="Es. Studio Legale Ferrari"
             value={data.currentWorkplace || ""}
-            onChange={(text) => onUpdate({ currentWorkplace: text })}
-            onSelect={(s) => onPickAddress(s, "lavoro")}
+            onChange={(e) => onUpdate({ currentWorkplace: e.target.value })}
+            justSaved={saved("currentWorkplace")}
           />
           <TagListField
-            label="Lavori Precedenti"
+            label="Lavori precedenti"
             tags={data.previousWorkplaces}
             onChange={(previousWorkplaces) => onUpdate({ previousWorkplaces })}
             placeholder="Aggiungi..."
           />
-          <AddressAutocomplete
-            label="Dove Ha Studiato"
-            placeholder="Es. Via Zamboni 33, Bologna"
+          <TextField
+            label="Dove ha studiato"
+            placeholder="Es. Università Di Bologna"
             value={data.studiedAt || ""}
-            onChange={(text) => onUpdate({ studiedAt: text })}
-            onSelect={(s) => onPickAddress(s, "studiato")}
+            onChange={(e) => onUpdate({ studiedAt: e.target.value })}
+            justSaved={saved("studiedAt")}
           />
           <TextField
-            label="Titolo Di Studio"
+            label="Titolo di studio"
             placeholder="Es. Laurea In Ingegneria Gestionale"
             value={data.educationTitle || ""}
             onChange={(e) => onUpdate({ educationTitle: capitalizeWords(e.target.value) })}
@@ -139,13 +117,13 @@ export function EducationWorkSection({
       )}
 
       <div className="space-y-6 border-t border-white/[0.06] pt-6">
-        <TagListField label="Materie Conosciute" tags={data.subjects} onChange={(subjects) => onUpdate({ subjects })} placeholder="Aggiungi..." />
+        <TagListField label="Materie conosciute" tags={data.subjects} onChange={(subjects) => onUpdate({ subjects })} placeholder="Aggiungi..." />
         <TagListField label="Competenze" tags={data.competencies} onChange={(competencies) => onUpdate({ competencies })} placeholder="Aggiungi..." />
         <TagListField label="Abilità" tags={data.abilities} onChange={(abilities) => onUpdate({ abilities })} placeholder="Aggiungi..." />
-        <TagListField label="Lingue Conosciute" tags={data.languages} onChange={(languages) => onUpdate({ languages })} placeholder="Aggiungi..." />
+        <TagListField label="Lingue conosciute" tags={data.languages} onChange={(languages) => onUpdate({ languages })} placeholder="Aggiungi..." />
 
         <TextField
-          label="Occupazione Attuale"
+          label="Occupazione attuale"
           placeholder="Es. Avvocata"
           value={data.occupation || ""}
           onChange={(e) => onUpdate({ occupation: capitalizeWords(e.target.value) })}
@@ -153,7 +131,7 @@ export function EducationWorkSection({
         />
 
         <TextArea
-          label="Ambizione Professionale"
+          label="Ambizione professionale"
           value={data.professionalAmbition || ""}
           onChange={(e) => onUpdate({ professionalAmbition: capitalizeSentence(e.target.value) })}
           justSaved={saved("professionalAmbition")}

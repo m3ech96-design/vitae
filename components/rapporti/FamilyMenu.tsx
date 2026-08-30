@@ -26,7 +26,7 @@ export function FamilyMenu() {
   const ungrouped = entities.filter((e) => !groupedIds.has(e.id));
 
   const byId = new Map(entities.map((e) => [e.id, e]));
-  const goTo = (id: string) => router.push(`/rapporti/albero/${id}`);
+  const goTo = (id: string) => router.push(`/albero/${id}`);
   // L'utente non può "dimenticare" se stesso: alone sempre a piena intensità per "Tu".
   const intensityOf = (id: string) => {
     const p = people.find((x) => x.id === id);
@@ -37,7 +37,7 @@ export function FamilyMenu() {
     <div>
       <div className="mb-5 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-xs text-ink-600">
-          <GitBranch size={13} /> Tocca Un Avatar Per Entrare Nel Suo Albero
+          <GitBranch size={13} /> Tocca un avatar per entrare nel suo albero
         </p>
         <button
           onClick={() => setSortByKinship((v) => !v)}
@@ -45,7 +45,7 @@ export function FamilyMenu() {
             sortByKinship ? "border-aura-amber/60 bg-aura-amber/15 text-ink-100" : "border-white/10 text-ink-600"
           }`}
         >
-          Per Parentela
+          Per parentela
         </button>
       </div>
 
@@ -76,7 +76,7 @@ export function FamilyMenu() {
           {ungrouped.length > 0 && (
             <div>
               <p className="mb-3 flex items-center gap-1.5 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-                <Users size={12} /> Senza Famiglia Collegata
+                <Users size={12} /> Senza famiglia collegata
               </p>
               <div className="grid grid-cols-4 gap-4">
                 {ungrouped.map((e) => (

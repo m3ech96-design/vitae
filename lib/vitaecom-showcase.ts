@@ -21,16 +21,16 @@ export type ShowcaseSource =
   | "lifestyle";
 
 export const SHOWCASE_SOURCE_LABEL: Record<ShowcaseSource, string> = {
-  favoriteMovies: "Film Preferiti",
-  favoriteMusic: "Musica Preferita",
-  favoriteBooks: "Libri Preferiti",
-  favoriteGames: "Videogiochi Preferiti",
-  favoriteFoods: "Cibi Preferiti",
-  placesOfInterest: "Luoghi D'Interesse",
-  favoriteCategories: "Categoria Preferita",
+  favoriteMovies: "Film preferiti",
+  favoriteMusic: "Musica preferita",
+  favoriteBooks: "Libri preferiti",
+  favoriteGames: "Videogiochi preferiti",
+  favoriteFoods: "Cibi preferiti",
+  placesOfInterest: "Luoghi d'interesse",
+  favoriteCategories: "Categoria preferita",
   values: "Valori",
   traits: "Carattere",
-  lifestyle: "Stile Di Vita",
+  lifestyle: "Stile di vita",
 };
 
 const THUMB_SOURCES: ShowcaseSource[] = ["favoriteMovies", "favoriteMusic", "favoriteBooks", "favoriteGames"];

@@ -30,7 +30,7 @@ export function RelationshipChart({ events }: { events: RelationshipEvent[] }) {
   return (
     <div>
       <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-        Andamento Nel Tempo
+        Andamento nel tempo
       </p>
       <svg viewBox={`0 0 ${w} ${h}`} className="h-20 w-full overflow-visible">
         <defs>

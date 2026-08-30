@@ -78,7 +78,7 @@ function ShowcaseEditor({ onClose }: { onClose: () => void }) {
   const hasAnyCandidate = EDITOR_ORDER.some((s) => (candidatesBySource.get(s)?.length ?? 0) > 0);
 
   return (
-    <PersonalCardSheet title="Vetrina Del Profilo" onClose={onClose}>
+    <PersonalCardSheet title="Vetrina del profilo" onClose={onClose}>
       <p className="text-xs text-ink-800">
         Scegli fino a {MAX_SHOWCASE_ITEMS} cose da mostrare a chi visita il tuo profilo — pescate da ciò che hai già
         scritto in &quot;Il Tuo Profilo&quot;, non un campo nuovo da compilare da capo. {selected.length}/{MAX_SHOWCASE_ITEMS}{" "}
@@ -166,7 +166,7 @@ export function ShowcaseDrawer({ isOwner }: { isOwner: boolean }) {
             onClick={() => setEditorOpen(true)}
             className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl2 border border-dashed border-white/15 py-3.5 text-xs text-ink-600 hover:border-[#B79A6B]/50 hover:text-ink-200"
           >
-            <Pencil size={13} /> Aggiungi Qualcosa Alla Tua Vetrina
+            <Pencil size={13} /> Aggiungi qualcosa alla tua vetrina
           </button>
         ) : (
           <div className="flex flex-wrap gap-2">

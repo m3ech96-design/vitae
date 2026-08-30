@@ -142,7 +142,7 @@ export function EngagementEditor({
 
       {view === "elenco" ? (
         <div className="space-y-3">
-          {upcoming.length === 0 && <p className="text-sm text-ink-800">Nessun Impegno In Programma.</p>}
+          {upcoming.length === 0 && <p className="text-sm text-ink-800">Nessun impegno in programma.</p>}
           {upcoming.map(renderCard)}
         </div>
       ) : (
@@ -150,22 +150,22 @@ export function EngagementEditor({
           <DayStrip selected={selectedDay} onSelect={setSelectedDay} hasTasks={(iso) => engagements.some((e) => taskOccursOnDate(e, iso))} />
           <div className="mt-4 space-y-2.5">
             {calendarEngagements.length === 0 && (
-              <p className="py-6 text-center text-sm text-ink-800">Nessun Impegno In Questo Giorno.</p>
+              <p className="py-6 text-center text-sm text-ink-800">Nessun impegno in questo giorno.</p>
             )}
             {calendarEngagements.map(renderCard)}
           </div>
         </div>
       )}
 
-      <InlineAddPanel label="Aggiungi Impegno" canConfirm={Boolean(draft.title.trim() && draft.date)} onConfirm={submit} onOpenChange={(o) => !o && reset()}>
+      <InlineAddPanel label="Aggiungi impegno" canConfirm={Boolean(draft.title.trim() && draft.date)} onConfirm={submit} onOpenChange={(o) => !o && reset()}>
         <p className="-mt-1 text-[11px] text-ink-800">
-          Identico A Una Task Di Tipo Evento: Ha Sempre Un Inizio E Una Fine, Non Si Spunta A Mano.
+          Identico a una task di tipo evento: ha sempre un inizio e una fine, non si spunta a mano.
         </p>
         <TaskFieldsForm
           value={draft}
           onChange={patch}
-          colorLabel="Colore Impegno"
-          peopleLabel="Altre Persone Coinvolte"
+          colorLabel="Colore impegno"
+          peopleLabel="Altre persone coinvolte"
           excludePersonId={personId}
           fixedType
         />

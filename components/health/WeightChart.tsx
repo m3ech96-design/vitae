@@ -7,7 +7,7 @@ export function WeightChart({ entries, goal }: { entries: WeightEntry[]; goal: n
   if (sorted.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-xl2 border border-dashed border-white/10 text-xs text-ink-800">
-        Nessuna Pesata Registrata Ancora.
+        Nessuna pesata registrata ancora.
       </div>
     );
   }

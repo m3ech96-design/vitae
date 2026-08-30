@@ -33,7 +33,7 @@ export function CustomSectionView({
               onKeyDown={(e) => e.key === "Enter" && saveTitle()}
               className="focus-ring rounded-lg border border-aura-violet/40 bg-white/[0.04] px-2 py-1 font-display text-lg text-ink-100"
             />
-            <button onClick={saveTitle} className="focus-ring text-aura-cyan" aria-label="Salva Nome Sezione">
+            <button onClick={saveTitle} className="focus-ring text-aura-cyan" aria-label="Salva nome sezione">
               <Check size={16} />
             </button>
           </>
@@ -46,7 +46,7 @@ export function CustomSectionView({
                 setEditing(true);
               }}
               className="focus-ring text-ink-800 transition hover:text-ink-200"
-              aria-label="Rinomina Sezione"
+              aria-label="Rinomina sezione"
             >
               <Pencil size={13} />
             </button>

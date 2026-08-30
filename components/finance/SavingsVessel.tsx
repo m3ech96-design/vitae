@@ -32,7 +32,7 @@ export function SavingsVessel({
       <button
         onClick={() => setConfirmDelete(true)}
         className="focus-ring absolute -top-1 right-0 z-10 text-ink-800 opacity-0 transition hover:text-aura-pink group-hover:opacity-100"
-        aria-label="Rimuovi Obiettivo"
+        aria-label="Rimuovi obiettivo"
       >
         <X size={13} />
       </button>
@@ -81,7 +81,7 @@ export function SavingsVessel({
       {confirmDelete && (
         <ConfirmDialog
           title={`Eliminare "${goal.label}"?`}
-          description={`Perderai Il Progresso Di ${Math.round(goal.currentAmount)}€ Già Accumulato.`}
+          description={`Perderai il progresso di ${Math.round(goal.currentAmount)}€ già accumulato.`}
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             onRemove();

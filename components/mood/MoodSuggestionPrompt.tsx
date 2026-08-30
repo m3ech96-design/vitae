@@ -21,7 +21,7 @@ export function MoodSuggestionPrompt() {
   if (settingsOpen) {
     return (
       <PersonalCardSheet
-        title="Stati D'Animo"
+        title="Stati d'animo"
         onClose={() => {
           setSettingsOpen(false);
           dismissSuggestion();
@@ -82,7 +82,7 @@ export function MoodSuggestionPrompt() {
           onClick={(e) => e.stopPropagation()}
           className="glass-strong w-full max-w-sm rounded-t-xl3 p-6 sm:rounded-xl3"
         >
-          <p className="text-center font-display text-lg text-ink-100">Ti Senti Così?</p>
+          <p className="text-center font-display text-lg text-ink-100">Ti senti così?</p>
           <div className="mt-6 flex flex-wrap justify-center gap-5">
             {candidates.map((m) => (
               <button
@@ -115,7 +115,7 @@ export function MoodSuggestionPrompt() {
               disabled={Boolean(confirmingId)}
               className="focus-ring flex-1 text-center text-xs text-ink-800 hover:text-ink-400"
             >
-              Non Ora
+              Non ora
             </button>
             <span className="w-px shrink-0 bg-white/10" aria-hidden />
             <button
@@ -128,7 +128,7 @@ export function MoodSuggestionPrompt() {
           </div>
 
           <label className="mt-5 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
-            <span className="text-xs text-ink-600">Condividi Stato D&apos;Animo Su Vitaecom</span>
+            <span className="text-xs text-ink-600">Condividi stato d&apos;animo su Vitaecom</span>
             <Switch checked={shareMoodOnVitaecom} onChange={setShareMoodOnVitaecom} disabled={Boolean(confirmingId)} />
           </label>
         </motion.div>

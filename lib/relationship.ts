@@ -68,10 +68,10 @@ export function applyInteraction(
 }
 
 export function relationshipLabel(p: Person): string {
-  if (p.trueFriendshipScore >= 100) return "Amicizia Suprema";
-  if (p.trueFriendshipScore > 0) return "Vera Amicizia";
-  if (p.deepEnmityScore >= 100) return "Inimicizia Suprema";
-  if (p.deepEnmityScore > 0) return "Profonda Inimicizia";
+  if (p.trueFriendshipScore >= 100) return "Amicizia suprema";
+  if (p.trueFriendshipScore > 0) return "Vera amicizia";
+  if (p.deepEnmityScore >= 100) return "Inimicizia suprema";
+  if (p.deepEnmityScore > 0) return "Profonda inimicizia";
   if (p.relationshipScore > 15) return "Amicizia";
   if (p.relationshipScore < -15) return "Inimicizia";
   return "Indifferenza";

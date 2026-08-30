@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { Recurrence, Task } from "@/lib/types";
+import { Recurrence, Task, taskGroup } from "@/lib/types";
 import { TASK_COLORS } from "@/lib/task-colors";
 import { capitalizeSentence } from "@/lib/text";
 import { todayIso } from "@/lib/date-format";
 import { useTasks } from "@/lib/tasks-context";
+import { openTaskInCalendar } from "@/lib/ics";
 import { Button } from "../ui/Button";
 import { TaskFieldsForm, TaskDraftFields } from "./TaskFieldsForm";
 
@@ -60,8 +61,13 @@ export function NewTaskModal({ onClose, task }: { onClose: () => void; task?: Ta
 
   const patch = (p: Partial<TaskDraftFields>) => setDraft((d) => ({ ...d, ...p }));
 
+  // Data, orario di inizio e orario di fine (gruppo "tempo": Evento/Appuntamento) non
+  // può essere creata senza almeno data e orario di inizio — l'orario di fine resta
+  // facoltativo.
+  const canSubmit = Boolean(draft.title.trim() && draft.date && (taskGroup(draft.type) !== "tempo" || draft.time));
+
   const submit = () => {
-    if (!draft.title.trim() || !draft.date) return;
+    if (!canSubmit) return;
     const effectiveRecurrence: Recurrence = draft.type === "quotidiana" ? "quotidiano" : draft.recurrence;
     const payload = {
       title: capitalizeSentence(draft.title.trim()),
@@ -86,7 +92,10 @@ export function NewTaskModal({ onClose, task }: { onClose: () => void; task?: Ta
     if (task) {
       updateTask(task.id, payload);
     } else {
-      addTask(payload);
+      const created = addTask(payload);
+      // Ogni task, eccetto "Attività Quotidiana", crea l'evento nel calendario
+      // predefinito del sistema — rispettando data, orario di inizio e orario di fine.
+      if (created.type !== "quotidiana") openTaskInCalendar(created);
     }
     onClose();
   };
@@ -101,7 +110,7 @@ export function NewTaskModal({ onClose, task }: { onClose: () => void; task?: Ta
         className="glass-strong flex max-h-[92vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 relative z-10 flex items-center justify-between px-6 pt-6">
-          <p className="font-display text-lg text-ink-100">{task ? "Modifica Task" : "Nuova Task"}</p>
+          <p className="font-display text-lg text-ink-100">{task ? "Modifica task" : "Nuova task"}</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
@@ -112,8 +121,8 @@ export function NewTaskModal({ onClose, task }: { onClose: () => void; task?: Ta
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">
-          <Button className="w-full justify-center" onClick={submit} disabled={!draft.title.trim() || !draft.date}>
-            {task ? "Salva Modifiche" : "Crea Task"}
+          <Button className="w-full justify-center" onClick={submit} disabled={!canSubmit}>
+            {task ? "Salva modifiche" : "Crea Task"}
           </Button>
         </div>
       </motion.div>

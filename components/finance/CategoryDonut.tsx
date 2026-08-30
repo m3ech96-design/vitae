@@ -40,7 +40,7 @@ export function CategoryDonut({ byCategory, total }: { byCategory: Record<string
         })}
       </svg>
       <div className="min-w-0 flex-1 space-y-1.5">
-        {entries.length === 0 && <p className="text-xs text-ink-800">Nessuna Spesa Questo Mese.</p>}
+        {entries.length === 0 && <p className="text-xs text-ink-800">Nessuna spesa questo mese.</p>}
         {entries.slice(0, 5).map(([cat, amount]) => {
           const meta = EXPENSE_CATEGORY_META[cat];
           const Icon = meta.icon;

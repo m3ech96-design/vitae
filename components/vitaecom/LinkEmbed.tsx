@@ -12,7 +12,7 @@ export function LinkEmbed({ link }: { link: DetectedLink }) {
       <div className="relative -mx-4 -mt-4 mb-3 aspect-video overflow-hidden bg-void-900">
         <iframe
           src={src}
-          title="Video Incorporato"
+          title="Video incorporato"
           className="h-full w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen

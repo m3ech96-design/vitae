@@ -34,17 +34,17 @@ export function CorpoSection({
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <TextField
-          label="Peso (Kg)"
+          label="Peso (kg)"
           inputMode="decimal"
           placeholder="Es. 68"
           value={weightDraft}
           onChange={(e) => setWeightDraft(e.target.value)}
           onBlur={commitWeight}
           justSaved={saved("weight")}
-          hint={trackWeightHistory && weightEntries.length === 0 ? "Diventa La Prima Pesata In Salute" : undefined}
+          hint={trackWeightHistory && weightEntries.length === 0 ? "Diventa la prima pesata in Salute" : undefined}
         />
         <TextField
-          label="Altezza (Cm)"
+          label="Altezza (cm)"
           inputMode="decimal"
           placeholder="Es. 172"
           value={data.height ?? ""}
@@ -57,7 +57,7 @@ export function CorpoSection({
       </div>
 
       <TextArea
-        label="Obiettivo Fisico"
+        label="Obiettivo fisico"
         placeholder="Es. Correre Una Mezza Maratona"
         value={data.physicalGoal || ""}
         onChange={(e) => onUpdate({ physicalGoal: capitalizeSentence(e.target.value) })}

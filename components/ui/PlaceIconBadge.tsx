@@ -19,7 +19,7 @@ export function PlaceIconBadge({ place, size = 72 }: { place: Place | null; size
         background: meta.color,
         boxShadow: `0 0 8px ${meta.color}aa`,
       }}
-      title={`Sei A ${place.name}`}
+      title={`Sei a ${place.name}`}
     >
       <Icon size={Math.round(badgeSize * 0.56)} className="text-void-950" strokeWidth={2.6} />
     </span>

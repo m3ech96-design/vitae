@@ -36,7 +36,7 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
         className="glass-strong flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 relative z-10 flex items-center justify-between px-6 pt-6">
-          <p className="font-display text-lg text-ink-100">Resoconto Generale</p>
+          <p className="font-display text-lg text-ink-100">Resoconto generale</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
@@ -65,7 +65,7 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           {(profile.educationTitle || profile.studiedAt || profile.currentWorkplace || profile.occupation) && (
             <div className="space-y-1 text-sm">
-              <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">Istruzione E Lavoro</p>
+              <p className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">Istruzione e lavoro</p>
               {profile.educationTitle && <p className="text-ink-300">{profile.educationTitle}</p>}
               {profile.occupation && <p className="text-ink-300">{profile.occupation}</p>}
               {profile.studiedAt && <p className="text-ink-600">Ha Studiato A {profile.studiedAt}</p>}
@@ -118,7 +118,7 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Ritmo E Salute</p>
+            <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Ritmo e salute</p>
             <div className="grid grid-cols-2 gap-2">
               <GlassCard className="flex items-center gap-2.5 p-3">
                 <Flame size={16} className="text-aura-amber" />

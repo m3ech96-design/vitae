@@ -26,7 +26,7 @@ export function NearbyPlacePrompt() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm text-ink-100">
-                Sei Attualmente A <span className="font-display">{nearbyPlace.name}</span>?
+                Sei attualmente a <span className="font-display">{nearbyPlace.name}</span>?
               </p>
             </div>
             <button

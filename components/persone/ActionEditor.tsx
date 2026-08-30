@@ -56,7 +56,7 @@ export function ActionEditor({
           onClick={() => setOpen(true)}
           className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl2 border border-dashed border-white/15 py-2.5 text-xs text-ink-600 hover:border-aura-violet/50 hover:text-ink-200"
         >
-          <Plus size={14} /> Aggiungi Azione
+          <Plus size={14} /> Aggiungi azione
         </button>
       ) : (
         <div className="space-y-2.5 rounded-xl2 border border-aura-violet/30 bg-white/[0.03] p-3">
@@ -81,7 +81,7 @@ export function ActionEditor({
               onClick={() => setMode("orario")}
               className={`focus-ring rounded-full border px-3 py-1.5 text-xs ${mode === "orario" ? "border-aura-cyan/60 bg-aura-cyan/15 text-ink-100" : "border-white/10 text-ink-600"}`}
             >
-              Orario Fisso
+              Orario fisso
             </button>
           </div>
           {mode === "orario" && (

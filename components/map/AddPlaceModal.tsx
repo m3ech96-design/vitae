@@ -78,7 +78,7 @@ export function AddPlaceModal({
     if (needsOwner && linkedPersonId !== "user") {
       const person = people.find((p) => p.id === linkedPersonId);
       if (person) {
-        const label = type === "casa" ? "Abita A" : "Lavora Presso";
+        const label = type === "casa" ? "Abita a" : "Lavora Presso";
         const field: CustomField = { id: newId(), label, value: finalName };
         if (type === "casa") {
           updatePerson(person.id, { homeCustomFields: [...person.homeCustomFields, field] });
@@ -102,7 +102,7 @@ export function AddPlaceModal({
         className="glass-strong flex max-h-[92vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 relative z-10 flex items-center justify-between px-6 pt-6">
-          <p className="font-display text-lg text-ink-100">Aggiungi Luogo</p>
+          <p className="font-display text-lg text-ink-100">Aggiungi luogo</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
@@ -132,7 +132,7 @@ export function AddPlaceModal({
           </div>
 
           <TextField
-            label="Rinomina Luogo (Facoltativo)"
+            label="Rinomina luogo (facoltativo)"
             placeholder="Es. Il Nostro Posto Preferito"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -149,7 +149,7 @@ export function AddPlaceModal({
                 className="focus-ring flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-600 hover:text-ink-200"
               >
                 <ImagePlus size={14} />
-                {photo ? "Foto Selezionata (Tocca Per Ricentrare)" : "Aggiungi Foto (Facoltativo)"}
+                {photo ? "Foto selezionata (tocca per ricentrare)" : "Aggiungi Foto (Facoltativo)"}
               </button>
             )}
           />
@@ -157,7 +157,7 @@ export function AddPlaceModal({
           {needsOwner && (
             <label className="block">
               <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-                {type === "casa" ? "A Chi Appartiene" : "Chi Lavora Qui"}
+                {type === "casa" ? "A chi appartiene" : "Chi Lavora Qui"}
               </span>
               <select
                 value={linkedPersonId}
@@ -179,10 +179,10 @@ export function AddPlaceModal({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-                Posizione Sulla Mappa
+                Posizione sulla mappa
               </span>
               <span className="text-[11px] text-ink-800">
-                {resolvingAddress ? "Sto Cercando L'Indirizzo…" : coords ? "Tocca Per Rifinire" : "Tocca Per Segnare Il Punto Esatto"}
+                {resolvingAddress ? "Sto cercando l'indirizzo…" : coords ? "Tocca per rifinire" : "Tocca Per Segnare Il Punto Esatto"}
               </span>
             </div>
             <div className="h-40 overflow-hidden rounded-xl2 border border-white/10">
@@ -210,7 +210,7 @@ export function AddPlaceModal({
             onClick={submit}
             disabled={!address.trim() || !coords}
           >
-            Aggiungi Luogo
+            Aggiungi luogo
           </Button>
         </div>
       </motion.div>

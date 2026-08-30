@@ -22,13 +22,13 @@ export interface LiveLocationState {
 function translateGeolocationError(err: GeolocationPositionError): string {
   switch (err.code) {
     case err.PERMISSION_DENIED:
-      return "Permesso Di Posizione Negato — Puoi Riattivarlo Dalle Impostazioni Del Telefono O Del Browser.";
+      return "Permesso di posizione negato — puoi riattivarlo dalle impostazioni del telefono o del browser.";
     case err.POSITION_UNAVAILABLE:
-      return "Posizione Non Disponibile Al Momento — Capita, Specie Al Chiuso: Riprova Da Solo Non Appena C'È Segnale.";
+      return "Posizione non disponibile al momento — capita, specie al chiuso: riprova da solo non appena c'è segnale.";
     case err.TIMEOUT:
-      return "Il Rilevamento Della Posizione Sta Impiegando Più Del Previsto.";
+      return "Il rilevamento della posizione sta impiegando più del previsto.";
     default:
-      return "Posizione Non Disponibile Al Momento.";
+      return "Posizione non disponibile al momento.";
   }
 }
 
@@ -52,7 +52,7 @@ export function useLiveLocation(enabled: boolean = true): LiveLocationState {
       return;
     }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setError("Geolocalizzazione Non Disponibile Su Questo Dispositivo.");
+      setError("Geolocalizzazione non disponibile su questo dispositivo.");
       return;
     }
 

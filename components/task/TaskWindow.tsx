@@ -80,7 +80,7 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
             </span>
             {category === "non-completate" && (
               <span className="flex items-center gap-1 rounded-full border border-aura-pink/40 px-3 py-1 text-aura-pink">
-                <AlertTriangle size={11} /> Non Completata
+                <AlertTriangle size={11} /> Non completata
               </span>
             )}
             {tint && (
@@ -164,7 +164,7 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
 
           {task.type === "spesa" && task.shoppingList.length > 0 && (
             <div>
-              <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Lista Della Spesa</p>
+              <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Lista della spesa</p>
               <div className="space-y-2">
                 {task.shoppingList.map((it) => (
                   <button
@@ -192,15 +192,15 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
             className="w-full justify-center"
             onClick={() => setConfirmDelete(true)}
           >
-            <Trash2 size={13} /> Elimina Task
+            <Trash2 size={13} /> Elimina task
           </Button>
         </div>
       </motion.div>
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Eliminare Questa Task?"
-          description="Non Potrai Più Recuperarla, Con Tutte Le Sue Sub-Task."
+          title="Eliminare questa task?"
+          description="Non potrai più recuperarla, con tutte le sue sub-task."
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             removeTask(task.id);

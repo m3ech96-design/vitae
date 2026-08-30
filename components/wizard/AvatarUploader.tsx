@@ -26,7 +26,7 @@ export function AvatarUploader({
               type="button"
               onClick={open}
               className="focus-ring absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full bg-aura-gradient text-void-950 shadow-glow-sm transition-transform active:scale-90"
-              aria-label="Carica Immagine Profilo"
+              aria-label="Carica immagine profilo"
             >
               <Camera size={16} strokeWidth={2.4} />
             </button>

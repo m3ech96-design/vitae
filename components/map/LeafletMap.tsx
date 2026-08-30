@@ -73,7 +73,7 @@ function LiveLocationLayer({ recenterOnce = false }: { recenterOnce?: boolean })
           />
         );
       })}
-      <Marker position={[position.lat, position.lng]} icon={icon} title="La Tua Posizione Attuale" />
+      <Marker position={[position.lat, position.lng]} icon={icon} title="La tua posizione attuale" />
     </>
   );
 }
@@ -125,13 +125,13 @@ export function LeafletMap({
             key={p.id}
             position={[p.lat, p.lng]}
             icon={icon}
-            title={`${p.name} — ${meta.label}${p.currentVisitStartedAt ? " — Sei Qui" : ""}`}
+            title={`${p.name} — ${meta.label}${p.currentVisitStartedAt ? " — sei qui" : ""}`}
             eventHandlers={{ click: () => onMarkerClick?.(p) }}
           />
         );
       })}
       {draftMarker && (
-        <Marker position={[draftMarker.lat, draftMarker.lng]} icon={draftIcon} title="Punto Selezionato Sulla Mappa" />
+        <Marker position={[draftMarker.lat, draftMarker.lng]} icon={draftIcon} title="Punto selezionato sulla mappa" />
       )}
       {pickMode && onPick && <ClickCatcher onPick={onPick} />}
       {showUserLocation && <LiveLocationLayer recenterOnce={recenterOnUserLocation} />}

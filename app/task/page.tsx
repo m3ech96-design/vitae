@@ -19,7 +19,7 @@ import { DayStrip } from "@/components/task/DayStrip";
 const OTHER_TYPES: TaskType[] = ["evento", "appuntamento", "promemoria", "obiettivo", "spesa"];
 const CATEGORIES: { id: TaskCategory; label: string }[] = [
   { id: "attive", label: "Attive" },
-  { id: "non-completate", label: "Non Completate" },
+  { id: "non-completate", label: "Non completate" },
   { id: "completate", label: "Completate" },
 ];
 
@@ -64,7 +64,7 @@ export default function TaskPage() {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Task</p>
-          <h1 className="mt-1 font-display text-2xl text-ink-100">Le Tue Giornate</h1>
+          <h1 className="mt-1 font-display text-2xl text-ink-100">Le tue giornate</h1>
         </div>
         <button
           onClick={() => setAddOpen(true)}
@@ -98,7 +98,7 @@ export default function TaskPage() {
           {dailyActivities.length > 0 && (
             <div className="mt-7">
               <p className="mb-3 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-                Attività Quotidiane
+                Attività quotidiane
               </p>
               <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
                 {dailyActivities.map((t) => {
@@ -191,10 +191,10 @@ export default function TaskPage() {
               {otherTasks.length === 0 && (
                 <p className="py-10 text-center text-sm text-ink-800">
                   {categoryFilter === "attive"
-                    ? "Nessuna Task Attiva Per Ora."
+                    ? "Nessuna task attiva per ora."
                     : categoryFilter === "non-completate"
-                    ? "Nessuna Task Scaduta Senza Spunta."
-                    : "Nessuna Task Completata Ancora."}
+                    ? "Nessuna task scaduta senza spunta."
+                    : "Nessuna task completata ancora."}
                 </p>
               )}
               <AnimatePresence initial={false}>
@@ -226,7 +226,7 @@ export default function TaskPage() {
           />
           <div className="mt-5 space-y-2.5">
             {calendarTasks.length === 0 && (
-              <p className="py-10 text-center text-sm text-ink-800">Nessuna Task In Questo Giorno.</p>
+              <p className="py-10 text-center text-sm text-ink-800">Nessuna task in questo giorno.</p>
             )}
             {calendarTasks.map((t) => (
               <TaskCard

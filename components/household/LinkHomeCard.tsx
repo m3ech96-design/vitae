@@ -46,10 +46,10 @@ export function LinkHomeCard() {
     <GlassCard glow="violet" className="p-5">
       <div className="mb-3 flex items-center gap-2">
         <Home size={16} className="text-aura-violet" />
-        <p className="font-display text-sm text-ink-100">Collega La Tua Casa</p>
+        <p className="font-display text-sm text-ink-100">Collega la tua casa</p>
       </div>
       <p className="mb-4 text-sm text-ink-600">
-        Serve Una Volta Sola: Da Qui In Poi L&apos;App Riconosce Quando Sei In Casa O Fuori.
+        Serve una volta sola: da qui in poi l&apos;app riconosce quando sei in casa o fuori.
       </p>
 
       <div className="space-y-3">
@@ -66,7 +66,7 @@ export function LinkHomeCard() {
           {!coords && (
             <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center p-3">
               <span className="glass-strong flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs text-ink-100">
-                <MapPin size={13} className="text-aura-violet" /> Tocca Dove Abiti
+                <MapPin size={13} className="text-aura-violet" /> Tocca dove abiti
               </span>
             </div>
           )}
@@ -75,7 +75,7 @@ export function LinkHomeCard() {
         {coords && (
           <div>
             <AddressAutocomplete
-              label={resolvingAddress ? "Indirizzo (Sto Cercando…)" : "Conferma L'Indirizzo"}
+              label={resolvingAddress ? "Indirizzo (sto cercando…)" : "Conferma L'Indirizzo"}
               placeholder="Es. Via Roma 12, Milano"
               value={address}
               onChange={setAddress}
@@ -97,7 +97,7 @@ export function LinkHomeCard() {
             onClick={() => setSearchOpen((v) => !v)}
             className="focus-ring text-[11px] text-ink-800 hover:text-ink-400"
           >
-            {searchOpen ? "Nascondi Ricerca Indirizzo" : "Preferisci Cercare L'Indirizzo Invece?"}
+            {searchOpen ? "Nascondi ricerca indirizzo" : "Preferisci Cercare L'Indirizzo Invece?"}
           </button>
         )}
 
@@ -115,7 +115,7 @@ export function LinkHomeCard() {
         )}
 
         <Button className="w-full justify-center" onClick={confirm} disabled={!coords || !address.trim()}>
-          Conferma Casa
+          Conferma casa
         </Button>
       </div>
     </GlassCard>

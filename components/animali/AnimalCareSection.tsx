@@ -27,7 +27,7 @@ export function AnimalCareSection({
     <div className="space-y-7">
       <label className="block">
         <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-          Chi È Il Padrone?
+          Chi è il padrone?
         </span>
         <select
           value={person.ownerId || "user"}

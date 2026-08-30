@@ -121,7 +121,7 @@ export function ThumbGridField({
                 className="focus-ring flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-600 hover:text-ink-200"
               >
                 <ImagePlus size={14} />
-                {image ? "Miniatura Selezionata (Tocca Per Ricentrare)" : "Aggiungi Miniatura"}
+                {image ? "Miniatura selezionata (tocca per ricentrare)" : "Aggiungi Miniatura"}
               </button>
             )}
           />

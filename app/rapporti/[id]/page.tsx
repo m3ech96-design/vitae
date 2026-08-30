@@ -52,9 +52,9 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
   if (!person) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 text-center">
-        <p className="text-sm text-ink-600">Questa Persona Non Esiste Più.</p>
+        <p className="text-sm text-ink-600">Questa persona non esiste più.</p>
         <button onClick={() => router.push("/rapporti")} className="focus-ring mt-4 text-sm text-aura-cyan">
-          Torna Ai Rapporti
+          Torna ai rapporti
         </button>
       </div>
     );
@@ -125,7 +125,7 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
       )}
 
       <div className="mt-8">
-        <p className="mb-3 font-display text-sm text-ink-100">Nuova Interazione</p>
+        <p className="mb-3 font-display text-sm text-ink-100">Nuova interazione</p>
         <InteractionPicker positiveOptions={positiveOptions} negativeOptions={negativeOptions} onPick={handlePick} />
       </div>
 

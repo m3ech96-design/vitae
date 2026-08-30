@@ -25,7 +25,7 @@ export function CreateSectionControl({ onCreate }: { onCreate: (title: string) =
           onClick={() => setOpen(true)}
           className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl2 border border-aura-cyan/30 bg-aura-cyan/[0.04] py-3.5 font-display text-sm text-ink-200 transition hover:border-aura-cyan/60 hover:shadow-glow-cyan"
         >
-          <FolderPlus size={16} /> Crea Sezione
+          <FolderPlus size={16} /> Crea sezione
         </button>
       ) : (
         <motion.div
@@ -35,7 +35,7 @@ export function CreateSectionControl({ onCreate }: { onCreate: (title: string) =
         >
           <label className="block">
             <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-              Nome Della Nuova Sezione
+              Nome della nuova sezione
             </span>
             <input
               autoFocus

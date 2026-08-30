@@ -54,10 +54,10 @@ export async function importBackup(file: File): Promise<void> {
   try {
     backup = JSON.parse(text);
   } catch {
-    throw new Error("Il File Non È Un Backup Valido.");
+    throw new Error("Il file non è un backup valido.");
   }
   if (!backup || backup.version !== 1 || !backup.data) {
-    throw new Error("Il File Non È Un Backup Valido.");
+    throw new Error("Il file non è un backup valido.");
   }
   Object.entries(backup.data).forEach(([key, value]) => {
     window.localStorage.setItem(key, value);

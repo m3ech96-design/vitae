@@ -118,11 +118,11 @@ export function TaskFieldsForm({
         <>
           <div className="grid grid-cols-3 gap-3">
             <TextField label="Data" type="date" value={value.date} onChange={(e) => onChange({ date: e.target.value })} />
-            <TextField label="Ora Inizio" type="time" value={value.time} onChange={(e) => onChange({ time: e.target.value })} />
-            <TextField label="Ora Fine" type="time" value={value.endTime} onChange={(e) => onChange({ endTime: e.target.value })} />
+            <TextField label="Ora inizio" type="time" value={value.time} onChange={(e) => onChange({ time: e.target.value })} />
+            <TextField label="Ora fine" type="time" value={value.endTime} onChange={(e) => onChange({ endTime: e.target.value })} />
           </div>
           <p className="-mt-3 text-[11px] text-ink-800">
-            Non Si Spunta A Mano: Si Completa Da Sola Quando L&apos;Ora Di Fine Arriva.
+            Non si spunta a mano: si completa da sola quando l&apos;ora di fine arriva.
           </p>
         </>
       )}
@@ -130,12 +130,12 @@ export function TaskFieldsForm({
       {group === "scadenza" && (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <TextField label="Data Inizio" type="date" value={value.date} onChange={(e) => onChange({ date: e.target.value })} />
-            <TextField label="Ora Inizio" type="time" value={value.time} onChange={(e) => onChange({ time: e.target.value })} />
+            <TextField label="Data inizio" type="date" value={value.date} onChange={(e) => onChange({ date: e.target.value })} />
+            <TextField label="Ora inizio" type="time" value={value.time} onChange={(e) => onChange({ time: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <TextField label="Data Scadenza" type="date" value={value.dueDate} onChange={(e) => onChange({ dueDate: e.target.value })} />
-            <TextField label="Ora Scadenza" type="time" value={value.dueTime} onChange={(e) => onChange({ dueTime: e.target.value })} />
+            <TextField label="Data scadenza" type="date" value={value.dueDate} onChange={(e) => onChange({ dueDate: e.target.value })} />
+            <TextField label="Ora scadenza" type="time" value={value.dueTime} onChange={(e) => onChange({ dueTime: e.target.value })} />
           </div>
         </>
       )}
@@ -143,7 +143,7 @@ export function TaskFieldsForm({
       {group !== "quotidiana" && (
         <label className="block">
           <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-            Avviso Anticipato
+            Avviso anticipato
           </span>
           <select
             value={value.reminderOffset}
@@ -182,7 +182,7 @@ export function TaskFieldsForm({
       {!fixedType && effectiveRecurrence === "personalizzato" && (
         <div>
           <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-            In Quali Giorni
+            In quali giorni
           </span>
           <div className="flex flex-wrap gap-2">
             {WEEKDAYS.map((d) => (
@@ -254,7 +254,7 @@ export function TaskFieldsForm({
       />
 
       <label className="block">
-        <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">Luogo Collegato</span>
+        <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">Luogo collegato</span>
         <select
           value={value.linkedPlaceId}
           onChange={(e) => onChange({ linkedPlaceId: e.target.value })}

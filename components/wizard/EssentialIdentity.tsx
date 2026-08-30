@@ -64,10 +64,10 @@ export function EssentialIdentity() {
             <span className="h-2 w-2 rounded-full bg-aura-gradient shadow-glow-sm" />
             <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Vitae</p>
           </div>
-          <h1 className="font-display text-2xl text-ink-100">Iniziamo Da Te</h1>
+          <h1 className="font-display text-2xl text-ink-100">Iniziamo da te</h1>
           <p className="mt-1.5 text-sm text-ink-600">
-            Il Resto — Valori, Interessi, Lavoro E Molto Altro — Lo Scoprirai Con Calma, Quando Vuoi,
-            Da &quot;Il Tuo Profilo&quot;.
+            Il resto — valori, interessi, lavoro e molto altro — lo scoprirai con calma, quando vuoi,
+            da &quot;il tuo profilo&quot;.
           </p>
         </Reveal>
 
@@ -109,7 +109,7 @@ export function EssentialIdentity() {
             type="date"
             value={profile.birthday || ""}
             onChange={(e) => updateProfile({ birthday: e.target.value })}
-            hint={age !== null ? `Età Calcolata: ${age} Anni` : undefined}
+            hint={age !== null ? `Età calcolata: ${age} anni` : undefined}
           />
           <label className="block">
             <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">

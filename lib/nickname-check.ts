@@ -9,7 +9,7 @@ export function normalizeNickname(raw: string): string {
 export function nicknameFormatError(raw: string): string | undefined {
   const n = normalizeNickname(raw);
   if (!n) return undefined;
-  if (!RULE.test(n)) return "Solo Minuscolo, Numeri, Punto E Underscore — Da 3 A 24 Caratteri.";
+  if (!RULE.test(n)) return "Solo minuscolo, numeri, punto e underscore — da 3 a 24 caratteri.";
   return undefined;
 }
 

@@ -41,7 +41,7 @@ export function NeedFulfillmentCelebration({ label, onDone }: { label: string | 
             transition={{ delay: 0.35, duration: 0.6, type: "spring", stiffness: 190, damping: 18 }}
             className="relative text-center"
           >
-            <p className="font-display text-2xl text-ink-100">Bisogno Esaudito</p>
+            <p className="font-display text-2xl text-ink-100">Bisogno esaudito</p>
             <p className="mt-1.5 text-sm text-ink-400">{label}</p>
           </motion.div>
         </motion.div>

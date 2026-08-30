@@ -58,7 +58,7 @@ export function VitaecomAccountCard({ account, posts }: { account: VitaecomAccou
         <Link
           href={`/vitaecom/chat/${account.id}`}
           className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-ink-400 transition hover:border-[#B79A6B]/50 hover:text-[#B79A6B]"
-          aria-label={`Apri La Chat Con ${account.nickname}`}
+          aria-label={`Apri la chat con ${account.nickname}`}
         >
           <MessageSquare size={14} />
         </Link>

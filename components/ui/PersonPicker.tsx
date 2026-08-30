@@ -94,7 +94,7 @@ export function PersonPicker({
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cerca Per Nome…"
+                  placeholder="Cerca per nome…"
                   className="w-full bg-transparent text-sm text-ink-100 placeholder:text-ink-800 focus:outline-none"
                 />
               </div>
@@ -130,7 +130,7 @@ export function PersonPicker({
                   <span className="flex-1 text-sm">{unknownOption.label}</span>
                 </button>
               )}
-              {filtered.length === 0 && <p className="py-8 text-center text-xs text-ink-800">Nessuna Persona Trovata.</p>}
+              {filtered.length === 0 && <p className="py-8 text-center text-xs text-ink-800">Nessuna persona trovata.</p>}
               {filtered.map((o) => (
                 <button
                   key={o.id}

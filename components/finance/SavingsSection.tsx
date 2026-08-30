@@ -43,14 +43,14 @@ export function SavingsSection() {
         <div className="flex items-center justify-between">
           <div>
             <p className="font-display text-2xl text-ink-100">{balance.toLocaleString("it-IT")}€</p>
-            <p className="text-xs text-ink-600">Nel Salvadanaio</p>
+            <p className="text-xs text-ink-600">Nel salvadanaio</p>
           </div>
           {!depositing && (
             <button
               onClick={() => setDepositing(true)}
               className="focus-ring rounded-full border border-aura-emerald/30 px-3.5 py-2 text-xs text-ink-200 hover:border-aura-emerald/60"
             >
-              Deposita O Preleva
+              Deposita o preleva
             </button>
           )}
         </div>
@@ -100,7 +100,7 @@ export function SavingsSection() {
       </div>
 
       <p className="mb-3 flex items-center gap-1.5 text-xs text-ink-600">
-        <Target size={12} /> Obiettivi Di Risparmio
+        <Target size={12} /> Obiettivi di risparmio
       </p>
       <div className="flex flex-wrap gap-4">
         {savingsGoals.map((g) => (
@@ -114,7 +114,7 @@ export function SavingsSection() {
       </div>
 
       <div className="mt-4">
-        <InlineAddPanel label="Nuovo Obiettivo" canConfirm={Boolean(goalLabel.trim() && goalTarget)} onConfirm={submitGoal}>
+        <InlineAddPanel label="Nuovo obiettivo" canConfirm={Boolean(goalLabel.trim() && goalTarget)} onConfirm={submitGoal}>
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Nome" placeholder="Es. Viaggio In Giappone" value={goalLabel} onChange={(e) => setGoalLabel(e.target.value)} />
             <TextField label="Obiettivo (€)" inputMode="decimal" value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} />

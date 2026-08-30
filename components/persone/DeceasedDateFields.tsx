@@ -31,7 +31,7 @@ export function DeceasedDateFields({
           onChange={(e) => onChange({ deceasedDay: e.target.value ? Number(e.target.value) : undefined })}
           className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] px-2 py-2.5 text-sm text-ink-100"
         >
-          <option value="">Non Lo So</option>
+          <option value="">Non lo so</option>
           {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
@@ -44,7 +44,7 @@ export function DeceasedDateFields({
           onChange={(e) => onChange({ deceasedMonth: e.target.value ? Number(e.target.value) : undefined })}
           className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] px-2 py-2.5 text-sm text-ink-100"
         >
-          <option value="">Non Lo So</option>
+          <option value="">Non lo so</option>
           {MONTHS.map((m, i) => (
             <option key={m} value={i + 1}>{m}</option>
           ))}

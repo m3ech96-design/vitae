@@ -63,7 +63,7 @@ function ChatList() {
       <div className="mt-6 space-y-2.5">
         {knownAccounts.length === 0 && (
           <p className="mt-10 text-center text-sm text-ink-800">
-            Non Conosci Ancora Nessuno Con Cui Chattare — Vedi La Scheda &quot;Persone&quot;.
+            Non conosci ancora nessuno con cui chattare — vedi la scheda &quot;persone&quot;.
           </p>
         )}
         {knownAccounts.map((a) => {
@@ -83,7 +83,7 @@ function ChatList() {
 
       {notifOpen && (
         <PersonalCardSheet title="Notifiche" onClose={() => setNotifOpen(false)}>
-          {notifications.length === 0 && <p className="text-sm text-ink-800">Nessuna Notifica Ancora.</p>}
+          {notifications.length === 0 && <p className="text-sm text-ink-800">Nessuna notifica ancora.</p>}
           {notifications.map((n) => {
             const account = resolveAccount(n.fromAccountId, userAccount);
             return (
@@ -98,17 +98,17 @@ function ChatList() {
                     <span className="text-ink-100">{account.nickname}</span>{" "}
                     {n.kind === "like" ? (
                       <>
-                        <Gem size={10} className="mb-0.5 inline" /> Ha Messo Mi Piace Al Tuo Post
+                        <Gem size={10} className="mb-0.5 inline" /> ha messo Mi Piace al tuo post
                       </>
                     ) : n.kind === "comment" ? (
-                      "Ha Commentato Il Tuo Post"
+                      "ha commentato il tuo post"
                     ) : n.kind === "know_request" ? (
                       <>
-                        <UserPlus size={10} className="mb-0.5 inline" /> Vuole Conoscerti
+                        <UserPlus size={10} className="mb-0.5 inline" /> vuole conoscerti
                       </>
                     ) : (
                       <>
-                        <UserCheck size={10} className="mb-0.5 inline" /> Ha Accettato!
+                        <UserCheck size={10} className="mb-0.5 inline" /> ha accettato!
                       </>
                     )}
                   </p>

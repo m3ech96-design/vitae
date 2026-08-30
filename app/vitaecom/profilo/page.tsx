@@ -45,7 +45,7 @@ function Bacheca() {
         onClick={() => setComposerOpen(true)}
         className="focus-ring mt-7 flex w-full items-center justify-center gap-2 rounded-xl2 border border-dashed border-white/15 py-3.5 text-sm text-ink-600 transition hover:border-[#B79A6B]/50 hover:text-ink-200"
       >
-        <Aperture size={16} /> Imprimi Momento
+        <Aperture size={16} /> Imprimi momento
       </button>
 
       <div className="mt-6 space-y-5">

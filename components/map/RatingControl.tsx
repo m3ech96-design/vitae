@@ -31,7 +31,7 @@ export function RatingControl({
           type="button"
           onClick={() => onChange(Math.max(0, value - ratingStep()))}
           className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-200 transition hover:border-aura-pink/50"
-          aria-label="Peggiora Valutazione"
+          aria-label="Peggiora valutazione"
         >
           <Minus size={15} />
         </button>
@@ -39,7 +39,7 @@ export function RatingControl({
           type="button"
           onClick={() => onChange(Math.min(100, value + ratingStep()))}
           className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-200 transition hover:border-aura-cyan/50"
-          aria-label="Migliora Valutazione"
+          aria-label="Migliora valutazione"
         >
           <Plus size={15} />
         </button>

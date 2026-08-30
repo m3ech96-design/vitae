@@ -10,7 +10,7 @@ import { PersonalCardSheet } from "./PersonalCardSheet";
 type WizardKey = "mood" | "needs";
 
 const MENU_ITEMS: { key: WizardKey; label: string; icon: typeof Smile }[] = [
-  { key: "mood", label: "Stati D'Animo", icon: Smile },
+  { key: "mood", label: "Stati d'animo", icon: Smile },
   { key: "needs", label: "Bisogni", icon: Heart },
 ];
 
@@ -82,7 +82,7 @@ export function PersonalCardMenu() {
   }, [open]);
 
   const wizardTitle =
-    activeWizard === "mood" ? "Stati D'Animo" : activeWizard === "needs" ? "Bisogni Di Questa Settimana" : "";
+    activeWizard === "mood" ? "Stati d'animo" : activeWizard === "needs" ? "Bisogni di questa settimana" : "";
 
   return (
     <>
@@ -93,7 +93,7 @@ export function PersonalCardMenu() {
             e.stopPropagation();
             setOpen((v) => !v);
           }}
-          aria-label="Stati D'Animo, Bisogni"
+          aria-label="Stati d'animo, bisogni"
           aria-haspopup="menu"
           aria-expanded={open}
           className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-aura-violet/50 hover:text-ink-100"

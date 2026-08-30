@@ -71,7 +71,7 @@ export interface TriggerDefinition {
 
 const TASK_TRIGGERS: TriggerDefinition[] = (Object.keys(TASK_TYPE_LABEL) as TaskType[]).map((type) => ({
   key: `task:${type}`,
-  label: `Completare Una Task: ${TASK_TYPE_LABEL[type]}`,
+  label: `Completare una task: ${TASK_TYPE_LABEL[type]}`,
   category: "Task",
   defaultMoodIds:
     type === "quotidiana"
@@ -87,7 +87,7 @@ const TASK_TRIGGERS: TriggerDefinition[] = (Object.keys(TASK_TYPE_LABEL) as Task
 
 const PLACE_TRIGGERS: TriggerDefinition[] = (Object.keys(PLACE_TYPE_META) as PlaceType[]).map((type) => ({
   key: `luogo:${type}`,
-  label: `Uscire Da Un Luogo: ${PLACE_TYPE_META[type].label}`,
+  label: `Uscire da un luogo: ${PLACE_TYPE_META[type].label}`,
   category: "Luoghi",
   defaultMoodIds:
     type === "palestra"
@@ -105,77 +105,77 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
   ...TASK_TRIGGERS,
   {
     key: "task:streak",
-    label: "Uno Streak Di Task Quotidiane Raggiunge Un Nuovo Traguardo",
+    label: "Uno streak di task quotidiane raggiunge un nuovo traguardo",
     category: "Task",
     defaultMoodIds: ["orgoglioso", "energico"],
   },
   ...PLACE_TRIGGERS,
-  { key: "luogo:nuovo", label: "Registrare Un Luogo Mai Visto Prima", category: "Luoghi", defaultMoodIds: ["curioso"] },
+  { key: "luogo:nuovo", label: "Registrare un luogo mai visto prima", category: "Luoghi", defaultMoodIds: ["curioso"] },
   {
     key: "luogo:valutazione-alta",
-    label: 'Valutare Un Luogo "Adoro" (80+)',
+    label: 'Valutare un luogo "Adoro" (80+)',
     category: "Luoghi",
     defaultMoodIds: ["felice"],
   },
   {
     key: "luogo:valutazione-bassa",
-    label: 'Valutare Un Luogo "Pessimo" (Sotto 20)',
+    label: 'Valutare un luogo "Pessimo" (sotto 20)',
     category: "Luoghi",
     defaultMoodIds: ["frustrato"],
   },
-  { key: "rapporti:positiva", label: "Interazione Positiva Con Una Persona", category: "Rapporti", defaultMoodIds: ["felice"] },
-  { key: "rapporti:negativa", label: "Interazione Negativa Con Una Persona", category: "Rapporti", defaultMoodIds: ["frustrato"] },
+  { key: "rapporti:positiva", label: "Interazione positiva con una persona", category: "Rapporti", defaultMoodIds: ["felice"] },
+  { key: "rapporti:negativa", label: "Interazione negativa con una persona", category: "Rapporti", defaultMoodIds: ["frustrato"] },
   {
     key: "rapporti:vera-amicizia",
-    label: "Un Legame Diventa Vera Amicizia",
+    label: "Un legame diventa vera amicizia",
     category: "Rapporti",
     defaultMoodIds: ["felice", "appagato"],
   },
   {
     key: "rapporti:amore",
-    label: "Il Legame Con Il Partner Si Rafforza",
+    label: "Il legame con il partner si rafforza",
     category: "Rapporti",
     defaultMoodIds: ["innamorato", "romantico"],
   },
-  { key: "scoperte:salvate", label: "Salvare Nuove Scoperte Su Una Persona", category: "Scoperte", defaultMoodIds: ["curioso"] },
+  { key: "scoperte:salvate", label: "Salvare nuove scoperte su una persona", category: "Scoperte", defaultMoodIds: ["curioso"] },
   {
     key: "scoperte:nome-parente",
-    label: "Scoprire Il Nome Di Un Parente Sconosciuto",
+    label: "Scoprire il nome di un parente sconosciuto",
     category: "Scoperte",
     defaultMoodIds: ["felice", "nostalgico"],
   },
-  { key: "salute:allenamento", label: "Registrare Un Allenamento", category: "Salute", defaultMoodIds: ["energico", "stanco"] },
-  { key: "finanze:spesa-registrata", label: "Registrare Una Spesa", category: "Finanze", defaultMoodIds: [] },
+  { key: "salute:allenamento", label: "Registrare un allenamento", category: "Salute", defaultMoodIds: ["energico", "stanco"] },
+  { key: "finanze:spesa-registrata", label: "Registrare una spesa", category: "Finanze", defaultMoodIds: [] },
   {
     key: "finanze:sopra-budget",
-    label: "La Proiezione Di Fine Mese Supera Il Budget",
+    label: "La proiezione di fine mese supera il budget",
     category: "Finanze",
     defaultMoodIds: ["frustrato"],
   },
   {
     key: "finanze:sotto-budget",
-    label: "Restare Sotto Budget A Fine Mese",
+    label: "Restare sotto budget a fine mese",
     category: "Finanze",
     defaultMoodIds: ["sollevato", "orgoglioso"],
   },
   {
     key: "animali:interazione-positiva",
-    label: "Interazione Positiva Con Un Animale",
+    label: "Interazione positiva con un animale",
     category: "Animali",
     defaultMoodIds: ["felice"],
   },
   {
     key: "animali:interazione-negativa",
-    label: "Interazione Negativa Con Un Animale",
+    label: "Interazione negativa con un animale",
     category: "Animali",
     defaultMoodIds: ["frustrato"],
   },
-  { key: "animali:sfamato", label: "Dar Da Mangiare A Un Animale Affamato", category: "Animali", defaultMoodIds: ["sollevato"] },
+  { key: "animali:sfamato", label: "Dar da mangiare a un animale affamato", category: "Animali", defaultMoodIds: ["sollevato"] },
   {
     key: "famiglia:nuovo-legame",
-    label: "Collegare Un Nuovo Parente Nell'Albero Genealogico",
+    label: "Collegare un nuovo parente nell'albero genealogico",
     category: "Famiglia",
     defaultMoodIds: ["curioso", "nostalgico"],
   },
-  { key: "bisogni:esaudito", label: "Esaudire Un Bisogno Della Settimana", category: "Bisogni", defaultMoodIds: ["appagato"] },
+  { key: "bisogni:esaudito", label: "Esaudire un bisogno della settimana", category: "Bisogni", defaultMoodIds: ["appagato"] },
 ];

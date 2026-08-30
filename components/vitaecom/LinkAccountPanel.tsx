@@ -109,7 +109,7 @@ export function LinkAccountPanel({ accountId, nickname }: { accountId: string; n
       </p>
       <div className="mt-4 text-left">
         <PersonPicker
-          label="Collega A"
+          label="Collega a"
           value={undefined}
           options={people}
           allowNone={false}
@@ -129,7 +129,7 @@ export function LinkAccountPanel({ accountId, nickname }: { accountId: string; n
             disabled={creating}
             className="focus-ring mt-3 flex w-full items-center justify-center gap-2 rounded-xl2 border border-[#B79A6B]/40 bg-[#B79A6B]/[0.06] py-2.5 text-xs text-[#B79A6B] transition hover:bg-[#B79A6B]/[0.12] disabled:opacity-50"
           >
-            <Sparkles size={13} /> Crea Una Persona Di Esempio Per Provare Subito
+            <Sparkles size={13} /> Crea una persona di esempio per provare subito
           </button>
           <p className="mt-1.5 text-[10px] text-ink-800">
             Crea una vera persona in Mondo (marcata &quot;Esempio&quot;), già con qualche scoperta e un paio di

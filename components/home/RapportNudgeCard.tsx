@@ -102,7 +102,7 @@ export function RapportNudgeCard() {
         <button
           onClick={() => setDismissedId(person.id)}
           className="focus-ring shrink-0 text-ink-800 hover:text-ink-400"
-          aria-label="Non Ora"
+          aria-label="Non ora"
         >
           <X size={14} />
         </button>
@@ -117,7 +117,7 @@ export function RapportNudgeCard() {
         <button
           onClick={() => setRerollTick((t) => t + 1)}
           className="focus-ring flex items-center justify-center rounded-full border border-white/10 px-3 py-2 text-ink-600 hover:text-ink-200"
-          aria-label="Un'Altra Idea"
+          aria-label="Un'altra idea"
         >
           <RefreshCw size={13} />
         </button>

@@ -5,7 +5,7 @@ import { DEMO_ACCOUNTS } from "./vitaecom-demo-data";
  * dove risolvere "di chi è questo post/commento/tag", finché non esiste un vero elenco account. */
 export function resolveAccount(id: string, userAccount: VitaecomAccount): VitaecomAccount {
   if (id === "user") return userAccount;
-  return DEMO_ACCOUNTS.find((a) => a.id === id) ?? { id, nickname: "Account Rimosso" };
+  return DEMO_ACCOUNTS.find((a) => a.id === id) ?? { id, nickname: "Account rimosso" };
 }
 
 export function resolveTaggedAccounts(tags: VitaecomTag[], userAccount: VitaecomAccount): VitaecomAccount[] {

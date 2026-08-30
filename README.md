@@ -973,6 +973,170 @@ solo tre account dimostrativi possibili oggi, la lista è già corta abbastanza.
 
 Build verificata da zero — compila ed è tipizzata correttamente su tutte le 18 rotte.
 
+## Checkpoint 22 — lo spazzamento Title Case, completato su tutta l'app
+
+Chiuso quello che era rimasto aperto da qualche checkpoint: ogni frase vera dell'app (non
+etichette, non titoli di sezione, non pulsanti) ora rispetta davvero la regola stabilita al
+Checkpoint 2 — maiuscola di sola frase, non Title Case.
+
+**Trovato un secondo tipo di violazione, non solo quella già cercata**: le prime ricerche
+cercavano solo dentro le stringhe tra virgolette — ma buona parte del testo dell'app vive
+come testo JSX semplice, mai tra virgolette (`<p>Nessuna Task Attiva</p>`, non
+`<p>{"Nessuna Task Attiva"}</p>`), e quella prima ricerca non lo vedeva affatto. Una seconda
+ricerca mirata a questo pattern (testo dentro i tag, che finisce con un punto o un punto
+esclamativo — il segnale più affidabile di una frase vera) ne ha trovate altre sedici, sparse
+per quasi tutta l'app: messaggi di stato vuoto ("Nessuna Persona Trovata", "Nessun Impegno In
+Programma", "Nessuna Spesa Futura In Programma", e una decina di altri identici nello
+spirito), un paio di istruzioni, e tre messaggi d'errore in Vitaecom (`ImprimiMomento.tsx`)
+mai toccati nei giri precedenti. Tutte corrette, con lo stesso criterio di sempre: "Vitaecom",
+"Mondo", "Il Tuo Profilo", "Il Campo" (il Campo Energetico di Salute) restano nomi propri
+anche dentro una frase minuscola; titoli di finestre/dialoghi ("Ti Senti Così?", "Quanto Hai
+Speso?", "Eliminare Questa Task?") restano intestazioni, non frasi.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 18 rotte.
+
+## Checkpoint 23 — la regola Title Case, corretta ancora: niente Title Case da nessuna parte
+
+**Il Checkpoint 2 aveva lasciato un'eccezione che non doveva esserci.** La regola diceva:
+maiuscola di sola frase per le frasi vere, ma Title Case ammesso per etichette, titoli di
+sezione e pulsanti, perché "quelli sono nomi, non frasi". Corretto: non è così — l'eccezione
+va tolta del tutto. Ora la maiuscola di sola frase vale ovunque nell'interfaccia: etichette dei
+campi ("Ora Inizio" → "Ora inizio"), titoli di sezione, pulsanti, aria-label, placeholder,
+intestazioni di finestre/dialoghi. Restano maiuscoli solo i nomi propri veri e propri — nomi e
+cognomi, il nome dell'app ("Vitae") e del suo modulo sociale ("Vitaecom"), titoli di
+film/libri/giochi scelti dall'utente, nomi di luoghi, il nome di un campo personalizzato — cioè
+dati, non testo di interfaccia scritto da chi sviluppa. Passata tutta l'app: etichette dei
+campi, titoli di sezione in wizard/rapporti/finanze/salute/task, testo dei pulsanti, aria-label
+statici, placeholder. Dove un nome proprio compare dentro un'etichetta più lunga (es. "Ultime
+Scoperte Su Vitaecom" → "Ultime scoperte su Vitaecom") solo il nome proprio resta maiuscolo.
+
+**Sistemato anche nella stessa sessione, prima di questo giro** (non ancora in un checkpoint a
+sé): il bug Soprannome/Nickname (`PersonalDetails.nickname` e `UserProfile.nickname`
+coincidevano per via dell'`extends` — rinominato il primo in `alias`); rimossa la possibilità di
+inserire un indirizzo nei campi "Quale Scuola Frequenta"/"Dove Lavora"/"Dove Ha Studiato" (ora
+testo libero — perso di conseguenza il marker automatico su Mappa per questi campi, serviva
+proprio la geocodifica dell'indirizzo); tutti gli inneschi di stato d'animo partono ora su
+"Nessuno" al primo avvio invece di essere pre-popolati dal catalogo; suggerimenti dei Bisogni
+ridotti da 15 a 2 + il campo libero; icona di "Sconosciuto" ingrandita.
+
+**Portata reale del giro Title Case**, completato in più passate per non perdere pezzi: un primo sweep
+automatico su tutti i file `.tsx` (etichette dei campi, pulsanti anche con icona+testo,
+aria-label statici e con template, placeholder) ha convertito 178 stringhe in 74+ file. Una
+seconda passata, più tollerante verso apostrofi in entità HTML (`&apos;`), trattini lunghi e
+altra punteggiatura che la prima regex non riconosceva, ne ha trovate altre 61 sfuggite nella
+prima battuta. Infine un giro a mano sui file `.ts` (le mappe di etichette dei Bisogni/Stati
+d'Animo in `mood-catalog.ts`, `discovery-feed.ts`, `vitaecom-showcase.ts`,
+`common-ground.ts`, `vitaecom-discoveries.ts`, i livelli di valutazione in `rating.ts` e
+`relationship.ts`, le etichette di tipo/ricorrenza/promemoria task in `types.ts`, le due
+etichette di categoria attività in `activity-catalog.ts`, un'etichetta di parentela in
+`family-relations.ts`, e i messaggi d'errore rivolti all'utente in `use-live-location.ts`,
+`nickname-check.ts`, `backup.ts`, `image-store.ts`) — questi non li vede nessuno sweep sulle
+`.tsx` perché non sono JSX, sono stringhe TypeScript pure.
+
+**Cosa NON ho toccato, apposta**: i cataloghi/vocabolari di tag selezionabili — Valori, Stile
+Di Vita, Carattere/Interessi degli animali, Categorie Di Interesse, Categorie Di Spesa, i nomi
+delle singole attività fisiche, i suggerimenti di Bisogni, le etichette dei campi
+personalizzati d'esempio in `LinkAccountPanel.tsx`. Sono nomi di opzioni scelte dall'utente o
+esempi di dati suoi, non testo istruttivo scritto da chi sviluppa — stesso trattamento già
+riservato ai titoli di film/libri/giochi. Se anche questi vanno convertiti, dimmelo
+esplicitamente: la distinzione è una scelta mia, non è scritta nel messaggio originale.
+
+**Secondo giro, stessa sessione — altri residui trovati con una scansione più ampia**: il
+primo sweep copriva solo `label=`/`title=`/`alt=`/`aria-label=`/`placeholder=` come stringhe
+semplici — mancavano gli attributi con nome diverso (`hint=`, `description=`,
+`colorLabel=`, `peopleLabel=`) e soprattutto qualunque valore dentro un'espressione
+(ternari `cond ? "..." : "..."`, template con interpolazione) perché quelli non sono stringhe
+semplici tra virgolette. Trovate e corrette un'altra quarantina di stringhe di questo tipo,
+sparse tra wizard, task, persone, casa, mappa, mood e home — tutto verificato di nuovo con
+build pulita. Fuori da questo secondo giro, lasciate come nel primo: cataloghi/vocabolari,
+ed è rimasto un solo dato tecnico non testuale (viewBox e stroke-dasharray SVG) scambiato per
+Title Case dalla scansione ma non toccato perché non è testo.
+
+**Campi Data più larghi degli altri — causa trovata**: non era un problema del tipo di
+campo, ma di layout — in tre punti (Aggiungi Spesa Singola, Aggiungi Spesa Futura, Registra
+Attività) il campo Data stava da solo a piena larghezza subito sotto una riga a due colonne
+(Nome+Importo, o Minuti+Calorie), quindi appariva doppio rispetto ai campi sopra. Corretto
+inserendo anche lui in una riga a due colonne (la seconda colonna resta vuota). Verificato
+anche Registra Peso: lì Peso/Data/Obiettivo erano già impilati alla stessa identica
+larghezza, nessun problema reale — non toccato.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 19 rotte.
+
+## Checkpoint 24 — zoom bloccato, validazione task, due Title Case sfuggiti fuori dalle .tsx
+
+**Zoom bloccato ovunque tranne mappa e immagini.** Il `maximumScale: 1` nel viewport avrebbe
+bloccato lo zoom anche lì dove doveva restare attivo — rimosso. Al suo posto, `touch-action:
+pan-x pan-y` su `html, body` (blocca pizzico e doppio tap in tutta l'app, senza dipendere da
+`user-scalable=no` che iOS spesso ignora), con `touch-action: auto` ripristinato su
+`.leaflet-container` (la mappa) e su ogni `<img>` (le immagini) per lasciare lo zoom nativo
+lì.
+
+**Task con data, orario di inizio e orario di fine (Evento/Appuntamento — il gruppo "tempo"
+di `taskGroup`) ora richiedono almeno data e orario di inizio per essere create**; l'orario di
+fine resta facoltativo, come richiesto. Promemoria/Obiettivo/Spesa non sono toccate: hanno una
+forma diversa (due coppie data+ora) e non erano nella richiesta.
+
+**Campi Data troppo larghi**: causa trovata — non il tipo di campo, il layout: in tre punti
+(Aggiungi Spesa Singola, Aggiungi Spesa Futura, Registra Attività) il campo Data stava da solo
+a piena larghezza subito sotto una riga a due colonne. Corretto inserendolo anche lui in una
+riga a due colonne. Registra Peso non aveva il problema (già tutto alla stessa larghezza).
+
+**Due Title Case sfuggiti perché fuori da qualunque file `.tsx` o `.ts` di componente**: la
+tagline "La Tua Vita, Vissuta Due Volte." viveva sia nei metadata di `app/layout.tsx` sia in
+`public/manifest.json` (nome e descrizione dell'app per la schermata Home e per il prompt
+d'installazione) — nessuno sweep precedente guarda dentro `manifest.json`. Corretta in
+entrambi i punti.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 19 rotte.
+
+## Checkpoint 25 — Albero Genealogico, una scheda tutta sua
+
+**Separato da Rapporti**, come richiesto esplicitamente ("altrimenti viene meno la
+possibilità di scoprire man mano una persona attualmente sconosciuta" non c'entra qui — quel
+punto riguarda Mondo/Persone, non l'Albero, ma la richiesta di scheda separata era chiara di
+suo). Prima l'Albero era un secondo tab interno alla pagina `/rapporti` (stato locale
+`tab`); ora è la sua rotta a sé, `/albero`, raggiungibile dalla barra di navigazione (nel menu
+"Altro", accanto a Rapporti) — non più nascosto dentro un'altra scheda. Spostata anche la
+rotta di dettaglio dell'albero di una persona, da `/rapporti/albero/[id]` a `/albero/[id]`,
+con tutti i link aggiornati (da `FamilyMenu`, da `ExploreProfileSheet`, e i link interni della
+pagina stessa quando salti da un parente all'altro). Il link "Torna Ai Rapporti" nella pagina
+di dettaglio ora dice "Torna all'albero" e riporta a `/albero`, non più a `/rapporti` — coerente
+con l'essere entrato lì dalla sua scheda, non da Rapporti.
+
+`/rapporti` resta con la sola vista Rapporti (griglia/costellazione, filtro amicizia/inimicizia,
+solo animali) — nessuna perdita di funzionalità, solo il secondo tab tolto perché ora vive
+altrove.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 21 rotte (due in
+più di prima: `/albero` e `/albero/[id]`).
+
+## Checkpoint 26 — creare una task crea l'evento nel calendario di sistema
+
+**Non esiste un'API browser per scrivere direttamente nel calendario di Android/iOS** — questa
+è una PWA, non un'app nativa, e nessun sito web può farlo davvero. La strada standard, che
+qualunque sito "Aggiungi Al Calendario" usa, è generare un file `.ics` e farlo aprire dal
+browser: sia Android che iOS riconoscono il tipo e offrono da soli "Aggiungi al calendario",
+con un tocco di conferma dell'utente — lo stesso identico comportamento richiesto, dichiarato
+qui per lo stesso motivo per cui ho dichiarato l'embed di Facebook al Checkpoint 20: una
+scelta onesta, non un tentativo rotto che sembra un bug.
+
+**Creare una task di qualunque tipo, eccetto "Attività Quotidiana"**, genera ora l'evento:
+`lib/ics.ts` costruisce il file rispettando data, orario di inizio e orario di fine. Per il
+gruppo "tempo" (Evento/Appuntamento): Data+Ora Inizio → inizio evento, Ora Fine (se c'è) →
+fine, altrimenti un'ora di durata di default. Per il gruppo "scadenza"
+(Promemoria/Obiettivo/Spesa): Data Inizio+Ora Inizio → inizio, Data Scadenza+Ora Scadenza (se
+ci sono) → fine — stessa logica, campi diversi. Senza alcun orario, l'evento diventa "tutto il
+giorno" sulla sola data. "Attività Quotidiana" resta esclusa, come richiesto: si ripete da sola
+ogni giorno, un evento di calendario non aggiungerebbe nulla.
+
+`addTask` ora restituisce la task appena creata (prima non restituiva nulla) — serviva per
+generare l'.ics con l'id vero. Aggiornare una task esistente non ri-genera l'evento: la
+richiesta parlava di creazione, non di modifica.
+
+**Trovata un'altra Title Case sfuggita**: "Nuova Task" nel titolo del modale di creazione.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 21 rotte.
+
 ## Sviluppo in locale
 
 ```bash

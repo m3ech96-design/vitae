@@ -79,7 +79,7 @@ export function ImageCropInput({
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
               className="mt-4 w-full accent-[#7C5CFF]"
-              aria-label="Zoom Immagine"
+              aria-label="Zoom immagine"
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={reset}>

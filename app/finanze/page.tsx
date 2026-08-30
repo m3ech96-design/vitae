@@ -76,7 +76,7 @@ export default function FinanzePage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Finanze</p>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Dove Va Il Tuo Denaro</h1>
+      <h1 className="mt-1 font-display text-2xl text-ink-100">Dove va il tuo denaro</h1>
 
       <GlassCard glow="violet" className="mt-6 flex flex-col items-center gap-5 p-6">
         <BudgetRing spent={total} budget={monthlyBudget} projected={projected} onSetBudget={setMonthlyBudget} />
@@ -96,7 +96,7 @@ export default function FinanzePage() {
             <p className="mt-2 font-display text-lg text-ink-100">
               {risparmioDelMese !== null ? Math.round(risparmioDelMese).toLocaleString("it-IT") : "—"}€
             </p>
-            <p className="text-[10px] text-ink-800">Risparmio Del Mese</p>
+            <p className="text-[10px] text-ink-800">Risparmio del mese</p>
           </GlassCard>
           <GlassCard className="p-4 text-center">
             <p
@@ -105,7 +105,7 @@ export default function FinanzePage() {
             >
               {indiceRisparmio !== null ? `${indiceRisparmio}%` : "—"}
             </p>
-            <p className="mt-2 text-[10px] text-ink-800">Indice Di Risparmio</p>
+            <p className="mt-2 text-[10px] text-ink-800">Indice di risparmio</p>
           </GlassCard>
         </div>
       )}

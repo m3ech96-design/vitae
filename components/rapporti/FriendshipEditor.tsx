@@ -25,8 +25,8 @@ export function FriendshipEditor({
   if (options.length === 0) {
     return (
       <p className="text-xs text-ink-800">
-        Amici Si Scelgono Tra Le Persone Che Crei — Torna Qui Una Volta Che Ne Avrai Aggiunta
-        Almeno Una, Dalla Scheda Mondo.
+        Amici si scelgono tra le persone che crei — torna qui una volta che ne avrai aggiunta
+        almeno una, dalla scheda Mondo.
       </p>
     );
   }
@@ -40,7 +40,7 @@ export function FriendshipEditor({
         onChange={(friendPersonIds) => onUpdate({ friendPersonIds })}
       />
       <MultiPersonPicker
-        label="Migliori Amici"
+        label="Migliori amici"
         values={person.bestFriendPersonIds}
         options={options}
         onChange={(bestFriendPersonIds) => onUpdate({ bestFriendPersonIds })}

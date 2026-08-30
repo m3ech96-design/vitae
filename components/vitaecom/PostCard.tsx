@@ -69,12 +69,12 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
         )}
         {link && <LinkEmbed link={link} />}
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-200">{post.caption}</p>
-        {post.captionByAI && <p className="mt-2 text-[10px] uppercase tracking-wide text-ink-800">Descritto Dall&apos;IA</p>}
+        {post.captionByAI && <p className="mt-2 text-[10px] uppercase tracking-wide text-ink-800">Descritto dall&apos;ia</p>}
       </div>
 
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
-          <button onClick={() => toggleLike(post.id)} className="focus-ring flex items-center gap-1.5" aria-label="Mi Piace">
+          <button onClick={() => toggleLike(post.id)} className="focus-ring flex items-center gap-1.5" aria-label="Mi piace">
             <Gem size={18} color={color} fill={post.likedByUser ? myMoodColor : "transparent"} strokeWidth={1.6} />
             {post.likeCount > 0 && <span className="text-xs text-ink-600">{post.likeCount}</span>}
           </button>
@@ -82,7 +82,7 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
             <MessageCircle size={18} color={color} strokeWidth={1.6} />
             {post.comments.length > 0 && <span className="text-xs text-ink-600">{post.comments.length}</span>}
           </button>
-          <button onClick={onShare} className="focus-ring" aria-label="Condividi Sulla Tua Bacheca">
+          <button onClick={onShare} className="focus-ring" aria-label="Condividi sulla tua bacheca">
             <Share2 size={17} color="#8B90A8" strokeWidth={1.6} />
           </button>
         </div>

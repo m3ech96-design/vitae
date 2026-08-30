@@ -5,7 +5,7 @@ const DB_VERSION = 1;
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === "undefined") {
-      reject(new Error("IndexedDB Non Disponibile"));
+      reject(new Error("IndexedDB non disponibile"));
       return;
     }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
