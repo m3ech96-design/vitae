@@ -9,6 +9,7 @@ export interface PostDraft {
   captionByAI: boolean;
   includeMood: boolean;
   photoKey?: string;
+  videoKey?: string;
   taggedAccountIds: string[];
   taskIds: string[];
 }

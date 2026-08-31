@@ -49,6 +49,9 @@ export interface VitaecomPost {
    * un url esterno in `demoPhotoUrl`. Mai generata. */
   photoKey?: string;
   demoPhotoUrl?: string;
+  /** Un solo video per post, alternativo alla foto (chiave verso lib/video-store.ts) —
+   * mai generato, mai nei post dimostrativi. */
+  videoKey?: string;
   tags: VitaecomTag[];
   likedByUser: boolean;
   likeCount: number;

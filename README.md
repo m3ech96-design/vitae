@@ -1137,6 +1137,33 @@ richiesta parlava di creazione, non di modifica.
 
 Build verificata da zero — compila ed è tipizzata correttamente su tutte le 21 rotte.
 
+## Checkpoint 27 — video nei post, e la finestra di ridimensionamento foto resta ferma
+
+**Non c'era un pulsante per caricare un video nella creazione del post — ora c'è.** Nuovo
+`lib/video-store.ts` (IndexedDB, stesso identico pattern di `image-store.ts` — un video in
+localStorage come base64 diretto avrebbe saturato la quota all'istante), collegato al backup
+(`lib/backup.ts` ora esporta e ripristina anche i video, non solo le immagini). Nuovo
+`VideoPickerInput` (nessun ritaglio, a differenza delle foto — non ha senso per un video).
+`VitaecomPost` ha un `videoKey` accanto a `photoKey`; foto e video sono a scelta alternativa,
+mai insieme sullo stesso post.
+
+**Ridotti i pulsanti di importazione foto e video a due icona-pulsante**, come richiesto: prima
+c'era un unico pulsante largo con testo ("Aggiungi Una Tua Foto"); ora sono due pulsanti-icona
+quadrati (fotocamera, videocamera) — quando ne scegli uno l'altro sparisce (foto e video restano
+alternativi) e il pulsante scelto diventa "cambia" + una X per rimuovere, sempre due pulsanti
+in tutto, mai di più.
+
+**Video riproducibili**: `PostCard.tsx` (l'unico componente che renderizza i post — usato da
+Vitaecom, dal profilo Vitaecom e dal profilo di ogni account) ora mostra un elemento `<video>`
+vero con controlli, quando il post ha un video invece di una foto.
+
+**Finestra di ridimensionamento foto (ovunque nell'app, non solo nel wizard di scoperta —
+`ImageCropInput` è condiviso)**: bloccato lo scroll della pagina sotto finché la finestra resta
+aperta, così non si sposta più rispetto allo schermo e non serve più scrollare per raggiungerla.
+Si sblocca da sola alla conferma o all'annullamento.
+
+Build verificata da zero — compila ed è tipizzata correttamente su tutte le 21 rotte.
+
 ## Sviluppo in locale
 
 ```bash

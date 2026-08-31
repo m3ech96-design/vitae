@@ -1,4 +1,5 @@
 import { getAllImages, restoreAllImages } from "./image-store";
+import { getAllVideos, restoreAllVideos } from "./video-store";
 
 const DATA_KEYS = [
   "vitae:profile",
@@ -23,9 +24,11 @@ export interface BackupFile {
   exportedAt: string;
   data: Record<string, string>;
   images: Record<string, string>;
+  videos?: Record<string, string>;
 }
 
-/** Backup completo: dati strutturati (localStorage) + immagini (IndexedDB) in un solo file. */
+/** Backup completo: dati strutturati (localStorage) + immagini e video (IndexedDB) in un
+ * solo file. */
 export async function exportBackup(): Promise<BackupFile> {
   const data: Record<string, string> = {};
   DATA_KEYS.forEach((key) => {
@@ -33,7 +36,8 @@ export async function exportBackup(): Promise<BackupFile> {
     if (v !== null) data[key] = v;
   });
   const images = await getAllImages();
-  return { version: 1, exportedAt: new Date().toISOString(), data, images };
+  const videos = await getAllVideos();
+  return { version: 1, exportedAt: new Date().toISOString(), data, images, videos };
 }
 
 export function downloadBackup(backup: BackupFile) {
@@ -64,5 +68,8 @@ export async function importBackup(file: File): Promise<void> {
   });
   if (backup.images) {
     await restoreAllImages(backup.images);
+  }
+  if (backup.videos) {
+    await restoreAllVideos(backup.videos);
   }
 }

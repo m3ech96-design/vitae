@@ -17,6 +17,7 @@ interface NewPostInput {
   captionByAI?: boolean;
   moodId?: string;
   photoKey?: string;
+  videoKey?: string;
   tags: VitaecomTag[];
 }
 
@@ -260,6 +261,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         caption: input.caption,
         captionByAI: input.captionByAI,
         photoKey: input.photoKey,
+        videoKey: input.videoKey,
         tags: input.tags,
         likedByUser: false,
         likeCount: 0,

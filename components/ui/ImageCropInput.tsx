@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { Check, X } from "lucide-react";
 import { Button } from "./Button";
@@ -35,6 +35,18 @@ export function ImageCropInput({
   };
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => setCroppedAreaPixels(pixels), []);
+
+  // La pagina sotto non deve poter scrollare finché la finestra di ridimensionamento è
+  // aperta — altrimenti si sposta rispetto allo schermo e bisogna scrollare per raggiungerla.
+  // Resta fissa finché non si conferma o annulla.
+  useEffect(() => {
+    if (!rawImage) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [rawImage]);
 
   const reset = () => {
     setRawImage(null);

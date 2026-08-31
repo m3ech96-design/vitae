@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Camera, Loader2, UserPlus } from "lucide-react";
+import { Sparkles, Camera, Video, X, Loader2, UserPlus } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { useTasks } from "@/lib/tasks-context";
 import { useProfile } from "@/lib/profile-context";
@@ -8,6 +8,7 @@ import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { useVitaecomDraft } from "@/lib/vitaecom-draft-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { ImageCropInput } from "../ui/ImageCropInput";
+import { VideoPickerInput } from "../ui/VideoPickerInput";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
 import { Button } from "../ui/Button";
 
@@ -35,6 +36,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
   const [caption, setCaption] = useState(existing?.caption ?? "");
   const [captionByAI, setCaptionByAI] = useState(existing?.captionByAI ?? false);
   const [photoKey, setPhotoKey] = useState<string | undefined>(existing?.photoKey);
+  const [videoKey, setVideoKey] = useState<string | undefined>(existing?.videoKey);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -42,10 +44,10 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
   // ancora scrivendo, quello che c'è in quel momento è già salvato, senza bisogno di un
   // salvataggio esplicito legato a un solo pulsante.
   useEffect(() => {
-    if (!caption.trim() && !photoKey && taskIds.length === 0 && taggedAccountIds.length === 0) return;
-    setPostDraft({ caption, captionByAI, includeMood, photoKey, taggedAccountIds, taskIds });
+    if (!caption.trim() && !photoKey && !videoKey && taskIds.length === 0 && taggedAccountIds.length === 0) return;
+    setPostDraft({ caption, captionByAI, includeMood, photoKey, videoKey, taggedAccountIds, taskIds });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caption, captionByAI, includeMood, photoKey, taggedAccountIds, taskIds]);
+  }, [caption, captionByAI, includeMood, photoKey, videoKey, taggedAccountIds, taskIds]);
 
   const toggleTask = (id: string) => setTaskIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleTag = (id: string) => setTaggedAccountIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -83,7 +85,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const canPublish = caption.trim().length > 0 || Boolean(photoKey);
+  const canPublish = caption.trim().length > 0 || Boolean(photoKey) || Boolean(videoKey);
 
   const submit = () => {
     if (!canPublish) return;
@@ -92,6 +94,7 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
       captionByAI,
       moodId: includeMood ? currentMood?.id : undefined,
       photoKey,
+      videoKey,
       tags: taggedAccountIds.map((accountId) => ({ accountId })),
     });
     clearDraft();
@@ -191,19 +194,54 @@ export function ImprimiMomento({ onClose }: { onClose: () => void }) {
         {aiError && <p className="mt-1.5 text-xs text-aura-pink">{aiError}</p>}
       </div>
 
-      <div className="mt-4">
-        <ImageCropInput
-          shape="square"
-          onChange={(key) => setPhotoKey(key)}
-          trigger={(open) => (
-            <button
-              onClick={open}
-              className="focus-ring flex items-center gap-2 rounded-xl2 border border-dashed border-white/15 px-4 py-3 text-xs text-ink-600"
-            >
-              <Camera size={14} /> {photoKey ? "Cambia foto" : "Aggiungi Una Tua Foto (Facoltativo)"}
-            </button>
-          )}
-        />
+      <div className="mt-4 flex items-center gap-2">
+        {!videoKey && (
+          <ImageCropInput
+            shape="square"
+            onChange={(key) => setPhotoKey(key)}
+            trigger={(open) => (
+              <button
+                onClick={open}
+                aria-label={photoKey ? "Cambia foto" : "Aggiungi una foto"}
+                className="focus-ring flex h-11 w-11 items-center justify-center rounded-xl2 border border-dashed border-white/15 text-ink-600"
+              >
+                <Camera size={16} />
+              </button>
+            )}
+          />
+        )}
+        {photoKey && (
+          <button
+            onClick={() => setPhotoKey(undefined)}
+            aria-label="Rimuovi foto"
+            className="focus-ring flex h-11 w-11 items-center justify-center rounded-xl2 border border-white/15 text-ink-600"
+          >
+            <X size={16} />
+          </button>
+        )}
+        {!photoKey && (
+          <VideoPickerInput
+            onChange={(key) => setVideoKey(key)}
+            trigger={(open) => (
+              <button
+                onClick={open}
+                aria-label={videoKey ? "Cambia video" : "Aggiungi un video"}
+                className="focus-ring flex h-11 w-11 items-center justify-center rounded-xl2 border border-dashed border-white/15 text-ink-600"
+              >
+                <Video size={16} />
+              </button>
+            )}
+          />
+        )}
+        {videoKey && (
+          <button
+            onClick={() => setVideoKey(undefined)}
+            aria-label="Rimuovi video"
+            className="focus-ring flex h-11 w-11 items-center justify-center rounded-xl2 border border-white/15 text-ink-600"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       <Button className="mt-6 w-full justify-center" onClick={submit} disabled={!canPublish}>

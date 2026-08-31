@@ -7,6 +7,7 @@ import { useMood } from "@/lib/mood-context";
 import { useProfile } from "@/lib/profile-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { useResolvedImage } from "@/lib/use-resolved-image";
+import { useResolvedVideo } from "@/lib/use-resolved-video";
 import { detectLink } from "@/lib/vitaecom-link-detect";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { TaggedAvatars } from "./TaggedAvatars";
@@ -26,6 +27,7 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
   const { profile } = useProfile();
   const { toggleLike } = useVitaecomSocial();
   const resolvedPhotoUrl = useResolvedImage(post.photoKey);
+  const resolvedVideoUrl = useResolvedVideo(post.videoKey);
 
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const account = resolveAccount(post.authorId, userAccount);
@@ -33,7 +35,7 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
   const color = mood?.color ?? "#565B77";
   const taggedAccounts = resolveTaggedAccounts(post.tags, userAccount);
   const photoUrl = resolvedPhotoUrl || post.demoPhotoUrl;
-  const link = !photoUrl ? detectLink(post.caption) : null;
+  const link = !photoUrl && !resolvedVideoUrl ? detectLink(post.caption) : null;
 
   // La gemma: il contorno resta il colore dello stato d'animo DEL POST (di chi l'ha
   // scritto), ma il riempimento — quando l'hai messa tu — è il colore del TUO stato
@@ -61,10 +63,21 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
       </div>
 
       <div className="mx-4 rounded-xl2 border border-white/[0.06] bg-white/[0.015] p-4">
-        {photoUrl && (
+        {photoUrl && !resolvedVideoUrl && (
           <div className="relative -mx-4 -mt-4 mb-3 aspect-[4/3] overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        )}
+        {resolvedVideoUrl && (
+          <div className="relative -mx-4 -mt-4 mb-3 aspect-[4/3] overflow-hidden bg-black">
+            <video
+              src={resolvedVideoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-contain"
+            />
           </div>
         )}
         {link && <LinkEmbed link={link} />}
