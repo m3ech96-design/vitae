@@ -1164,6 +1164,289 @@ Si sblocca da sola alla conferma o all'annullamento.
 
 Build verificata da zero — compila ed è tipizzata correttamente su tutte le 21 rotte.
 
+## Checkpoint 28 — rilettura del brief originale: Mondo↔Vitaecom, barra di navigazione, notch, icona
+
+Ripartito dal brief originale per intero (non nuove segnalazioni: lo stesso testo di
+sempre, riletto da capo per trovare cosa mancava ancora rispetto a tutti i checkpoint
+precedenti). Molti punti risultavano già coperti da checkpoint passati — verificati nel
+codice uno per uno prima di toccare qualunque cosa, non dati per scontati: bug
+soprannome/nickname, dimensioni barra di navigazione offline vs online, indirizzo nei campi
+Studia/Lavora, campi Data larghi, stati d'animo di default "Nessuno", suggerimenti Bisogni
+ridotti a due, blocco dello zoom, Albero separato da Rapporti — tutti già a posto, nessun
+intervento necessario. Quello che segue è invece quanto mancava davvero.
+
+**Eliminato il collegamento tra un account Vitaecom e una Persona di Mondo**, come richiesto
+esplicitamente: teneva in vita un ponte che sarebbe comunque dovuto sparire il giorno
+dell'unione tra Mondo e Persone (la direzione dichiarata), e nel frattempo toglieva senso a
+scoprire man mano una persona oggi ancora sconosciuta. Rimossi `LinkAccountPanel.tsx` e
+`accountLinks`/`linkAccountToPerson`/`unlinkAccount` da `vitaecom-social-context.tsx`;
+`ExploreProfileSheet` non ha più le tre schede Scoperte/Rapporto/Albero pescate da una
+Persona presa in prestito — ora dichiara con onestà che arriveranno quando Mondo e Persone
+diventeranno un'unica scheda, invece di mostrare tre schede vuote o dati non suoi.
+
+**Le vetrine dei profili altrui, ora visibili per davvero.** Non potendo più pescare da una
+Persona collegata, i tre account dimostrativi hanno una propria vetrina statica (gli stessi
+dati curati a mano che stavano nel pannello di collegamento appena tolto — occupazione,
+un paio di tratti scelti per Nina/Leo/Sara), mostrata a chi visita il loro profilo tramite
+lo stesso componente `ShowcaseDrawer` del proprietario. La Vetrina ora parte davvero da
+sotto il notch su entrambe le pagine profilo: il pulsante Indietro/Home, quando in flusso la
+spingeva più in basso, è diventato un cerchietto flottante ancorato al safe-area,
+sovrapposto al suo bordo — lo spazio del notch lo porta ora la Vetrina stessa (o un semplice
+spaziatore, quando un account ospite non ne ha una: mai un riquadro "Vetrina" finto e vuoto).
+
+**Il tocco lungo non apre più il menu del browser.** Mancava una regola di base
+(`-webkit-touch-callout`/`user-select` su pulsanti e link): il gesto lungo dell'app veniva
+scavalcato dal fermo-immagine di iOS o dal menu contestuale. Corretto globalmente, non solo
+nel punto segnalato.
+
+**La barra di navigazione "offline" è ora personalizzabile con una pressione lunga**, come
+richiesto: le tre schede della fila principale (tutte tranne Home e "Altro", sempre fissi)
+si possono sostituire tenendole premute — si apre un selettore con tutte le altre schede non
+già assegnate a un altro slot, e quella scelta prende il posto della vecchia, che torna da
+sola nel pannello "Altro" (che è semplicemente "tutto ciò che oggi non è in nessuno dei tre
+slot", non un secondo elenco da tenere sincronizzato). Preferenza persistita in locale.
+
+**Tre transizioni per le barre di navigazione**, tutte richieste esplicitamente:
+- Passando dalla barra "offline" a quella "online" (e viceversa) la pillola gira su se
+  stessa (`rotateY`) mentre l'altra prende il suo posto, invece di sparire e ricomparire di
+  scatto — le due restano montate insieme per la durata della transizione (`AnimatePresence`
+  in `NavSwitcher`).
+- L'alone viola dietro la scheda attiva è ora un solo elemento condiviso (`layoutId`) che
+  scivola da una scheda all'altra quando cambi pagina, non una ricolorazione istantanea —
+  stesso meccanismo su entrambe le barre, con un `layoutId` diverso a testa per non
+  confonderle tra loro.
+- Le barre sono ora visibilmente più traslucide (nuova classe `.glass-nav`, sfondo molto più
+  trasparente di `.glass-strong`) con un effetto di distorsione vero sui colori sottostanti
+  (`saturate` insieme al blur, non solo sfocatura) — lo stesso linguaggio "liquid glass",
+  applicato solo alle barre, non a modali e fogli che restano `.glass-strong` come prima.
+
+**Bug Casa/Fuori Casa con la geolocalizzazione, corretto.** Un Impegno/Evento "Fuori Casa"
+aveva sempre l'ultima parola sulla posizione dell'utente, anche quando il GPS confermava che
+era fisicamente a Casa — esattamente il caso segnalato. Ora la geolocalizzazione, quando il
+rilevamento è attivo e ha una lettura vera, vince sempre sul dato dedotto dalla task; la task
+resta valida per tutto il resto (rilevamento spento, o il GPS stesso conferma che sei
+altrove).
+
+**"Altro" in Carattere, Valori, Stile Di Vita e Categoria Preferita**, nello stesso formato
+di selezione delle altre voci: un chip in fondo alla fila che, toccato, si trasforma sul
+posto in un campo di testo da confermare (invio o l'icona di spunta) — il valore scritto
+viene aggiunto e selezionato subito, un'unica modifica condivisa in `TagMultiSelect` che
+copre tutti e quattro i punti in un colpo solo.
+
+**I Bisogni generano anche uno stato d'animo "desiderato", non solo "Appagato".** Sceglierne
+uno nuovo (dal suggerimento o scritto a mano) ora aziona anche un proprio innesco — di serie
+"Curioso", configurabile come ogni altro innesco nel pannello degli Stati D'Animo — accanto
+a quello già esistente per quando lo esaudisci.
+
+**Anche i tag notificano l'utente taggato.** Nuovo tipo di notifica "tag": un post
+dimostrativo (quello di Sara con la foto ritrovata) ti tagga davvero e genera la notifica
+alla primissima apertura di Vitaecom, gestita in entrambi i punti dove le notifiche compaiono
+oggi (la card in Home e la finestra "Notifiche" dentro Chat).
+
+**Icona dell'app aggiornata su Android e iOS**: "Vitae" dove il puntino della "i" è una vera
+sfera di stato d'animo, con un bagliore morbido intorno nello stesso linguaggio "Aura" di
+avatar e mappa — sfondo scuro con due aloni radiali (violetto e ciano) coerenti col resto
+dell'app, verificato anche ritagliato a cerchio (l'icona "maskable" di Android non taglia
+nulla di importante).
+
+**Tre punti del brief restano apposta senza una riga di codice, in attesa di una decisione
+insieme**, non dimenticati: il processo di segnalazione di un post (prima/dopo la
+segnalazione — non è una scelta che dovrei fare da solo), un controllo automatico dei
+contenuti sessualmente espliciti in foto/video (non costruibile con onestà in questa app
+solo-locale, senza un vero servizio di moderazione dietro), e il brainstorming sulle stories
+verticali stile TikTok.
+
+**Il resto del brief, ancora da fare** — la parte più grossa e più interconnessa, rimandata
+apposta a un giro suo: la barra di testo della chat con i pulsanti multimediali e la sua
+trasformazione dalla barra di navigazione; le reazioni ai messaggi in chat (stato d'animo,
+fusione liquida dei colori, animazione dell'avatar); il tasto "+" del riquadro Casa collegato
+a Vitaecom (Da Vitaecom/Offline/Animali, con richiesta e accettazione reciproca); separare il
+wizard di creazione Persone da quello degli Animali; l'intero sistema "Lato Stato" (reazioni
+sui post, ri-condivisione con "Cosa provi?", le notifiche che ne derivano); il menu a tre
+puntini sui post; il visualizzatore di immagini a schermo intero in Vitaecom; l'animazione
+di scroll del profilo (Vetrina che si ritira nell'avatar in alto); la scheda "News"; le
+notifiche interne che funzionano anche ad app chiusa (limite di piattaforma da confermare,
+come già discusso per la geolocalizzazione).
+
+Build verificata da zero (`npm install` + `npm run build`) dopo ogni blocco — compila ed è
+tipizzata correttamente su tutte le 21 rotte.
+
+## Checkpoint 29 — separazione Persone/Animali, e il tasto "+" della Casa diventa "Aggiungi:"
+
+**Wizard di creazione Persone separato da quello Animali, come richiesto.** "Aggiungi
+Persona" non mostra più Cane/Gatto tra le opzioni di tipo (`AddPersonModal` filtra ora i
+tipi umani a meno che non sia esplicitamente in modalità animale); Mondo ha un secondo
+pulsante "+ Animale" accanto a "+ Persona", che apre lo stesso modale in modalità dedicata.
+
+**Il tasto "+" del riquadro Casa, evoluto in "Aggiungi:".** Non apre più direttamente il
+vecchio wizard: si apre invece una finestrella ancorata alla sua posizione (stesso pattern
+già usato per il menù della card personale — portal su `document.body`, coordinate reali) con
+tre strade — "Da Vitaecom", "Offline", "Animali" — esattamente come richiesto. "Offline" e
+"Animali" aprono il wizard (ora davvero) dedicato, con la Casa già impostata. "Da Vitaecom"
+apre un nuovo pannello sulle tue Persone Conosciute: toccare una card la inspessisce e apre
+il pulsante "Scegli"; "Scegli" controlla che tu conosca almeno nome e cognome di quella
+persona — se non lo conosci ancora, l'errore "Devi Almeno Conoscere Il Suo Nome!" compare
+accanto al pulsante, con un modo rapido per rimediare sul posto.
+
+**Il "wizard delle scoperte" minimo per gli account Vitaecom.** Non esisteva alcun posto
+dove registrare "conosco il nome vero di questo account" dopo aver tolto il ponte verso una
+Persona di Mondo (Checkpoint 28) — aggiunto un piccolissimo pezzo nuovo (`knownNames` in
+`vitaecom-social-context.tsx`): oggi solo Nome e Cognome, il minimo che questa richiesta
+specifica serve a verificare. Il seme di quello che sarà, quando Mondo e Persone si
+uniranno, la vera scheda Scoperte di ogni account.
+
+**L'appartenenza alla Casa, reciproca come conoscersi.** Confermata la scelta, parte una
+richiesta all'account scelto — simulata con la stessa idea già usata per "Inizia A
+Conoscere": un account demo che accetta da solo dopo qualche secondo (l'unico modo di
+provare il flusso fino in fondo senza un vero account dall'altra parte), più una richiesta
+in arrivo già seminata per provare subito anche "Accetta"/"Rifiuta" come destinatario. Due
+nuovi tipi di notifica ("[nickname] Desidera Aggiungersi Nella Tua Casa" / "è entrato/a
+nella tua Casa"), visibili sia nella card di Home sia nella finestra Notifiche, con i
+pulsanti Accetta/Rifiuta proprio lì per la richiesta in arrivo.
+
+**Gli account Vitaecom nel riquadro Casa hanno un loro avatar**, con lo stesso linguaggio
+Aura di una Persona di Mondo — ma toccarlo apre un piccolo menù, non una scheda Persona: "Vai
+al profilo" (la sua vera pagina Vitaecom) e "Dissocia dalla Casa" al posto di "Elimina
+persona", con la conferma richiesta ("Vuoi Davvero Dissociare [Nome Cognome] Da Casa?").
+Dissociare rimuove il legame solo sul tuo dispositivo — l'unico che esiste davvero in
+questa app solo-locale; "anche dal suo lato" non è rappresentabile per un account demo senza
+un dispositivo proprio, stesso limite onesto già dichiarato fin dal Checkpoint 16.
+
+**"I movimenti Casa-Fuori Casa sono visibili", anche per chi non ha un vero GPS.** Un account
+Vitaecom nel tuo riquadro Casa non è fermo per sempre in un solo posto: la sua posizione
+cambia da sola nel tempo (deterministica per account e quarto d'ora, non un
+`Math.random()` diverso a ogni apertura) — l'idea vera di qualcuno che si muove, dichiarata
+come simulazione nel codice, non un finto GPS spacciato per vero.
+
+Bug trovato e corretto scrivendo questo pezzo, prima di consegnare: `useVitaecomSocial()`
+era stato chiamato dopo l'`if (...) return null;` di `HomePage` — un hook chiamato solo a
+volte, non ad ogni render, viola le regole di React anche quando il build non lo segnala
+subito. Spostato in cima insieme agli altri hook del componente.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 21 rotte.
+
+## Checkpoint 30 — il sistema "Lato Stato": reazioni, condivisione vera, e un giro di pulizia Title Case
+
+**Condividere un post ora è un vero gesto, non più una riga generata da sola.** "Condividi"
+apre un foglio dove scrivere qualcosa di tuo, con "Cosa provi?" — obbligatorio, è quello che
+finisce sotto il nickname ("si è sentito/a [stato d'animo]") e alimenta il Lato Stato della
+catena — e, solo quando il post che stai condividendo aveva a sua volta una propria aggiunta
+scritta durante una condivisione precedente, l'interruttore "Incorpora anche il contenuto
+aggiunto da [nickname]". Il contenuto dell'originale si incorpora sempre, senza bisogno di
+un interruttore; quello del post di provenienza mai oltre un livello, esattamente come
+richiesto ("mai quello prima"). Alla fine della condivisione riappare il Pop Up "Ti Senti
+Così?" già esistente, pre-selezionato sullo stato appena scelto (`suggestMood` in
+`mood-context.tsx`, che riusa lo stesso popup con un candidato deciso al volo invece che
+pescato dalla mappa inneschi) — resta comunque un suggerimento da confermare, mai imposto.
+
+**Il "Lato Stato".** Il lato sinistro della cornice di un post, spezzato dal resto del bordo,
+si popola con una linea di colore per ogni stato d'animo provato da chi ha condiviso o
+reagito lungo tutta la catena — dall'originale fino all'ultima condivisione, tutte
+collegate allo stesso conteggio (`moodTallies` in `vitaecom-social-context.tsx`, indicizzato
+per la radice della catena, non per il singolo post). Quando le linee non ci stanno più
+tutte, restano solo quelle con il numero più alto di persone — e si aggiornano da sole se una
+quota supera la più bassa già in classifica. Toccare una linea apre una finestra ancorata con
+scritto "[n] persone si sono sentite [stato d'animo]".
+
+**Reazioni sui post.** Una sfera accanto al pulsante di condivisione, identica a quelle dei
+pop-up degli stati d'animo — toccandola si apre lo stesso selettore usato per "Cosa provi?"
+(componente condiviso, `MoodPicker.tsx`); scelto uno stato, la sfera si colora gradualmente e
+una sferetta più piccola cade e schizza verso il Lato Stato, dove la linea corrispondente si
+illumina (o nasce, se non c'era ancora). La reazione aggiorna la stessa quota condivisa da
+tutta la catena. Una nota onesta su una scelta di semplificazione: quando lo stato reagito
+non fa il "taglio" delle linee visibili, la sferetta sparisce comunque al bordo senza una sua
+animazione di risucchio dedicata — il dettaglio più sottile dell'idea originale, lasciato
+fuori per restare dentro tempi ragionevoli.
+
+**Le reazioni generano una notifica vera.** "Il tuo post ha reso [nickname] [stato d'animo]"
+— dato che solo il tuo dispositivo esiste per davvero in quest'app solo-locale, l'unico modo
+onesto di provare il flusso è lo stesso già usato per Mi Piace e commenti: un account demo
+che reagisce a un tuo post appena pubblicato dopo una manciata di secondi (ora un terzo
+esito possibile di `simulateDemoEngagement`, accanto a Mi Piace e commento), che notifica sia
+te come autore di quel post sia l'autore dell'originale quando è sempre tu (es. hai condiviso
+una tua vecchia foto) — mai un account demo, che non ha un dispositivo su cui vederla.
+
+**Un giro di pulizia sulla maiuscola di sola frase.** Scrivendo in fretta i componenti dei
+Checkpoint 28 e 29 erano rientrate diverse violazioni della regola stabilita al Checkpoint
+23 — corrette tutte dopo una segnalazione diretta, con una scansione mirata (non solo a
+occhio) su ogni file toccato in queste ultime sessioni: i saluti e le descrizioni delle
+Scorciatoie in Home, il filtro di Mondo, i testi del picker "Da Vitaecom" e della Casa, le
+notifiche di appartenenza alla Casa, il pannello "Esplora Altro" — e due violazioni
+preesistenti nella pagina del profilo altrui, trovate per lo stesso motivo pur non essendo
+mie. D'ora in avanti la stessa scansione fa parte del controllo prima di consegnare, non solo
+una lettura a occhio.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte statiche/dinamiche.
+
+## Checkpoint 31 — il menu a tre puntini sui post
+
+**Ogni post ha ora il pulsante a tre puntini in alto a destra**, come richiesto. Su un tuo
+post, l'unica voce è "Elimina post". Su un post altrui, due voci distinte: "Non mi interessa
+questo post" (lo toglie dal tuo Vitaeworld e da qualunque profilo lo mostri, solo per te —
+non è una segnalazione, dall'altra parte non succede nulla) e "Nascondi tutti i post di
+questo utente" (niente più suoi post ovunque compaiano, e smette anche di essere scelto dalla
+simulazione di Mi Piace/commento/reazione sui tuoi post — niente più sue notifiche future).
+Entrambi i filtri sono persistiti in locale e si applicano ovunque i post vengono elencati:
+Vitaeworld, il profilo altrui, e filtrano anche le notifiche già arrivate da un account
+appena messo a tacere.
+
+"Segnala questo post" manca apposta, non per dimenticanza: il processo di segnalazione —
+cosa vede chi segnala, cosa succede dopo — resta tra le cose da decidere insieme prima di
+costruirlo, esattamente come discusso.
+
+Nel farlo, trovato e corretto un altro `share()` rimasto rozzo: la scheda Vitaeworld
+generava ancora una condivisione a una riga con `publish()` invece di aprire il vero foglio
+"Condividi" costruito al Checkpoint 30 — sfuggito perché quel giro aveva toccato solo la
+Bacheca e il profilo altrui, non Vitaeworld. Ora anche lì apre `ShareComposer`.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
+## Checkpoint 32 — il visualizzatore di immagini a schermo intero
+
+Toccare la foto di un post (non su una condivisione, dove il contenuto vero è quello
+incorporato — vedi sotto) apre ora `ImageViewer.tsx`: sfondo completamente buio con aloni di
+colore di una palette "tipo inverno" (ghiaccio, non i violetti/ciano dell'Aura solita —
+qui è solo lo sfondo di una foto, non deve competere con lei) che si muovono in loop ai
+margini, mai sul lato sinistro, dove compare invece il Lato Stato a schermo intero, cliccabile
+esattamente come sul post. L'immagine sta al centro secondo il suo rapporto, zoomabile con un
+pizzico a due dita (o la rotella su desktop) senza scatto di ritorno — resta dove la lasci
+finché non chiudi. Toccare lo schermo in un punto qualunque apre la finestra informazioni in
+basso, molto traslucida: nickname, gemma/commento/condividi, e il testo del post minimizzato
+a due righe con un "espandi" quando serve.
+
+Non ancora esteso alle immagini incorporate dentro una condivisione (l'originale e l'eventuale
+aggiunta del post di provenienza, dentro `EmbeddedPost` in `PostCard.tsx`) — solo alla foto
+principale di un post che non è esso stesso una condivisione: un primo passo solido, non
+tutta la superficie possibile.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
+## Checkpoint 33 — l'animazione di scroll del profilo altrui
+
+Scorrendo verso il basso nel profilo di un altro utente, un riquadro fisso (sotto il notch,
+dove prima stava solo "Indietro") prende gradualmente il posto di vetrina, riquadro
+centrale, nickname e stato d'animo: l'avatar si rimpicciolisce e la sua aura svanisce prima
+di lui, poi — verso la fine della corsa — compaiono nel riquadro l'avatar in miniatura, la
+freccia indietro alla sua sinistra e il nickname alla sua destra. Il riquadro si riempie con
+un effetto liquido nel colore dello stato d'animo, fino a tre quarti della sua altezza, con
+un guizzo più acceso a ogni scroll che si assesta da solo quando ti fermi. Tornare in cima
+rifà tutto al contrario da sé, senza codice apposta per il verso inverso: l'intera
+transizione è una funzione diretta della posizione di scroll (`ProfileHeader.tsx` accetta ora
+un `collapseProgress` opzionale, mai passato dal proprio profilo — lì non si raccoglie nulla),
+non un interruttore che scatta una volta sola.
+
+Una nota onesta sulla soglia di scroll: il punto "il primo post arriva all'altezza
+dell'avatar" è approssimato con un valore fisso di pixel invece che misurato dal vero — una
+misura live si romperebbe proprio nei casi limite (zero post, tanti post), una soglia
+ragionevole resta solida ovunque.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
 ## Sviluppo in locale
 
 ```bash

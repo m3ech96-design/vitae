@@ -1,33 +1,27 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Phone, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { VitaecomAccount, VitaecomPost } from "@/lib/vitaecom-social-types";
 import { useMood } from "@/lib/mood-context";
-import { useHousehold } from "@/lib/household-context";
-import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { AuraAvatar } from "../ui/AuraAvatar";
 
 /**
  * La card della scheda Persone — stesso taglio visivo di PersonCard in Mondo (identica,
  * come richiesto), ma per un account Vitaecom invece che per una Persona del tuo Mondo:
  * l'icona Chat al posto di WhatsApp (qui la conversazione è quella vera di Vitaecom, non un
- * link esterno), e il telefono compare solo se hai già scoperto il numero della Persona
- * eventualmente collegata — mai per un account non collegato.
+ * link esterno). Niente più numero di telefono qui: veniva da una Persona di Mondo
+ * collegata a questo account, un concetto eliminato apposta (Mondo e Persone restano due
+ * cose distinte finché non si uniranno davvero in una sola).
  *
  * Non è un <Link> come il resto della card: un <a> (quello che <Link> genera) dentro un
- * altro <a> — qui sotto ce ne sono due, telefono e chat — non è HTML valido, lo stesso bug
- * già corretto più volte in questa sessione (PersonCard, PersonalCardMenu). Un <div
+ * altro <a> — qui sotto c'è anche quello della chat — non è HTML valido, lo stesso bug già
+ * corretto più volte in questa sessione (PersonCard, PersonalCardMenu). Un <div
  * role="button"> con la navigazione via router risolve senza perderla.
  */
 export function VitaecomAccountCard({ account, posts }: { account: VitaecomAccount; posts: VitaecomPost[] }) {
   const router = useRouter();
   const { allMoods } = useMood();
-  const { people } = useHousehold();
-  const { accountLinks } = useVitaecomSocial();
-
-  const linkedPerson = people.find((p) => p.id === accountLinks[account.id]);
-  const phone = linkedPerson?.phone;
 
   const ownPosts = posts.filter((p) => p.authorId === account.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const mood = allMoods.find((m) => m.id === ownPosts[0]?.moodId);
@@ -46,15 +40,6 @@ export function VitaecomAccountCard({ account, posts }: { account: VitaecomAccou
         <p className="truncate text-xs text-ink-800">{mood ? mood.label : "Persona Conosciuta"}</p>
       </div>
       <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
-        {phone && (
-          <a
-            href={`tel:${phone}`}
-            className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-ink-400 transition hover:border-aura-cyan/50 hover:text-aura-cyan"
-            aria-label={`Chiama ${account.nickname}`}
-          >
-            <Phone size={14} />
-          </a>
-        )}
         <Link
           href={`/vitaecom/chat/${account.id}`}
           className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-ink-400 transition hover:border-[#B79A6B]/50 hover:text-[#B79A6B]"

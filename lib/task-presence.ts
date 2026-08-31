@@ -34,7 +34,10 @@ export function taskDrivenLocation(
 /**
  * Per l'utente: qualunque sua task attiva con un luogo collegato decide la posizione,
  * indipendentemente dal fatto che coinvolga altre persone o meno — l'utente è sempre
- * implicitamente parte di ogni sua task. Ha priorità sul GPS quando è attiva.
+ * implicitamente parte di ogni sua task. Ha priorità sul GPS quando il rilevamento è spento
+ * o non ha ancora una lettura — MA MAI quando il GPS conferma che sei fisicamente a casa: in
+ * quel caso vince sempre la posizione reale (vedi app/home/page.tsx, `gpsConfirmsHome`), un
+ * Impegno "Fuori casa" non può più contraddire il posto in cui il telefono ti vede davvero.
  */
 export function userTaskDrivenLocation(tasks: Task[], homePlaceId: string | undefined, now: Date = new Date()): TaskLocation {
   const active = tasks.find((t) => isTaskActiveNow(t, now) && t.linkedPlaceId);

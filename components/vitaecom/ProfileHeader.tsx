@@ -1,37 +1,37 @@
 "use client";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Compass, MoreHorizontal } from "lucide-react";
-import { useProfile } from "@/lib/profile-context";
+import { MoreHorizontal } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
-import { useHousehold } from "@/lib/household-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { VitaecomAccount, VitaecomPost } from "@/lib/vitaecom-social-types";
-import { latestDiscoveries } from "@/lib/vitaecom-discoveries";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { ShowcaseDrawer } from "./ShowcaseDrawer";
 import { ExploreProfileSheet } from "./ExploreProfileSheet";
 import { KnowPanel } from "./KnowPanel";
 
-const MENU_WIDTH = 240;
 const UNKNOWN_TIP_MS = 5000;
 
 export function ProfileHeader({
   account,
   isOwner,
   posts,
+  collapseProgress = 0,
 }: {
   account: VitaecomAccount;
   isOwner: boolean;
   posts: VitaecomPost[];
+  /** Solo per un profilo altrui (vedi CollapsedProfileBar nella pagina): 0 in cima, 1
+   * quando il riquadro in alto ha preso il posto di vetrina/avatar/nickname. L'owner non lo
+   * passa mai — il suo profilo non si raccoglie durante lo scroll. */
+  collapseProgress?: number;
 }) {
   const router = useRouter();
-  const { profile } = useProfile();
   const { activeMood, activeMoodIntensity, allMoods, shareMoodOnVitaecom } = useMood();
-  const { people } = useHousehold();
-  const { accountLinks, knownAccountIds } = useVitaecomSocial();
+  const { knownAccountIds } = useVitaecomSocial();
+  const known = knownAccountIds.includes(account.id);
 
   const normale = allMoods.find((m) => m.id === "normale");
 
@@ -53,61 +53,14 @@ export function ProfileHeader({
   // a un'intensità fissa e tranquilla, non un battito a caso.
   const auraIntensityValue = isOwner && activeMood && shareMoodOnVitaecom ? activeMoodIntensity : 0.4;
 
-  const linkedPersonId = isOwner ? undefined : accountLinks[account.id];
-  const linkedPerson = linkedPersonId ? people.find((p) => p.id === linkedPersonId) : undefined;
-  const gender = isOwner ? profile.gender : linkedPerson?.gender;
-
-  const [discoveriesOpen, setDiscoveriesOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [unknownTipOpen, setUnknownTipOpen] = useState(false);
   const [unknownTipPos, setUnknownTipPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
   const unknownTipTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const known = knownAccountIds.includes(account.id);
-
   useEffect(() => setMounted(true), []);
-
-  // Stessa correzione della card personale offline (vedi PersonalCardMenu): il pop-up esce
-  // dal DOM del profilo con un portal, così niente può più tagliarlo — qui, in più, la card
-  // del profilo scorre parecchio più di quella di Home, quindi era anche più probabile
-  // capitasse.
-  useLayoutEffect(() => {
-    if (!discoveriesOpen) return;
-    const position = () => {
-      const btn = triggerRef.current;
-      if (!btn) return;
-      const rect = btn.getBoundingClientRect();
-      // "In basso a destra dell'avatar": l'ancora parte da un po' oltre il centro
-      // dell'avatar ed estende verso destra, non semplicemente centrata sotto di lui.
-      const left = Math.max(8, Math.min(rect.left + rect.width * 0.6, window.innerWidth - MENU_WIDTH - 8));
-      setMenuPos({ top: rect.bottom + 10, left });
-    };
-    position();
-    const close = () => setDiscoveriesOpen(false);
-    window.addEventListener("scroll", close, { passive: true });
-    window.addEventListener("resize", position);
-    return () => {
-      window.removeEventListener("scroll", close);
-      window.removeEventListener("resize", position);
-    };
-  }, [discoveriesOpen]);
-
-  useEffect(() => {
-    if (!discoveriesOpen) return;
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
-      setDiscoveriesOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [discoveriesOpen]);
 
   const handleAvatarClick = () => {
     if (isOwner) {
@@ -117,7 +70,7 @@ export function ProfileHeader({
     if (known) return;
     // "Non Conosci Ancora Questa Persona" — ancorata all'avatar, si chiude da sola dopo 5
     // secondi (o subito, se tocchi di nuovo l'avatar). Stessa tecnica del portal già usata
-    // per il menù "..." qui sotto, per non farsi tagliare dalla card che scorre.
+    // per il pannello "Esplora Altro", per non farsi tagliare dalla card che scorre.
     const rect = avatarRef.current?.getBoundingClientRect();
     if (!rect) return;
     setUnknownTipPos({ top: rect.bottom + 10, left: Math.max(8, Math.min(rect.left, window.innerWidth - 220 - 8)) });
@@ -128,22 +81,26 @@ export function ProfileHeader({
 
   useEffect(() => () => unknownTipTimer.current && clearTimeout(unknownTipTimer.current), []);
 
-  const recent = linkedPerson ? latestDiscoveries(linkedPerson, 3) : [];
-
   return (
     <div>
-      {isOwner && <ShowcaseDrawer isOwner />}
+      <div style={{ opacity: Math.max(0, 1 - collapseProgress * 1.6) }}>
+        <ShowcaseDrawer isOwner={isOwner} account={!isOwner ? account : undefined} />
+      </div>
 
-      <div className="mt-7 flex flex-col items-center">
+      <div
+        className="mt-7 flex flex-col items-center px-5 sm:px-6"
+        style={{
+          transform: `scale(${1 - collapseProgress * 0.55})`,
+          transformOrigin: "top center",
+          opacity: Math.max(0, 1 - collapseProgress * 1.7),
+        }}
+      >
         <span className="relative inline-flex">
           {!isOwner && (
             <button
-              ref={triggerRef}
-              onClick={() => setDiscoveriesOpen((v) => !v)}
+              onClick={() => setExploreOpen(true)}
               className="focus-ring absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-[#B79A6B]/50 hover:text-ink-100"
-              aria-label={`Ultime scoperte su ${account.nickname}`}
-              aria-haspopup="menu"
-              aria-expanded={discoveriesOpen}
+              aria-label={`Esplora altro su ${account.nickname}`}
             >
               <MoreHorizontal size={14} />
             </button>
@@ -152,97 +109,62 @@ export function ProfileHeader({
             ref={avatarRef}
             onClick={handleAvatarClick}
             className="focus-ring relative rounded-full"
-            aria-label={isOwner ? "Il tuo profilo completo" : known ? account.nickname : "Non Conosci Ancora Questa Persona"}
+            aria-label={isOwner ? "Il tuo profilo completo" : known ? account.nickname : "Non conosci ancora questa persona"}
           >
-            <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={92} ring="idle" glowColor={mood?.color} glowIntensity={auraIntensityValue} />
+            {/* L'aura scompare prima che l'avatar finisca di rimpicciolirsi (vedi
+               requisito: "man mano che l'avatar si avvicina alla posizione finale...
+               l'aura scompare"), non insieme a lui — da qui l'intensità che cala più in
+               fretta della sua opacità generale. */}
+            <AuraAvatar
+              imageUrl={account.avatarUrl}
+              firstName={account.nickname}
+              size={92}
+              ring="idle"
+              glowColor={mood?.color}
+              glowIntensity={auraIntensityValue * Math.max(0, 1 - collapseProgress * 1.8)}
+            />
           </button>
         </span>
 
         <p className="mt-3.5 font-display text-lg text-ink-100">@{account.nickname}</p>
 
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-600">
-          {gender && <span>{gender}</span>}
-          {gender && mood && <span className="h-1 w-1 shrink-0 rounded-full bg-ink-800" />}
-          {mood && <span style={{ color: mood.color }}>{mood.label}</span>}
-        </p>
+        {mood && (
+          <p className="mt-1 text-xs" style={{ color: mood.color }}>
+            {mood.label}
+          </p>
+        )}
       </div>
 
-      {/* Non subito sotto la riga di stato/genere, ma nemmeno lontano — il "riquadro
-         centrale" (vedi KnowPanel) che decide se sei "Persona Conosciuta" o "Sconosciuto"
-         per questo account, e cosa puoi farci. Solo sui profili altrui: il tuo non ha
-         bisogno di dichiarare se conosci te stesso. */}
+      {/* Non subito sotto la riga di stato, ma nemmeno lontano — il "riquadro centrale"
+         (vedi KnowPanel) che decide se sei "Persona Conosciuta" o "Sconosciuto" per questo
+         account, e cosa puoi farci. Solo sui profili altrui: il tuo non ha bisogno di
+         dichiarare se conosci te stesso. */}
       {!isOwner && (
-        <div className="mt-5">
+        <div className="mt-5" style={{ opacity: Math.max(0, 1 - collapseProgress * 1.7) }}>
           <KnowPanel accountId={account.id} />
         </div>
       )}
 
       {mounted &&
         createPortal(
-          <>
-            <AnimatePresence>
-              {discoveriesOpen && menuPos && (
+          <AnimatePresence>
+            {unknownTipOpen && unknownTipPos && (
               <motion.div
-                ref={menuRef}
                 initial={{ opacity: 0, scale: 0.94, y: -6 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.94, y: -6 }}
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                style={{ position: "fixed", top: menuPos.top, left: menuPos.left, width: MENU_WIDTH }}
-                className="glass-strong z-50 overflow-hidden rounded-xl2 p-1.5"
+                style={{ position: "fixed", top: unknownTipPos.top, left: unknownTipPos.left, width: 220 }}
+                className="glass-strong z-50 rounded-xl2 px-3.5 py-3 text-center text-xs text-ink-200"
               >
-                <p className="px-3 pt-2 text-[10px] uppercase tracking-wide text-ink-800">
-                  Ultime Scoperte Su {account.nickname}
-                </p>
-                {!linkedPerson ? (
-                  <p className="px-3 py-3 text-xs text-ink-800">
-                    Non hai ancora collegato @{account.nickname} a nessuna persona — tocca &quot;Esplora Altro&quot; per
-                    farlo.
-                  </p>
-                ) : recent.length === 0 ? (
-                  <p className="px-3 py-3 text-xs text-ink-800">Non hai ancora scoperto nulla.</p>
-                ) : (
-                  recent.map((d, i) => (
-                    <div key={i} className="flex items-start gap-1 px-3 py-2 text-xs">
-                      <span className="text-ink-600">{d.label}</span>
-                      <span className="ml-auto text-right text-ink-200">{d.value}</span>
-                    </div>
-                  ))
-                )}
-                <button
-                  onClick={() => {
-                    setDiscoveriesOpen(false);
-                    setExploreOpen(true);
-                  }}
-                  className="focus-ring mt-1 flex w-full items-center gap-2 rounded-xl border-t border-white/[0.06] px-3 py-2.5 text-left text-xs text-[#B79A6B] hover:bg-white/[0.04]"
-                >
-                  <Compass size={13} /> Esplora altro <ChevronRight size={13} className="ml-auto" />
-                </button>
+                Non conosci ancora questa persona
               </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {unknownTipOpen && unknownTipPos && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.94, y: -6 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.94, y: -6 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ position: "fixed", top: unknownTipPos.top, left: unknownTipPos.left, width: 220 }}
-                  className="glass-strong z-50 rounded-xl2 px-3.5 py-3 text-center text-xs text-ink-200"
-                >
-                  Non conosci ancora questa persona
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>,
+            )}
+          </AnimatePresence>,
           document.body
         )}
 
-      {exploreOpen && (
-        <ExploreProfileSheet accountId={account.id} nickname={account.nickname} onClose={() => setExploreOpen(false)} />
-      )}
+      {exploreOpen && <ExploreProfileSheet nickname={account.nickname} onClose={() => setExploreOpen(false)} />}
     </div>
   );
 }

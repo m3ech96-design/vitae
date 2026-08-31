@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Pencil, Sparkles, Check } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
+import { VitaecomAccount } from "@/lib/vitaecom-social-types";
 import {
   ShowcaseCandidate,
   ShowcaseSource,
@@ -134,18 +135,45 @@ function ShowcaseEditor({ onClose }: { onClose: () => void }) {
  * valori, luoghi...), non un bio testuale generico da un'altra scheda di testo libero: è un
  * cassetto pensato per accogliere altri contenuti/funzioni in futuro, questo è il primo.
  */
-export function ShowcaseDrawer({ isOwner }: { isOwner: boolean }) {
+/**
+ * Il riquadro che spezza la parte alta del profilo — largo quanto lo schermo, non inserito
+ * nel solito contenitore centrato con margini: è un breakout deliberato (`w-screen` con
+ * margini negativi calcolati sul viewport), il primo elemento di tutta l'app che rompe quel
+ * pattern apposta, per segnalare "qui è una vetrina, non una card come le altre". Oggi
+ * contiene la Vetrina — una selezione di cose vere già scritte nel tuo profilo (film,
+ * valori, luoghi...), non un bio testuale generico da un'altra scheda di testo libero: è un
+ * cassetto pensato per accogliere altri contenuti/funzioni in futuro, questo è il primo.
+ *
+ * È anche il primo elemento in assoluto della pagina (nessun pulsante "Indietro"/"Home" in
+ * flusso sopra di lei, vedi le pagine che la usano): porta con sé il proprio
+ * `padding-top` per il notch, così parte davvero da sotto il safe-area — anche quando non
+ * ha nulla da mostrare (account ospite senza vetrina propria), nel qual caso resta comunque
+ * uno spazio vuoto della stessa altezza, mai un riquadro "Vetrina" finto senza contenuto.
+ */
+export function ShowcaseDrawer({
+  isOwner,
+  account,
+}: {
+  isOwner: boolean;
+  /** Solo per un account ospite: la sua vetrina statica (vedi vitaecom-demo-data.ts) —
+   * testo curato a mano, non pescato da un profilo vero dietro (gli account ospiti non ne
+   * hanno uno). */
+  account?: VitaecomAccount;
+}) {
   const { profile } = useProfile();
   const [editorOpen, setEditorOpen] = useState(false);
-  const items = resolveShowcase(profile, profile.vitaecomShowcase);
+  const items = isOwner ? resolveShowcase(profile, profile.vitaecomShowcase) : [];
+  const guestItems = !isOwner ? account?.showcaseItems ?? [] : [];
 
-  // Solo il proprietario ha oggi una Vetrina da mostrare — un account ospite (dimostrativo)
-  // non ha un proprio profilo ricco dietro, quindi qui non c'è nulla di vero da pescare;
-  // niente riquadro vuoto finto al suo posto.
-  if (!isOwner && items.length === 0) return null;
+  // Solo il proprietario ha oggi una Vetrina editabile; un account ospite (dimostrativo) ne
+  // ha una propria solo se qualcuno gliel'ha scritta a mano (vedi vitaecom-demo-data.ts) —
+  // altrimenti resta solo lo spazio del notch, mai un riquadro vuoto finto.
+  if (!isOwner && guestItems.length === 0) {
+    return <div style={{ height: "max(env(safe-area-inset-top), 1.25rem)" }} aria-hidden />;
+  }
 
   return (
-    <div className="relative w-screen mx-[calc(50%-50vw)] border-y border-white/[0.06] bg-white/[0.015] px-6 py-5">
+    <div className="relative w-screen mx-[calc(50%-50vw)] border-y border-white/[0.06] bg-white/[0.015] px-6 pb-5 pt-[max(env(safe-area-inset-top),1.25rem)]">
       <div className="mx-auto max-w-xl">
         <div className="mb-3 flex items-center justify-between">
           <p className="flex items-center gap-1.5 font-display text-[11px] uppercase tracking-[0.2em] text-[#B79A6B]">
@@ -161,7 +189,7 @@ export function ShowcaseDrawer({ isOwner }: { isOwner: boolean }) {
           )}
         </div>
 
-        {items.length === 0 ? (
+        {isOwner && items.length === 0 ? (
           <button
             onClick={() => setEditorOpen(true)}
             className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl2 border border-dashed border-white/15 py-3.5 text-xs text-ink-600 hover:border-[#B79A6B]/50 hover:text-ink-200"
@@ -170,9 +198,9 @@ export function ShowcaseDrawer({ isOwner }: { isOwner: boolean }) {
           </button>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
-              <ShowcaseChip key={item.key} item={item} />
-            ))}
+            {isOwner
+              ? items.map((item) => <ShowcaseChip key={item.key} item={item} />)
+              : guestItems.map((text, i) => <ShowcaseChip key={i} item={{ key: `guest-${i}`, source: "traits", label: text }} />)}
           </div>
         )}
       </div>

@@ -223,11 +223,10 @@ export interface Person extends PersonalDetails {
   avatarUrl?: string;
   kind: PersonKind;
   livesAtHome: boolean;
-  /** Creata dal pulsante "Crea Una Persona Di Esempio" in Vitaecom (vedi
-   * components/vitaecom/LinkAccountPanel.tsx), per provare Scoperte/Rapporto/Albero senza
-   * dover prima collegare qualcuno di vero — una vera Persona a tutti gli effetti (si
-   * modifica, si cancella, conta nell'Albero come chiunque altro), solo segnata con un
-   * piccolo badge "Esempio" in Mondo per non confonderla con un contatto reale mesi dopo. */
+  /** Badge "Esempio" in Mondo, per non confondere una persona di prova con un contatto
+   * reale — nessuna scorciatoia la crea più da sola (il collegamento Vitaecom↔Mondo che la
+   * generava è stato tolto, vedi ExploreProfileSheet), il campo resta solo per chi l'aveva
+   * già creata così prima di questo cambiamento. */
   isDemo?: boolean;
   /** Impostato solo alla creazione, dal wizard — vedi AddPersonModal. Cambia il trattamento
    * dell'avatar ovunque compaia (desaturato, respiro che si assesta una volta sola) e fa

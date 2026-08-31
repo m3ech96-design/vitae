@@ -2,7 +2,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Bell, Gem, UserPlus, UserCheck } from "lucide-react";
+import { MessageSquare, Bell, Gem, UserPlus, UserCheck, AtSign, Home, Sparkles } from "lucide-react";
+import { useMood } from "@/lib/mood-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { useVitaecomChat } from "@/lib/vitaecom-chat-context";
@@ -29,7 +30,8 @@ function timeAgo(iso: string): string {
 function ChatList() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { notifications, hasUnreadNotification, markNotificationsRead, knownAccountIds } = useVitaecomSocial();
+  const { notifications, hasUnreadNotification, markNotificationsRead, knownAccountIds, householdReceivedRequests, respondHouseholdRequest, mutedAccountIds } = useVitaecomSocial();
+  const { allMoods } = useMood();
   const { messagesWith } = useVitaecomChat();
   const [notifOpen, setNotifOpen] = useState(false);
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
@@ -83,9 +85,72 @@ function ChatList() {
 
       {notifOpen && (
         <PersonalCardSheet title="Notifiche" onClose={() => setNotifOpen(false)}>
-          {notifications.length === 0 && <p className="text-sm text-ink-800">Nessuna notifica ancora.</p>}
-          {notifications.map((n) => {
+          {(() => {
+            const visibleNotifications = notifications.filter((n) => !mutedAccountIds.includes(n.fromAccountId));
+            if (visibleNotifications.length === 0) return <p className="text-sm text-ink-800">Nessuna notifica ancora.</p>;
+            return visibleNotifications.map((n) => {
             const account = resolveAccount(n.fromAccountId, userAccount);
+            const reactionMood = n.kind === "reaction" ? allMoods.find((m) => m.id === n.moodId) : undefined;
+            const label =
+              n.kind === "like" ? (
+                <>
+                  <Gem size={10} className="mb-0.5 inline" /> ha messo Mi Piace al tuo post
+                </>
+              ) : n.kind === "comment" ? (
+                "ha commentato il tuo post"
+              ) : n.kind === "know_request" ? (
+                <>
+                  <UserPlus size={10} className="mb-0.5 inline" /> vuole conoscerti
+                </>
+              ) : n.kind === "know_accepted" ? (
+                <>
+                  <UserCheck size={10} className="mb-0.5 inline" /> ha accettato!
+                </>
+              ) : n.kind === "household_request" ? (
+                <>
+                  <Home size={10} className="mb-0.5 inline" /> desidera aggiungersi nella tua casa
+                </>
+              ) : n.kind === "household_accepted" ? (
+                <>
+                  <Home size={10} className="mb-0.5 inline" /> è entrato/a nella tua casa
+                </>
+              ) : n.kind === "reaction" ? (
+                <>Il tuo post ha reso {account.nickname} <span style={{ color: reactionMood?.color }}>{reactionMood?.label ?? ""}</span></>
+              ) : (
+                <>
+                  <AtSign size={10} className="mb-0.5 inline" /> ti ha taggato in un post
+                </>
+              );
+
+            // Una richiesta di Casa in arrivo si accetta/rifiuta qui sul posto — le uniche
+            // due notifiche con un esito ancora da decidere, non solo da leggere.
+            if (n.kind === "household_request" && householdReceivedRequests.includes(n.fromAccountId)) {
+              return (
+                <div key={n.id} className="mt-3 flex items-center gap-3 first:mt-0">
+                  <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={36} ring="idle" glowColor="#B79A6B" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-ink-200">
+                      <span className="text-ink-100">{account.nickname}</span> {label}
+                    </p>
+                    <div className="mt-1.5 flex gap-1.5">
+                      <button
+                        onClick={() => respondHouseholdRequest(n.fromAccountId, true)}
+                        className="focus-ring rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 px-3 py-1 text-[11px] text-ink-100 transition hover:bg-[#B79A6B]/25"
+                      >
+                        Accetta
+                      </button>
+                      <button
+                        onClick={() => respondHouseholdRequest(n.fromAccountId, false)}
+                        className="focus-ring rounded-full border border-white/10 px-3 py-1 text-[11px] text-ink-600 transition hover:text-ink-200"
+                      >
+                        Rifiuta
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <button
                 key={n.id}
@@ -95,20 +160,9 @@ function ChatList() {
                 <AuraAvatar imageUrl={account.avatarUrl} firstName={account.nickname} size={36} ring="idle" glowColor="#B79A6B" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-ink-200">
-                    <span className="text-ink-100">{account.nickname}</span>{" "}
-                    {n.kind === "like" ? (
+                    {n.kind === "reaction" ? label : (
                       <>
-                        <Gem size={10} className="mb-0.5 inline" /> ha messo Mi Piace al tuo post
-                      </>
-                    ) : n.kind === "comment" ? (
-                      "ha commentato il tuo post"
-                    ) : n.kind === "know_request" ? (
-                      <>
-                        <UserPlus size={10} className="mb-0.5 inline" /> vuole conoscerti
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck size={10} className="mb-0.5 inline" /> ha accettato!
+                        <span className="text-ink-100">{account.nickname}</span> {label}
                       </>
                     )}
                   </p>
@@ -116,7 +170,8 @@ function ChatList() {
                 </div>
               </button>
             );
-          })}
+            });
+          })()}
         </PersonalCardSheet>
       )}
     </div>

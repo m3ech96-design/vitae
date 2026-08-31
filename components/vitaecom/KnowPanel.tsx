@@ -75,7 +75,7 @@ export function KnowPanel({ accountId }: { accountId: string }) {
                   onClick={() => (revealed ? sendKnowRequest(accountId) : setRevealed(true))}
                   className="focus-ring flex items-center gap-1.5 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 px-3.5 py-2.5 text-sm text-ink-100 transition hover:bg-[#B79A6B]/25"
                 >
-                  <Aperture size={20} className="shrink-0" />
+                  <Aperture size={28} className="shrink-0" />
                   <motion.span
                     initial={false}
                     animate={{ width: revealed ? "auto" : 0, opacity: revealed ? 1 : 0 }}

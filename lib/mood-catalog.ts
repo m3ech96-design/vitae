@@ -177,5 +177,11 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
     category: "Famiglia",
     defaultMoodIds: ["curioso", "nostalgico"],
   },
+  {
+    key: "bisogni:desiderato",
+    label: "Scegliere un nuovo bisogno della settimana",
+    category: "Bisogni",
+    defaultMoodIds: ["curioso"],
+  },
   { key: "bisogni:esaudito", label: "Esaudire un bisogno della settimana", category: "Bisogni", defaultMoodIds: ["appagato"] },
 ];

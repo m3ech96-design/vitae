@@ -37,6 +37,12 @@ interface MoodContextValue {
   /** Chiamata da ogni angolo dell'app dove succede qualcosa di potenzialmente emotivo — se
    * per quell'innesco non è configurato nessuno stato, non fa nulla in silenzio. */
   fireTrigger: (triggerKey: string) => void;
+  /** Come fireTrigger, ma con un unico stato d'animo già deciso (non pescato dalla mappa
+   * inneschi) — riusa lo stesso Pop Up "Ti Senti Così?" per un caso dinamico, come la
+   * condivisione di un post: "lo stesso Pop Up... aggiornato con lo stato d'animo appena
+   * selezionato (lascialo di default)" — appare identico, resta comunque solo un
+   * suggerimento da confermare o ignorare, mai imposto in automatico. */
+  suggestMood: (moodId: string) => void;
   pendingSuggestion: PendingSuggestion | null;
   confirmMood: (moodId: string) => void;
   dismissSuggestion: () => void;
@@ -179,6 +185,10 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     [triggerMap]
   );
 
+  const suggestMood = useCallback((moodId: string) => {
+    setPendingSuggestion({ triggerKey: "manual", candidateMoodIds: [moodId] });
+  }, []);
+
   const confirmMood = useCallback(
     (moodId: string) => {
       persistActive({ moodId, startedAt: new Date().toISOString() });
@@ -223,6 +233,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
         addCustomMood,
         removeCustomMood,
         fireTrigger,
+        suggestMood,
         pendingSuggestion,
         confirmMood,
         dismissSuggestion,

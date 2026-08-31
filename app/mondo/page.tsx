@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Plus, Users, Search, X } from "lucide-react";
+import { Plus, Users, Search, X, PawPrint } from "lucide-react";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
 import { usePlaces } from "@/lib/places-context";
@@ -19,6 +19,7 @@ export default function MondoPage() {
   const { tasks } = useTasks();
   const { places } = usePlaces();
   const [addOpen, setAddOpen] = useState(false);
+  const [addAnimalOpen, setAddAnimalOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("alfabetico");
   const [filter, setFilter] = useState<FilterMode>("tutti");
@@ -46,12 +47,20 @@ export default function MondoPage() {
           <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Mondo</p>
           <h1 className="mt-1 font-display text-2xl text-ink-100">Chi conosci</h1>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="focus-ring flex items-center gap-1.5 rounded-full bg-aura-gradient px-4 py-2.5 text-xs font-display text-void-950 shadow-glow"
-        >
-          <Plus size={15} /> Persona
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={() => setAddAnimalOpen(true)}
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-2.5 text-xs text-ink-200 transition hover:border-aura-cyan/50"
+          >
+            <PawPrint size={14} /> Animale
+          </button>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="focus-ring flex items-center gap-1.5 rounded-full bg-aura-gradient px-4 py-2.5 text-xs font-display text-void-950 shadow-glow"
+          >
+            <Plus size={15} /> Persona
+          </button>
+        </div>
       </div>
 
       <div className="relative mt-5">
@@ -97,7 +106,7 @@ export default function MondoPage() {
           ["tutti", "Tutti"],
           ["persone", "Persone"],
           ["animali", "Animali"],
-          ["in-casa", "In Casa"],
+          ["in-casa", "In casa"],
         ] as [FilterMode, string][]).map(([mode, label]) => (
           <button
             key={mode}
@@ -126,6 +135,7 @@ export default function MondoPage() {
       </div>
 
       {addOpen && <AddPersonModal onClose={() => setAddOpen(false)} />}
+      {addAnimalOpen && <AddPersonModal onClose={() => setAddAnimalOpen(false)} title="Aggiungi animale" forceAnimal />}
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenId(null)} />}
     </div>
   );

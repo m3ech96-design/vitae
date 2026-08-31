@@ -24,7 +24,7 @@ const KIND_OPTIONS: { kind: PersonKind; icon: React.ReactNode }[] = [
 
 export function AddPersonModal({
   onClose,
-  title = "Aggiungi Persona",
+  title = "Aggiungi persona",
   lockLivesAtHome,
   forceAnimal,
 }: {
@@ -50,7 +50,9 @@ export function AddPersonModal({
   // momento, da qui in poi cambia solo interagendo davvero (vedi Rapporti).
   const [initialRelationship, setInitialRelationship] = useState(0);
 
-  const kindOptions = forceAnimal ? KIND_OPTIONS.filter((o) => o.kind === "cane" || o.kind === "gatto") : KIND_OPTIONS;
+  const kindOptions = forceAnimal
+    ? KIND_OPTIONS.filter((o) => o.kind === "cane" || o.kind === "gatto")
+    : KIND_OPTIONS.filter((o) => !ANIMAL_KINDS.includes(o.kind));
   const isAnimalKind = ANIMAL_KINDS.includes(kind);
 
   const submit = () => {

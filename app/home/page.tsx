@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { HeartPulse, Wallet, Sparkles, Pencil, Home as HomeIcon, DoorOpen, Plus, LocateFixed } from "lucide-react";
+import { HeartPulse, Wallet, Sparkles, Pencil, Home as HomeIcon, DoorOpen, LocateFixed } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -18,7 +18,10 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { LinkHomeCard } from "@/components/household/LinkHomeCard";
-import { AddPersonModal } from "@/components/persone/AddPersonModal";
+import { AddToHouseholdMenu } from "@/components/household/AddToHouseholdMenu";
+import { VitaecomHouseholdAvatarCell } from "@/components/household/VitaecomHouseholdAvatarCell";
+import { vitaecomMemberIsHome } from "@/lib/vitaecom-household-presence";
+import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { PersonWindow } from "@/components/persone/PersonWindow";
 import { UserOverviewModal } from "@/components/home/UserOverviewModal";
 import { HouseholdAvatarCell } from "@/components/household/HouseholdAvatarCell";
@@ -29,19 +32,20 @@ import { WeeklyNeedsCard } from "@/components/home/WeeklyNeedsCard";
 import { VitaecomNotificationsCard } from "@/components/home/VitaecomNotificationsCard";
 import { PersonalCardMenu } from "@/components/home/PersonalCardMenu";
 import { useMood } from "@/lib/mood-context";
+import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { moodBackgroundLayers, moodBackgroundOpacity } from "@/lib/mood-tone";
 
 function greetingForHour(hour: number) {
   if (hour >= 5 && hour < 12) return "Buongiorno";
-  if (hour >= 12 && hour < 18) return "Buon Pomeriggio";
+  if (hour >= 12 && hour < 18) return "Buon pomeriggio";
   if (hour >= 18 && hour < 22) return "Buonasera";
   return "Buonanotte";
 }
 
 const SHORTCUTS = [
-  { href: "/salute", icon: HeartPulse, label: "Salute", desc: "Attività E Peso" },
-  { href: "/finanze", icon: Wallet, label: "Finanze", desc: "Budget E Risparmi" },
-  { href: "/rapporti", icon: Sparkles, label: "Rapporti", desc: "Legami E Animali" },
+  { href: "/salute", icon: HeartPulse, label: "Salute", desc: "Attività e peso" },
+  { href: "/finanze", icon: Wallet, label: "Finanze", desc: "Budget e risparmi" },
+  { href: "/rapporti", icon: Sparkles, label: "Rapporti", desc: "Legami e animali" },
 ];
 
 export default function HomePage() {
@@ -63,12 +67,12 @@ export default function HomePage() {
     currentPlaceIcon,
   } = useHousehold();
   const [greeting, setGreeting] = useState("Ciao");
-  const [addOpen, setAddOpen] = useState(false);
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
+  const { householdMembers } = useVitaecomSocial();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -88,7 +92,19 @@ export default function HomePage() {
   const atHome = people.filter((p) => statusOf(p) === "casa");
   const awayPeople = people.filter((p) => statusOf(p) === "fuori-casa");
   const userTaskLocation = userTaskDrivenLocation(tasks, home?.placeId);
-  const userIsHome = userTaskLocation ? userTaskLocation === "casa" : !userIsAway;
+  // La geolocalizzazione, quando è attiva e ha una lettura vera, ha sempre l'ultima parola
+  // sul "sei a casa": un Impegno/Evento che ti vorrebbe fuori casa non può più contraddire
+  // il GPS che ti vede fisicamente lì (il caso segnalato: "ho un evento fuori casa ma sono
+  // ancora in casa secondo il GPS, eppure risulto fuori"). Il luogo dedotto dalla task resta
+  // valido per tutto il resto — nessuna lettura GPS attendibile (rilevamento spento), o il
+  // GPS stesso conferma che sei altrove.
+  const gpsConfirmsHome = trackingEnabled && !userIsAway;
+  const userIsHome = gpsConfirmsHome ? true : userTaskLocation ? userTaskLocation === "casa" : !userIsAway;
+  // La posizione di un account Vitaecom nel riquadro Casa è simulata (vedi
+  // lib/vitaecom-household-presence.ts) — ricalcolata a ogni minuto insieme al resto della
+  // Home (lo stesso `tick` già usato per far scorrere le altre presenze).
+  const vitaecomHomeAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id) && vitaecomMemberIsHome(a.id));
+  const vitaecomAwayAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id) && !vitaecomMemberIsHome(a.id));
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
@@ -145,7 +161,7 @@ export default function HomePage() {
               <p className="truncate font-display text-lg text-ink-100">
                 {profile.firstName} {profile.lastName}
               </p>
-              <p className="text-sm text-ink-600">{age !== null ? `${age} Anni` : "Età Non Impostata"}</p>
+              <p className="text-sm text-ink-600">{age !== null ? `${age} anni` : "Età non impostata"}</p>
               {displayMood && (
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: displayMood.color }}>
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: displayMood.color }} />
@@ -186,7 +202,7 @@ export default function HomePage() {
                 title="Attiva il rilevamento della tua posizione"
               >
                 <LocateFixed size={11} />
-                {trackingEnabled ? "Rilevamento attivo" : "Rilevamento Spento"}
+                {trackingEnabled ? "Rilevamento attivo" : "Rilevamento spento"}
               </button>
             </div>
 
@@ -209,15 +225,10 @@ export default function HomePage() {
               {atHome.map((p) => (
                 <HouseholdAvatarCell key={p.id} person={p} location="casa" onOpen={setOpenPerson} />
               ))}
-              <button
-                onClick={() => setAddOpen(true)}
-                className="focus-ring flex flex-col items-center gap-1.5"
-              >
-                <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-dashed border-white/15 text-ink-600 transition hover:border-aura-violet/50 hover:text-ink-200">
-                  <Plus size={18} />
-                </span>
-                <span className="text-[11px] text-ink-600">Aggiungi</span>
-              </button>
+              {vitaecomHomeAccounts.map((a) => (
+                <VitaecomHouseholdAvatarCell key={a.id} account={a} location="casa" />
+              ))}
+              <AddToHouseholdMenu />
             </div>
             {trackingError && (
               <p className={`mt-3 text-[11px] ${trackingPermissionDenied ? "text-aura-pink" : "text-ink-800"}`}>
@@ -250,7 +261,10 @@ export default function HomePage() {
               {awayPeople.map((p) => (
                 <HouseholdAvatarCell key={p.id} person={p} location="fuori-casa" onOpen={setOpenPerson} />
               ))}
-              {userIsHome && awayPeople.length === 0 && (
+              {vitaecomAwayAccounts.map((a) => (
+                <VitaecomHouseholdAvatarCell key={a.id} account={a} location="fuori-casa" />
+              ))}
+              {userIsHome && awayPeople.length === 0 && vitaecomAwayAccounts.length === 0 && (
                 <p className="py-3 text-center text-[11px] text-ink-800">
                   Nessuno è fuori casa
                 </p>
@@ -319,9 +333,6 @@ export default function HomePage() {
         </Reveal>
       )}
 
-      {addOpen && (
-        <AddPersonModal onClose={() => setAddOpen(false)} title="Aggiungi alla casa" lockLivesAtHome />
-      )}
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
       {overviewOpen && <UserOverviewModal onClose={() => setOverviewOpen(false)} />}
     </div>

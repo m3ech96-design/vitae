@@ -7,9 +7,36 @@ import { VitaecomAccount, VitaecomPost } from "./vitaecom-social-types";
  * di essere importato: nessun'altra parte del codice dipende da questi dati per esistere.
  */
 export const DEMO_ACCOUNTS: VitaecomAccount[] = [
-  { id: "demo-nina", nickname: "nina.tra.le.nuvole", isDemo: true },
-  { id: "demo-leo", nickname: "leo_84", isDemo: true },
-  { id: "demo-sara", nickname: "sarasa.wandering", isDemo: true },
+  {
+    id: "demo-nina",
+    nickname: "nina.tra.le.nuvole",
+    isDemo: true,
+    showcaseItems: [
+      "Occupazione: Illustratrice freelance",
+      "Bevanda Del Mattino: Caffè lungo, sempre",
+      "Posto Preferito In Città: Il tavolino vicino alla finestra del bar sotto casa",
+    ],
+  },
+  {
+    id: "demo-leo",
+    nickname: "leo_84",
+    isDemo: true,
+    showcaseItems: [
+      "Occupazione: Personal trainer",
+      "Sport: Corsa, tre volte a settimana",
+      "Obiettivo Di Quest'Anno: Finire la sua prima mezza maratona",
+    ],
+  },
+  {
+    id: "demo-sara",
+    nickname: "sarasa.wandering",
+    isDemo: true,
+    showcaseItems: [
+      "Occupazione: Archivista",
+      "Passione: Fotografie vecchie e storie di famiglia",
+      "Città Del Cuore: Dove è cresciuta, non dove vive ora",
+    ],
+  },
 ];
 
 const HOUR = 3_600_000;
@@ -57,7 +84,9 @@ export function buildDemoPosts(): VitaecomPost[] {
       createdAt: new Date(now - 50 * HOUR).toISOString(),
       moodId: "nostalgico",
       caption: "Ho ritrovato una foto di dieci anni fa oggi. Certe cose non invecchiano davvero.",
-      tags: [],
+      // Ti tagga in quella foto — anche i tag notificano l'utente taggato (vedi
+      // vitaecom-social-context.tsx, seeding delle notifiche alla primissima apertura).
+      tags: [{ accountId: "user" }],
       likedByUser: false,
       likeCount: 7,
       comments: [

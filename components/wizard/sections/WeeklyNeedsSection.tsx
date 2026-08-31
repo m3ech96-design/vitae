@@ -2,23 +2,35 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useNeeds } from "@/lib/needs-context";
+import { useMood } from "@/lib/mood-context";
 import { NEED_SUGGESTIONS } from "@/lib/needs-catalog";
 
 /**
  * "Quando ho voglia" — nessun bisogno è mai obbligatorio né decade con un fallimento da
  * segnalare: aggiungi solo quello che ti va, quando ti va. Dura una settimana, poi sparisce
  * in silenzio se non lo esaudisci — la Home lo ricorda nel frattempo (vedi WeeklyNeedsCard).
+ *
+ * Non genera solo lo stato d'animo di arrivo ("Appagato", quando lo esaudisci — vedi
+ * WeeklyNeedsCard): sceglierne uno nuovo è già un innesco suo, quello di chi comincia a
+ * desiderare qualcosa (di serie "Curioso", configurabile come ogni altro innesco nel
+ * pannello degli Stati D'Animo).
  */
 export function WeeklyNeedsSection() {
   const { needs, addNeed, cancelNeed } = useNeeds();
+  const { fireTrigger } = useMood();
   const [customLabel, setCustomLabel] = useState("");
 
   const activeLabels = new Set(needs.map((n) => n.label));
   const availableSuggestions = NEED_SUGGESTIONS.filter((s) => !activeLabels.has(s));
 
+  const pickNeed = (label: string) => {
+    addNeed(label);
+    fireTrigger("bisogni:desiderato");
+  };
+
   const submitCustom = () => {
     if (!customLabel.trim()) return;
-    addNeed(customLabel.trim());
+    pickNeed(customLabel.trim());
     setCustomLabel("");
   };
 
@@ -49,7 +61,7 @@ export function WeeklyNeedsSection() {
           {availableSuggestions.map((s) => (
             <button
               key={s}
-              onClick={() => addNeed(s)}
+              onClick={() => pickNeed(s)}
               className="focus-ring flex items-center gap-1 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-400 transition hover:border-aura-cyan/50 hover:text-ink-100"
             >
               <Plus size={11} /> {s}

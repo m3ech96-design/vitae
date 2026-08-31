@@ -10,6 +10,12 @@ export interface VitaecomAccount {
   nickname: string;
   avatarUrl?: string;
   isDemo?: boolean;
+  /** Vetrina statica dell'account (solo per gli account dimostrativi, scritta a mano — vedi
+   * vitaecom-demo-data.ts): l'app non ha un vero profilo `PersonalDetails` dietro un
+   * account altrui da cui pescare come fa `lib/vitaecom-showcase.ts` per il proprietario,
+   * quindi qui i testi sono già pronti, non generati da campi vivi. Ogni riga è già nel
+   * formato "Etichetta: valore" pronto per un chip — vedi ShowcaseDrawer. */
+  showcaseItems?: string[];
 }
 
 export type VitaecomMentionType = "person" | "place" | "task";
@@ -41,7 +47,9 @@ export interface VitaecomPost {
   id: string;
   authorId: string;
   createdAt: string;
-  /** Determina il colore del bordo e il tono della riga sotto il nickname. */
+  /** Determina il colore del bordo e il tono della riga sotto il nickname — solo per un
+   * post che NON è una condivisione. Una condivisione mostra "si è sentito/a" con
+   * `sharedMoodId`, vedi sotto. */
   moodId?: string;
   caption: string;
   captionByAI?: boolean;
@@ -57,6 +65,36 @@ export interface VitaecomPost {
   likeCount: number;
   comments: VitaecomComment[];
   isDemo?: boolean;
+
+  /**
+   * Condivisione — "Lato Stato". La radice della catena (l'id del post originale): assente
+   * per un post che è esso stesso l'originale. `moodTallies` in vitaecom-social-context.tsx
+   * è indicizzato per questa chiave, non per il singolo post: tutti i post di una stessa
+   * catena condividono lo stesso Lato Stato, dall'originale fino all'ultima condivisione.
+   */
+  chainRootId?: string;
+  /** L'id del post condiviso direttamente (il tuo "di provenienza") — assente per l'originale. */
+  sharedFromPostId?: string;
+  /** Lo stato d'animo scelto in "Cosa provi?" durante QUESTA condivisione — va sotto il
+   * nickname al posto del nome dello stato d'animo normale, e alimenta il Lato Stato. */
+  sharedMoodId?: string;
+  /** Il contenuto del post ORIGINALE, incorporato sempre in ogni condivisione (mai solo
+   * quello immediatamente a monte, che vive invece nei campi embedSource* qui sotto). */
+  embedOriginAuthorId?: string;
+  embedOriginCaption?: string;
+  embedOriginPhotoKey?: string;
+  embedOriginDemoPhotoUrl?: string;
+  embedOriginVideoKey?: string;
+  /** Il contenuto AGGIUNTO dal post di provenienza diretto (non l'originale) — incorporato
+   * solo se, condividendo, hai lasciato acceso "Incorpora anche il contenuto aggiunto da
+   * [nickname]" (mostrato solo quando quel post aveva davvero qualcosa di suo da
+   * aggiungere, cioè era a sua volta una condivisione con un proprio testo). */
+  embedSourceAuthorId?: string;
+  embedSourceCaption?: string;
+  /** Il tuo stato d'animo di reazione su QUESTO post — solo il tuo: gli account demo non
+   * hanno un dispositivo che reagisca sul serio (vedi simulateDemoEngagement per l'unica
+   * simulazione onesta possibile, dal loro lato verso un tuo post). */
+  userReactionMoodId?: string;
 }
 
 /** Cosa "Imprimi Momento" raccoglie prima di chiedere all'utente cosa pubblicare davvero —
