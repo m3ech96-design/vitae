@@ -12,13 +12,17 @@ export interface VitaecomChatMessage {
   fromUser: boolean;
   text: string;
   createdAt: string;
+  /** Solo una TUA foto/video vero (chiavi verso image-store.ts/video-store.ts) — mai
+   * entrambi insieme, mai generati, mai per un messaggio demo. */
+  photoKey?: string;
+  videoKey?: string;
 }
 
 interface VitaecomChatContextValue {
   hydrated: boolean;
   messages: VitaecomChatMessage[];
   messagesWith: (accountId: string) => VitaecomChatMessage[];
-  sendMessage: (accountId: string, text: string) => void;
+  sendMessage: (accountId: string, text: string, media?: { photoKey?: string; videoKey?: string }) => void;
 }
 
 const VitaecomChatContext = createContext<VitaecomChatContextValue | null>(null);
@@ -70,10 +74,18 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
   const messagesWith = useCallback((accountId: string) => messages.filter((m) => m.accountId === accountId), [messages]);
 
   const sendMessage = useCallback(
-    (accountId: string, text: string) => {
+    (accountId: string, text: string, media?: { photoKey?: string; videoKey?: string }) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
-      const mine: VitaecomChatMessage = { id: newId(), accountId, fromUser: true, text: trimmed, createdAt: new Date().toISOString() };
+      if (!trimmed && !media?.photoKey && !media?.videoKey) return;
+      const mine: VitaecomChatMessage = {
+        id: newId(),
+        accountId,
+        fromUser: true,
+        text: trimmed,
+        createdAt: new Date().toISOString(),
+        photoKey: media?.photoKey,
+        videoKey: media?.videoKey,
+      };
       persist([...messagesRef.current, mine]);
 
       const delay = 1800 + Math.random() * 2600;

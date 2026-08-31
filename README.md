@@ -1447,6 +1447,29 @@ ragionevole resta solida ovunque.
 Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
 correttamente su tutte le 19 rotte.
 
+## Checkpoint 34 — la barra di navigazione diventa barra di testo dentro una chat
+
+Entrando nella conversazione con una Persona Conosciuta, la barra di navigazione "online" si
+capovolge (stessa animazione `rotateY` già usata per il cambio offline/online, non una nuova
+— vedi `NavSwitcher.tsx`, che ora sceglie tra tre barre in base al percorso, non più due) e
+al suo posto compare una barra di testo vera: freccia indietro all'estrema sinistra (torna
+alla scheda Chat, il che fa scattare da solo il capovolgimento inverso — nessuno stato da
+invertire a mano, `NavSwitcher` sceglie sempre la barra giusta in base al percorso), il campo
+di testo, due pulsanti-icona per allegare una foto o un video (mutuamente esclusivi, stesso
+formato già stabilito per "Imprimi Momento") e l'invio. Prima non c'era alcun modo di
+condividere file multimediali da qui: mancava del tutto.
+
+La barra resta fissa durante lo scroll come già faceva quella di navigazione, e ora reagisce
+anche alla tastiera virtuale (`lib/use-keyboard-inset.ts`, tramite `visualViewport` — l'unica
+API che riflette davvero quanto spazio la tastiera toglie), restando sopra di lei invece di
+finirci nascosta sotto.
+
+Nel farlo, un'altra violazione Title Case preesistente trovata e corretta nella stessa pagina
+("Conosci Prima..." nel messaggio per chi non conosce ancora la persona).
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
 ## Sviluppo in locale
 
 ```bash
