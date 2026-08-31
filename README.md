@@ -1470,6 +1470,33 @@ Nel farlo, un'altra violazione Title Case preesistente trovata e corretta nella 
 Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
 correttamente su tutte le 19 rotte.
 
+## Checkpoint 35 — reazioni ai messaggi in chat, e l'aura fiammeggiante dell'avatar
+
+**Ogni messaggio è reagibile con uno stato d'animo**, stessa meccanica dei post: una sfera
+sotto il messaggio (nome dello stato al posto della sfera una volta reagito, sempre
+cliccabile per cambiarlo) genera "Ti sei sentito/a [stato]" quando reagisci tu, "Si è
+sentito/a [stato]" quando reagisce l'altro lato (simulato — vedi sotto), e "Vi siete
+sentiti" con le due sfere sovrapposte, cliccabili in un elenco, quando reagite entrambi. Il
+contorno del messaggio prende il colore dello stato di chi ha reagito; se avete reagito
+entrambi con stati diversi, diventa un gradiente liquido dei due colori (stessa animazione
+già costruita per il Lato Stato dei post, non un secondo linguaggio visivo).
+
+Non esistendo un vero interlocutore dall'altra parte del filo, la sua reazione è simulata
+con la stessa onestà già usata altrove: dopo un tuo messaggio, l'account demo a volte reagisce
+con uno stato invece di rispondere a parole (mai entrambe le cose insieme).
+
+**L'avatar dell'altro account, in chat, non ha più l'aura permanente** — l'aveva sempre
+avuta per errore di distrazione, non per scelta: ora è spenta come richiesto. Quando arriva
+una sua reazione, si accende invece un'animazione (`ReactionAvatarBurst.tsx`): il tasto
+indietro si trasforma in una sfera dello stato d'animo, raggiunge il bordo dell'avatar, lo
+gira una volta intera, torna al punto di partenza e ridiventa freccia — poi un'aura
+fiammeggiante esplode intorno all'avatar con scintille bianche e del colore dello stato,
+dura un secondo e scompare per sempre (non un nuovo respiro continuo). Circa due-tre secondi
+in tutto, come richiesto.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
 ## Sviluppo in locale
 
 ```bash
