@@ -386,11 +386,11 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                   <SwitchVisual checked={Boolean(person.liveModeEnabled)} />
                 </button>
                 <p className="mb-3 mt-2 text-xs text-ink-800">
-                  Cosa {person.firstName} sta forse facendo, in certi orari o a caso. Compare nella card, non nella nuvoletta.
+                  Cosa {person.firstName} sta facendo, in certi orari o a caso. Compare nella card, non nella nuvoletta.
                 </p>
                 <ActionEditor
-                  actions={person.actionPhrases}
-                  onChange={(actionPhrases) => updatePerson(person.id, { actionPhrases })}
+                  action={person.actionPhrase}
+                  onChange={(actionPhrase) => updatePerson(person.id, { actionPhrase })}
                 />
               </div>
 

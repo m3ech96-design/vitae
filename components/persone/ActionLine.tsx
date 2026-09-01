@@ -43,7 +43,7 @@ export function ActionLine({ person }: { person: Person }) {
       timers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [person.liveModeEnabled, person.actionPhrases, person.engagements, places]);
+  }, [person.liveModeEnabled, person.actionPhrase, person.engagements, places]);
 
   if (!text) return null;
 

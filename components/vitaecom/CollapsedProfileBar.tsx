@@ -1,6 +1,7 @@
 "use client";
 import { ArrowLeft } from "lucide-react";
 import { AuraAvatar } from "../ui/AuraAvatar";
+import { LiquidFill } from "./LiquidFill";
 
 /**
  * Il riquadro fisso in alto (sotto il notch, dove prima stava solo "Indietro") che prende
@@ -8,8 +9,9 @@ import { AuraAvatar } from "../ui/AuraAvatar";
  * vedi `progress` calcolato nella pagina, `[0, 1]` in scroll diretto (nessun caso speciale
  * per "tornare indietro": scrollare in alto rifà semplicemente la stessa interpolazione al
  * contrario, la stessa che l'ha creata). Il riempimento liquido nel colore dello stato
- * d'animo cresce con lo scroll fino a tre quarti dell'altezza, con un guizzo in più a ogni
- * evento di scroll (`pulsing`) che si assesta da solo quando ti fermi.
+ * d'animo cresce con lo scroll fino a tre quarti dell'altezza — l'animazione vera e propria
+ * (bollicine, onda, gradiente che si mescola) vive in LiquidFill.tsx, corretta rispetto a
+ * prima quando non c'era nessuna animazione, solo un blocco colorato fermo.
  */
 export function CollapsedProfileBar({
   progress,
@@ -46,15 +48,7 @@ export function CollapsedProfileBar({
         WebkitBackdropFilter: "blur(24px) saturate(180%)",
       }}
     >
-      <div
-        className="lato-stato-line absolute inset-x-0 bottom-0 transition-[height,opacity] duration-150"
-        style={{
-          height: `${fillHeightPct}%`,
-          opacity: pulsing ? 0.85 : 0.5,
-          background: `linear-gradient(120deg, ${moodColor}, #fff5, ${moodColor})`,
-          boxShadow: pulsing ? `0 0 20px 2px ${moodColor}aa` : `0 0 10px 0 ${moodColor}66`,
-        }}
-      />
+      <LiquidFill heightPct={fillHeightPct} moodColor={moodColor} pulsing={pulsing} />
       <div className="relative flex h-full items-center gap-2.5 px-4" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <button onClick={onBack} className="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-100" aria-label="Indietro">
           <ArrowLeft size={16} />

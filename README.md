@@ -1520,7 +1520,6 @@ in tutto, come richiesto.
 Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
 correttamente su tutte le 19 rotte.
 
-<<<<<<< HEAD
 ## Checkpoint 36 — la scheda "News"
 
 Nuova scheda "News", assegnabile a uno slot della barra di navigazione con la stessa
@@ -1717,8 +1716,239 @@ per attività basate sul peso, le nuove schede Alimentazione/Diario/Hobby/Wishli
 due da valutare insieme prima di costruirle), i bug di reazioni/Lato Stato/animazione
 liquida del profilo altrui.
 
-=======
->>>>>>> 3a75f45c1f7675983c7651c0fe45471953b79606
+## Checkpoint 41 — verifica del riempimento bilaterale, e prima parte di "modalità vivo/dialogo" sul proprio profilo
+
+**"L'auto compilazione dei campi in Albero Genealogico" (bilaterale, sempre)**: verificata con
+un test end-to-end dedicato, non solo dichiarata a parole — simulata la sequenza reale con
+cui React applica gli aggiornamenti (sposare A con B compila da solo `B.spouseId`, e il
+`motherId`/`fatherId` di ogni figlio già esistente di A). Prima della correzione della race
+condition (Checkpoint 40), lo stesso identico scenario perdeva silenziosamente tutte le
+scritture tranne l'ultima; ora sopravvivono tutte.
+
+**Modalità vivo/dialogo, anche sul proprio profilo** (prima esistevano solo per le altre
+persone in Mondo):
+- `dialogModeEnabled`/`recurringPhrases`/`liveModeEnabled` spostati da `Person` a
+  `PersonalDetails`, così `UserProfile` li eredita allo stesso modo — niente più una
+  funzionalità riservata a "le altre persone".
+- La Frase Azione non è più una lista: al più una sola, sempre in vigore, col campo
+  rinominato "Frase azione". Prefisso fisso "Sta" (mai più "Forse sta"/"Probabilmente sta"
+  a sorte — con una sola frase, sceglierne il tono a caso era solo rumore). Limite di 50
+  caratteri (il prefisso non conta, si aggiunge solo in visualizzazione).
+- Le Frasi Dialogo hanno ora davvero un limite di 40 caratteri e un tetto di 10 frasi — non
+  esisteva alcun limite prima, nonostante fosse già dato per assunto.
+- Aggiunte le sezioni "Modalità dialogo" e "Modalità vivo" alla pagina del proprio profilo
+  (`/profilo`), con gli stessi editor già usati per le altre persone.
+- Sul proprio profilo Vitaecom (`ProfileHeader`, solo per il proprietario): la nuvoletta di
+  dialogo compare ora sull'avatar, e la Frase Azione compare subito dopo lo stato d'animo —
+  l'ultima voce del blocco, dato che per il proprio profilo il "riquadro centrale"
+  (`KnowPanel`) non esiste nemmeno.
+- **Bug reale di ancoraggio corretto in `DialogueBubble`** (vale ovunque la nuvoletta viene
+  usata, non solo qui): la punta doveva "coincidere con l'avatar, leggermente sovrapposta",
+  ma un margine di troppo (`mb-2`) la lasciava sempre 4px sospesa sopra l'avatar, mai a
+  toccarlo. Rimosso quel margine: ora il bordo della nuvoletta coincide con il bordo
+  dell'avatar e la punta vi si sovrappone per i suoi 4px, come richiesto.
+
+**Non ancora risolto, onestamente**: dove esattamente debba comparire la Frase Azione
+"nella card della chat, l'ultima riga sotto a quella utilizzata" resta ambiguo. La lista
+delle chat (`/vitaecom/chat`) mostra solo account dimostrativi (`DEMO_ACCOUNTS`), che per
+loro stessa natura — lo dice già il codice stesso, in `vitaecom-social-types.ts` — non hanno
+un vero `PersonalDetails` dietro a cui attingere frasi vere; l'unico account con dati reali
+sei tu, e tu non compari come riga della tua stessa lista di conversazioni. Prima di
+costruire una card "te stesso" mai chiesta esplicitamente altrove, preferisco chiedere
+conferma piuttosto che indovinare — vedi la richiesta che accompagna questo checkpoint.
+
+## Checkpoint 42 — nuvoletta e frase azione, simmetriche in entrambe le direzioni
+
+Chiarito: valgono per il tuo profilo visto da altri E per i profili altrui visti da te,
+esattamente come già la nuvoletta di dialogo. Non più legate a `isOwner`.
+
+- `lib/dialogue.ts`: `pickDialoguePhrase`/`pickActionPhrase` ora accettano due piccole
+  interfacce (`DialoguePresentable`, `ActionPresentable` — solo i campi davvero letti, tutti
+  facoltativi) invece di richiedere un intero `PersonalDetails`. Così lo stesso meccanismo
+  vale anche per un `VitaecomAccount` altrui, che non avrà mai il resto del profilo.
+- `VitaecomAccount` (in `vitaecom-social-types.ts`) porta ora, facoltativi, gli stessi due
+  campi — per un account dimostrativo sono scritti a mano (stessa idea della vetrina), per
+  il tuo si leggono dal tuo vero profilo.
+- `ProfileHeader.tsx` sceglie la fonte giusta in base a chi si sta guardando (`isOwner`
+  decide da dove pescare, non più se mostrare o no) — la nuvoletta sull'avatar e la Frase
+  Azione subito dopo, ultima voce prima del riquadro centrale, sono ora sempre le stesse per
+  chiunque.
+- Aggiunte due account dimostrativi con nuvoletta e frase azione scritte a mano
+  (`demo-nina`, `demo-leo`), per rendere la simmetria visibile e verificabile guardando un
+  profilo altrui, non solo dichiarata; `demo-sara` resta senza, a mostrare che non tutti gli
+  account le hanno.
+- `OwnActionLine.tsx` è stato sostituito da `AccountActionLine.tsx`, generico.
+
+## Checkpoint 43 — ricerca e "+" nella scheda Chat, menu avatar nella conversazione, chat di gruppo
+
+- **Scheda Chat**: pulsante di ricerca (filtra sia le persone conosciute sia i gruppi per
+  nome) e pulsante "+" per una nuova chat — singola (apre subito la conversazione) o di
+  gruppo (nome + almeno due persone conosciute).
+- **Chat di gruppo, prima volta**: nuovo tipo `VitaecomGroupChat` in
+  `vitaecom-chat-context.tsx`, con una sua rotta (`/vitaecom/chat/gruppo/[groupId]`) e una
+  sua barra di input dedicata (`GroupChatInputBar`, solo testo). Scelta dichiarata
+  esplicitamente nel codice: a differenza della chat 1:1 (dove un solo account dimostrativo
+  simula risposte, già una finzione ammessa), un gruppo con più account dimostrativi che si
+  "parlano" tra loro sarebbe un'invenzione multi-voce ben più elaborata — resta quindi
+  sempre e solo ciò che ci scrivi tu.
+- **Menu avatar nella chat singola** (`ChatOptionsSheet`, aperto toccando l'avatar in cima
+  alla conversazione, sostituendo il tasto indietro solo per quel tocco — la freccia vera
+  resta cliccabile a parte): "Trova nella chat" (cerca testo nei messaggi), "Media inviati"
+  (solo le tue foto/video, mai quelli demo — coerente con la stessa nota di onestà già nel
+  codice), "Link inviati" (URL estratti dal testo dei messaggi).
+- Corretto anche un Title Case residuo ("Nessun Messaggio Ancora — Scrivi Tu Per Primo").
+- `PersonalCardSheet` (il foglio condiviso da sei punti diversi dell'app) ora accetta un
+  titolo `React.ReactNode`, non solo `string` — serviva per il pulsante "indietro" dentro il
+  titolo di `ChatOptionsSheet"; cambio compatibile con tutti gli usi esistenti.
+
+## Checkpoint 44 — calorie per attività, dal Compendio delle Attività Fisiche, in base al peso vero
+
+`registra attività` non stimava più a occhio per categoria (10 kcal/min per tutto il
+"Cardio", per esempio, uguale per la corsa e per la camminata veloce) — ogni singola
+attività del catalogo (110 in tutto, non solo dieci per categoria: "Combattimento" e
+"Cardio" ne avevano di più) ha ora un proprio valore MET (Metabolic Equivalent of Task),
+cercato nel 2024 Adult Compendium of Physical Activities (Ainsworth/Herrmann et al. — la
+fonte scientifica di riferimento per questo tipo di stima) o in valori equivalenti ben
+documentati per le poche attività non coperte direttamente lì (es. Baseball, Cricket, Tiro
+Con L'Arco, Scherma, Tai Chi, Vela — voci classiche della letteratura sul tema, non numeri
+a caso).
+
+- `lib/activity-catalog.ts`: ogni attività porta il proprio `met`; nuova funzione
+  `estimatedCalories(activityId, minutes, weightKg)` che applica la formula standard —
+  calorie = MET × peso in kg × ore — invece del tasso fisso per categoria.
+  `ACTIVITY_CATEGORIES` non ha più `kcalPerMinute` (non serve più a nessuno).
+- `AddWorkoutModal.tsx`: il peso usato è ora quello vero — l'ultima pesata registrata in
+  Salute se c'è, altrimenti quello scritto nel wizard, altrimenti 70 kg (il peso medio di
+  riferimento della letteratura, dichiarato nel testo del suggerimento se capita). Prima
+  due persone che correvano lo stesso tempo vedevano la stessa stima; ora no, come dovrebbe
+  essere.
+- Verificato con un test dedicato (non solo dichiarato): stesso allenamento, pesi diversi,
+  calorie diverse; nessuna delle 110 attività senza un MET valido; la formula applicata
+  corrisponde esattamente al calcolo manuale.
+
+## Checkpoint 45 — nuova scheda "Salute" (medica): dieci sezioni, dopo un brainstorming insieme
+
+Come deciso insieme: "Salute" (allenamenti + peso) è diventata **Attività e peso**
+(`/attivita-peso`, stesso contenuto di prima, solo il nome è cambiato — nuova icona
+manubrio per non confondersi con la nuova Salute). **Salute** (`/salute`) è ora la parte
+medica vera e propria, con dieci sezioni, ciascuna nel proprio foglio:
+
+- **Appuntamenti**: prossimi/passati, con un pulsante per esportare l'evento nel calendario
+  di sistema (stesso meccanismo .ics già costruito per le task, riadattato).
+- **Referti medici**: titolo, tipo (Analisi/Visita/Imaging/Altro), data, medico o
+  laboratorio, note, e — su richiesta — una foto del referto (stesso `ImageCropInput` già
+  usato altrove nell'app, salvata in IndexedDB come ogni altra immagine).
+- **Analisi del sangue**: un pannello per data, con più valori nominati (nome, valore,
+  unità) — toccando un valore in qualsiasi pannello se ne vede l'andamento nel tempo, con
+  lo stesso grafico a linee del peso.
+- **Parametri vitali** (pressione, battito, glicemia): sempre inseriti a mano, ciascuno col
+  proprio grafico. **Perché non c'è (e non può esserci) una sincronizzazione automatica con
+  smartwatch o app come Zepp/Mi Fit/Google Fit**, spiegato per esteso all'utente nella
+  conversazione: Zepp e Mi Fit non hanno un'API pubblica; Apple Health (HealthKit) è
+  raggiungibile solo da un'app nativa, mai da un sito web; Google Fit avrebbe un'API vera
+  ma richiede OAuth con un server dietro a gestirlo in sicurezza, che questa app non ha
+  (solo locale, un utente reale, nessun server — vedi la nota in cima a questo file); il
+  giorno di un vero server, Google Fit è l'unico dei tre tecnicamente riconsiderabile.
+- **Farmaci**: nome, dosaggio, orari multipli, data di fine facoltativa (vuoto = in corso)
+  — con un vero promemoria: `MedicationNotifier.tsx`, stessa meccanica di
+  `TaskNotifier.tsx` (un controllo al minuto, notifica del browser), stesso limite onesto
+  dichiarato nel codice: funziona solo mentre l'app è aperta, non è una notifica push vera
+  (richiederebbe un service worker con abbonamento push e un server dietro).
+- **Anamnesi**: condizioni croniche, interventi, familiarità — tre liste in un'unica
+  scheda a tab.
+- **Allergie e intolleranze**: nome, gravità (lieve/moderata/grave, evidenziata in rosso se
+  grave), reazione.
+- **Vaccinazioni**: fatta il, richiamo previsto (evidenziato se in scadenza).
+- **Contatti medici**: nome, ruolo, telefono (toccabile per chiamare), indirizzo.
+- **Cronologia sintomi**: nome, data, gravità 1-5 a colori, durata.
+
+Nuovo `lib/medical-context.tsx`: dieci collezioni indipendenti, tutte con la stessa forma
+funzionale di `setState` fin dall'inizio (la stessa correzione, con la stessa causa reale,
+del Checkpoint 40 su `household-context.tsx` — qui evitata da subito, non corretta dopo).
+
+## Checkpoint 46 — nove nuove funzionalità per "Attività e peso", dopo un brainstorming insieme
+
+Come deciso insieme, tutte e nove:
+
+1. **Obiettivo settimanale**: minuti, sessioni o calorie, con barra di progresso —
+   `WeeklyGoalCard.tsx`.
+2. **Record personali**: sessione più lunga e con più calorie, per ogni attività praticata
+   almeno due volte (sotto quella soglia non è ancora un record) — `PersonalRecordsSection`,
+   `lib/activity-stats.ts`.
+3. **Calendario a mappa di calore**: un quadratino per giorno delle ultime ~17 settimane,
+   come i contributi di GitHub — `ActivityHeatmap.tsx`.
+4. **Grafico per categoria**: cardio contro forza contro sport negli ultimi 30 giorni, non
+   solo il totale generico — `CategoryBreakdown.tsx`.
+5. **Confronto periodi**: questa settimana contro la scorsa, questo mese contro il
+   precedente, con la differenza percentuale — `PeriodComparisonCard.tsx`.
+6. **Misure corporee**: nome libero (vita, petto, braccia — quello che conta per la
+   persona, come le Analisi Del Sangue in Salute), ciascuna con il proprio grafico nel
+   tempo — `BodyMeasurementsSection.tsx`.
+7. **BMI calcolato**: solo se l'altezza è già impostata nel wizard — non richiesta di
+   nuovo qui — mostrato accanto al peso con la categoria (sottopeso/normopeso/eccetera) —
+   `BmiBadge.tsx`.
+8. **Foto progressi**: una foto periodica, in sequenza temporale (più recente per prima) —
+   `ProgressPhotosSection.tsx`.
+9. **Pianifica un allenamento futuro**: non un sistema a parte — usa direttamente il
+   sistema di Task esistente (tipo "Evento", con promemoria un'ora prima), offrendo subito
+   anche l'aggiunta al calendario di sistema — `ScheduleWorkoutModal.tsx`.
+
+Verificate `personalRecords`/`minutesByCategory`/`activityHeatmap` con un test dedicato,
+non solo dichiarate — stesso standard di verifica di questa intera sessione.
+
+## Checkpoint 47 — reazioni, Lato Stato, sfera di reazione, animazione liquida
+
+Quattro bug corretti, uno per uno, con la causa reale trovata prima di scrivere codice:
+
+- **Testo di reazione duplicato nella chat** (`MessageReaction.tsx`): quando esisteva solo
+  la tua reazione, il componente mostrava contemporaneamente un'etichetta a parte con il
+  solo nome dello stato d'animo ("Felice") E la frase intera ("Ti sei sentito/a felice") —
+  il bug esatto descritto ("[stato d'animo] frase [stato d'animo]"). Ora c'è una sola frase,
+  cliccabile, senza ripetizione. Le reazioni ai post e ai messaggi erano già correttamente
+  "una sola per persona" (un campo singolo, non un elenco) — quella parte del bug non
+  serviva correggerla, era già a posto.
+- **Lato Stato** (`LatoStato.tsx` + `PostCard.tsx`): il bordo sinistro del post restava
+  intero (un `border` unico su tutti e quattro i lati) mentre la striscia colorata veniva
+  disegnata 2px più dentro (`pl-0.5` di troppo) — risultato: bordo mai interrotto e striscia
+  rientrata rispetto a dove sarebbe dovuta stare. Corretto separando il bordo per lato
+  (sinistro rimosso, gli angoli si smussano naturalmente da soli grazie al border-radius) e
+  togliendo il rientro, così la striscia ora occupa esattamente il posto del bordo tolto.
+- **Sfera di reazione** (`ReactionOrbit.tsx`, nuovo, + `lib/perimeter-path.ts`): prima era
+  un salto diagonale dal basso verso l'angolo, non un percorso lungo il contorno. Ora la
+  sfera parte esattamente dal pulsante di reazione, cammina in senso antiorario per tutto il
+  perimetro del post (basso verso destra, su a destra, a sinistra in alto, giù a sinistra) e
+  si dissolve vicino all'interruzione del Lato Stato, in sincronia con l'impulso della
+  striscia. Geometria verificata con un test dedicato — nessun punto del percorso esce mai
+  dai limiti della card.
+- **Animazione liquida nel riquadro profilo altrui** (`LiquidFill.tsx`, nuovo): prima non
+  c'era alcuna animazione, un blocco colorato fermo che solo cresceva con lo scroll. Ora ci
+  sono tutte e tre le caratteristiche richieste: bollicine che nascono sul fondo e scoppiano
+  in superficie, una superficie ondulata che scorre sempre nella stessa direzione (più ampia
+  mentre si scorre attivamente, come scuotere un bicchiere), e un gradiente che si mescola
+  spostando lentamente la propria posizione.
+
+## Checkpoint 48 — "una sola reazione per persona" nei post: il campo era già singolo, il conteggio no
+
+Segnalazione giusta, causa reale trovata: `userReactionMoodId` (il campo che dice qual è la
+TUA reazione a un post) era già a posto — sempre uno solo, mai un elenco. Il problema stava
+un livello più giù, nel conteggio aggregato che alimenta il Lato Stato
+(`moodTallies`/`bumpMoodTally` in `vitaecom-social-context.tsx`): cambiare reazione fa
+partire due chiamate di fila nello stesso gestore di evento (-1 sulla vecchia, +1 sulla
+nuova), ed entrambe leggevano lo stesso stato non ancora aggiornato — la seconda
+sovrascriveva la prima invece di sommarsi, lasciando la quota della reazione precedente mai
+tolta. Il risultato visibile: un solo cambio di idea finiva per contare come due persone
+diverse nel Lato Stato — la stessa identica famiglia di bug della race condition già trovata
+e corretta nel Checkpoint 40 (`household-context.tsx`), qui nascosta un livello più a fondo.
+
+Convertite tutte e dieci le funzioni "persist" di `vitaecom-social-context.tsx` (non solo
+quella dei conteggi) alla stessa forma funzionale sicura, e ogni punto di chiamata che
+leggeva da un `ref` o da una chiusura per calcolare il prossimo valore — post, notifiche,
+richieste di amicizia/famiglia, nomi conosciuti — non ne ha più bisogno: ognuna riceve
+sempre lo stato più aggiornato, indipendentemente da quante scritture arrivano nello stesso
+istante. Verificato con un test dedicato che replica lo scenario esatto (cambio reazione da
+uno stato d'animo a un altro): prima il risultato finale contava entrambi gli stati, ora
+solo quello nuovo.
+
 ## Sviluppo in locale
 
 ```bash

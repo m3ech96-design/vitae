@@ -4,6 +4,8 @@ import { newId } from "./id";
 import { DEFAULT_MOODS } from "./mood-catalog";
 
 const MESSAGES_KEY = "vitae:vitaecom-messages";
+const GROUPS_KEY = "vitae:vitaecom-groups";
+const GROUP_MESSAGES_KEY = "vitae:vitaecom-group-messages";
 
 export interface VitaecomChatMessage {
   id: string;
@@ -24,6 +26,29 @@ export interface VitaecomChatMessage {
   otherReactionMoodId?: string;
 }
 
+/** Una chat di gruppo — solo tra account "Persona Conosciuta" (stessa regola delle chat
+ * singole, applicata da chi la crea, non da questo contesto). */
+export interface VitaecomGroupChat {
+  id: string;
+  name: string;
+  /** Gli altri membri — non include mai "user", che è sempre presente implicitamente. */
+  memberIds: string[];
+  createdAt: string;
+}
+
+/** A differenza delle chat singole, qui NON si simula mai una risposta o una reazione da
+ * parte degli account dimostrativi: farlo per una singola persona nella chat 1:1 è già di
+ * per sé una finzione dichiarata (vedi DEMO_REPLIES sopra), ma orchestrare più account
+ * dimostrativi che si "parlano" tra loro in un gruppo sarebbe un'invenzione ben più
+ * elaborata — una conversazione a più voci scritta a tavolino. Una chat di gruppo, qui,
+ * resta quindi sempre e solo ciò che ci scrivi tu: reale, non popolata a finzione. */
+export interface VitaecomGroupMessage {
+  id: string;
+  groupId: string;
+  text: string;
+  createdAt: string;
+}
+
 interface VitaecomChatContextValue {
   hydrated: boolean;
   messages: VitaecomChatMessage[];
@@ -36,6 +61,12 @@ interface VitaecomChatContextValue {
    * app/vitaecom/chat/[accountId]/page.tsx), una volta sola per ogni reazione, non a ogni
    * nuovo render. */
   reactionPing: Record<string, { at: number; moodId: string }>;
+  groups: VitaecomGroupChat[];
+  groupById: (groupId: string) => VitaecomGroupChat | undefined;
+  createGroup: (name: string, memberIds: string[]) => string;
+  groupMessages: VitaecomGroupMessage[];
+  messagesInGroup: (groupId: string) => VitaecomGroupMessage[];
+  sendGroupMessage: (groupId: string, text: string) => void;
 }
 
 const VitaecomChatContext = createContext<VitaecomChatContextValue | null>(null);
@@ -60,11 +91,21 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
   const [hydrated, setHydrated] = useState(false);
   const [messages, setMessages] = useState<VitaecomChatMessage[]>([]);
   const [reactionPing, setReactionPing] = useState<Record<string, { at: number; moodId: string }>>({});
+  const [groups, setGroups] = useState<VitaecomGroupChat[]>([]);
+  const [groupMessages, setGroupMessages] = useState<VitaecomGroupMessage[]>([]);
   const messagesRef = useRef<VitaecomChatMessage[]>([]);
+  const groupsRef = useRef<VitaecomGroupChat[]>([]);
+  const groupMessagesRef = useRef<VitaecomGroupMessage[]>([]);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
+  useEffect(() => {
+    groupMessagesRef.current = groupMessages;
+  }, [groupMessages]);
 
   const persist = useCallback((next: VitaecomChatMessage[]) => {
     setMessages(next);
@@ -75,10 +116,32 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const persistGroups = useCallback((next: VitaecomGroupChat[]) => {
+    setGroups(next);
+    try {
+      window.localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
+  const persistGroupMessages = useCallback((next: VitaecomGroupMessage[]) => {
+    setGroupMessages(next);
+    try {
+      window.localStorage.setItem(GROUP_MESSAGES_KEY, JSON.stringify(next));
+    } catch {
+      // storage non disponibile: continua solo in memoria
+    }
+  }, []);
+
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(MESSAGES_KEY);
       if (raw) setMessages(JSON.parse(raw) as VitaecomChatMessage[]);
+      const rawGroups = window.localStorage.getItem(GROUPS_KEY);
+      if (rawGroups) setGroups(JSON.parse(rawGroups) as VitaecomGroupChat[]);
+      const rawGroupMessages = window.localStorage.getItem(GROUP_MESSAGES_KEY);
+      if (rawGroupMessages) setGroupMessages(JSON.parse(rawGroupMessages) as VitaecomGroupMessage[]);
     } catch {
       // dati corrotti: riparte da nessun messaggio
     }
@@ -136,8 +199,47 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
     [persist]
   );
 
+  const groupById = useCallback((groupId: string) => groups.find((g) => g.id === groupId), [groups]);
+
+  const createGroup = useCallback(
+    (name: string, memberIds: string[]) => {
+      const id = newId();
+      const group: VitaecomGroupChat = { id, name: name.trim(), memberIds, createdAt: new Date().toISOString() };
+      persistGroups([...groupsRef.current, group]);
+      return id;
+    },
+    [persistGroups]
+  );
+
+  const messagesInGroup = useCallback((groupId: string) => groupMessages.filter((m) => m.groupId === groupId), [groupMessages]);
+
+  const sendGroupMessage = useCallback(
+    (groupId: string, text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const mine: VitaecomGroupMessage = { id: newId(), groupId, text: trimmed, createdAt: new Date().toISOString() };
+      persistGroupMessages([...groupMessagesRef.current, mine]);
+    },
+    [persistGroupMessages]
+  );
+
   return (
-    <VitaecomChatContext.Provider value={{ hydrated, messages, messagesWith, sendMessage, setMessageReaction, reactionPing }}>
+    <VitaecomChatContext.Provider
+      value={{
+        hydrated,
+        messages,
+        messagesWith,
+        sendMessage,
+        setMessageReaction,
+        reactionPing,
+        groups,
+        groupById,
+        createGroup,
+        groupMessages,
+        messagesInGroup,
+        sendGroupMessage,
+      }}
+    >
       {children}
     </VitaecomChatContext.Provider>
   );

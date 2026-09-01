@@ -1,15 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Person } from "@/lib/types";
-import { pickDialoguePhrase } from "@/lib/dialogue";
+import { DialoguePresentable, pickDialoguePhrase } from "@/lib/dialogue";
 
 /**
  * Nuvoletta ancorata all'avatar, riservata alle Frasi Ricorrenti (Modalità Dialogo).
  * Le Azioni non passano più da qui: vivono come riga di testo nella card (vedi ActionLine).
  * Va usata solo dentro un contenitore che NON ha overflow-hidden, altrimenti viene tagliata.
+ * Il parametro è la piccola interfaccia `DialoguePresentable` (solo i due campi letti
+ * davvero), non `Person`: vale quindi anche per il tuo profilo e per un account Vitaecom
+ * altrui, in entrambe le direzioni — chiunque abbia questi due campi comunque popolati.
+ *
+ * Ancoraggio: bug reale corretto — la punta doveva "coincidere con l'avatar, leggermente
+ * sovrapposta" ma restava sospesa 4px sopra di lui. La punta (8x8px, ruotata 45°) sporge
+ * di metà della propria altezza (4px) sotto il bordo inferiore della nuvoletta per via di
+ * `top-full` + `-translate-y-1/2`: con il vecchio `mb-2` (8px di distacco tra nuvoletta e
+ * avatar), quei 4px di punta finivano comunque 4px sopra l'avatar, mai a toccarlo. Senza
+ * quel margine, il bordo inferiore della nuvoletta coincide esattamente con il bordo
+ * superiore dell'avatar, e la punta vi si sovrappone dei suoi 4px — l'effetto voluto.
  */
-export function DialogueBubble({ person }: { person: Person }) {
+export function DialogueBubble({ person }: { person: DialoguePresentable }) {
   const [text, setText] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const [typed, setTyped] = useState("");
@@ -68,7 +78,7 @@ export function DialogueBubble({ person }: { person: Person }) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.4, y: 6 }}
           transition={{ type: "spring", stiffness: 340, damping: 20 }}
-          className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[150px] -translate-x-1/2"
+          className="pointer-events-none absolute bottom-full left-1/2 z-30 w-max max-w-[150px] -translate-x-1/2"
         >
           <div className="rounded-2xl border border-aura-violet/30 bg-void-800/95 px-3 py-1.5 text-[11px] leading-snug text-ink-100 shadow-glow-sm">
             {typed}

@@ -26,13 +26,7 @@ export function MessageReaction({
 
   return (
     <div className="mt-2 flex items-center gap-2 border-t border-white/[0.06] pt-1.5">
-      {userMood ? (
-        <button onClick={() => onReact(userMood.id)} className="focus-ring text-[11px]" style={{ color: userMood.color }}>
-          {userMood.label}
-        </button>
-      ) : (
-        <MoodPicker size={15} color="#565B77" onPick={onReact} label="Reagisci con uno stato d'animo" />
-      )}
+      {!userMood && <MoodPicker size={15} color="#565B77" onPick={onReact} label="Reagisci con uno stato d'animo" />}
 
       {userMood && otherMood ? (
         <div className="relative">
@@ -63,9 +57,12 @@ export function MessageReaction({
           </AnimatePresence>
         </div>
       ) : userMood ? (
-        <span className="text-[11px]" style={{ color: userMood.color }}>
+        // Solo la tua reazione: un'unica frase cliccabile, non più un'etichetta a parte
+        // seguita dalla stessa frase ripetuta (era esattamente il bug: "Felice Ti sei
+        // sentito/a felice" — la parola compariva due volte).
+        <button onClick={() => onReact(userMood.id)} className="focus-ring text-[11px]" style={{ color: userMood.color }}>
           Ti sei sentito/a {userMood.label.toLowerCase()}
-        </span>
+        </button>
       ) : otherMood ? (
         <span className="text-[11px]" style={{ color: otherMood.color }}>
           Si è sentito/a {otherMood.label.toLowerCase()}

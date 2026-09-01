@@ -43,12 +43,16 @@ const FLAME_PARTICLES = Array.from({ length: 10 }, (_, i) => ({
  */
 export function ReactionAvatarBurst({
   onBack,
+  onAvatarClick,
   avatarUrl,
   nickname,
   triggerAt,
   moodColor,
 }: {
   onBack: () => void;
+  /** Apre il pannello "trova nella chat / media inviati / link inviati" — solo l'avatar è
+   * toccabile per questo, la freccia indietro resta riservata a `onBack`. */
+  onAvatarClick: () => void;
   avatarUrl?: string;
   nickname: string;
   /** Cambia ogni volta che arriva una nuova reazione (vedi reactionPing nel context) — è il
@@ -74,7 +78,9 @@ export function ReactionAvatarBurst({
     <div className="relative flex shrink-0 items-center" style={{ width: ICON_SLOT + GAP + AVATAR_SIZE, height: AVATAR_SIZE }}>
       <div style={{ width: ICON_SLOT, height: ICON_SLOT }} />
       <div style={{ width: GAP }} />
-      <AuraAvatar imageUrl={avatarUrl} firstName={nickname} size={AVATAR_SIZE} ring="none" />
+      <button onClick={onAvatarClick} className="focus-ring rounded-full" aria-label={`Opzioni chat con ${nickname}`}>
+        <AuraAvatar imageUrl={avatarUrl} firstName={nickname} size={AVATAR_SIZE} ring="none" />
+      </button>
 
       {/* Il tasto indietro vero, a riposo — sparisce durante il viaggio della sfera. */}
       <AnimatePresence>

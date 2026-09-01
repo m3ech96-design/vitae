@@ -6,9 +6,12 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { MoreHorizontal, Flag } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
+import { useProfile } from "@/lib/profile-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { VitaecomAccount, VitaecomPost } from "@/lib/vitaecom-social-types";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
+import { DialogueBubble } from "@/components/persone/DialogueBubble";
+import { AccountActionLine } from "./AccountActionLine";
 import { ShowcaseDrawer } from "./ShowcaseDrawer";
 import { ExploreProfileSheet } from "./ExploreProfileSheet";
 import { KnowPanel } from "./KnowPanel";
@@ -32,7 +35,19 @@ export function ProfileHeader({
   const router = useRouter();
   const { activeMood, activeMoodIntensity, allMoods, shareMoodOnVitaecom } = useMood();
   const { knownAccountIds, reports } = useVitaecomSocial();
+  const { profile } = useProfile();
   const known = knownAccountIds.includes(account.id);
+
+  // Simmetrico in entrambe le direzioni: il tuo account pesca dal tuo vero profilo (sempre
+  // aggiornato), un account altrui porta già scritti i propri due campi (vedi la nota su
+  // VitaecomAccount) — la nuvoletta e la riga azione qui sotto non sanno nemmeno da dove
+  // arrivano questi dati, gli basta la forma.
+  const dialogueSource = isOwner
+    ? { dialogModeEnabled: profile.dialogModeEnabled, recurringPhrases: profile.recurringPhrases }
+    : { dialogModeEnabled: account.dialogModeEnabled, recurringPhrases: account.recurringPhrases };
+  const actionSource = isOwner
+    ? { liveModeEnabled: profile.liveModeEnabled, actionPhrase: profile.actionPhrase }
+    : { liveModeEnabled: account.liveModeEnabled, actionPhrase: account.actionPhrase };
 
   const normale = allMoods.find((m) => m.id === "normale");
 
@@ -121,6 +136,9 @@ export function ProfileHeader({
               {reports.length > 0 && <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-aura-pink" />}
             </Link>
           )}
+          {/* La nuvoletta (Modalità Dialogo) — simmetrica: qui sopra è già stato scelto
+             se pescare dal tuo profilo vero o dai due campi già scritti sull'account. */}
+          <DialogueBubble person={dialogueSource} />
           <button
             ref={avatarRef}
             onClick={handleAvatarClick}
@@ -149,6 +167,15 @@ export function ProfileHeader({
             {mood.label}
           </p>
         )}
+
+        {/* Frase Azione (Modalità Vivo) — su richiesta esplicita, l'ultima voce della
+           lista di componenti sotto l'avatar, escluso il riquadro centrale: per il tuo
+           stesso profilo quel riquadro (KnowPanel, vedi sotto) non esiste nemmeno, quindi
+           qui è semplicemente l'ultima cosa del blocco. Per un profilo altrui, invece,
+           resta comunque prima del riquadro — "dopo il componente prima del riquadro
+           centrale" come da richiesta. Simmetrica: stessa riga, stesso posto, per
+           chiunque. */}
+        <AccountActionLine account={actionSource} />
       </div>
 
       {/* Non subito sotto la riga di stato, ma nemmeno lontano — il "riquadro centrale"

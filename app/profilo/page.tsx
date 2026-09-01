@@ -12,6 +12,9 @@ import { CorpoSection } from "@/components/wizard/sections/CorpoSection";
 import { InterestsSection } from "@/components/wizard/sections/InterestsSection";
 import { CustomSectionView } from "@/components/wizard/sections/CustomSectionView";
 import { CreateSectionControl } from "@/components/wizard/CreateSectionControl";
+import { SwitchVisual } from "@/components/ui/Switch";
+import { PhraseEditor } from "@/components/persone/PhraseEditor";
+import { ActionEditor } from "@/components/persone/ActionEditor";
 
 export default function ProfiloPage() {
   const { profile, hydrated, updateProfile } = useProfile();
@@ -75,6 +78,39 @@ export default function ProfiloPage() {
           <p className="mb-4 font-display text-sm text-ink-100">Interessi</p>
           <InterestsSection data={profile} onUpdate={onUpdate} />
         </div>
+
+        <div className="border-t border-white/[0.06] pt-7">
+          <button
+            onClick={() => onUpdate({ dialogModeEnabled: !profile.dialogModeEnabled })}
+            className={`focus-ring flex w-full items-center justify-between rounded-xl2 border px-4 py-3 text-sm transition ${
+              profile.dialogModeEnabled ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
+            }`}
+          >
+            Modalità dialogo
+            <SwitchVisual checked={Boolean(profile.dialogModeEnabled)} />
+          </button>
+          <p className="mb-3 mt-2 text-xs text-ink-800">
+            Frasi ricorrenti che compaiono a caso vicino al tuo avatar, ben visibili su Vitaecom.
+          </p>
+          <PhraseEditor phrases={profile.recurringPhrases} onChange={(recurringPhrases) => onUpdate({ recurringPhrases })} />
+        </div>
+
+        <div className="border-t border-white/[0.06] pt-7">
+          <button
+            onClick={() => onUpdate({ liveModeEnabled: !profile.liveModeEnabled })}
+            className={`focus-ring flex w-full items-center justify-between rounded-xl2 border px-4 py-3 text-sm transition ${
+              profile.liveModeEnabled ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
+            }`}
+          >
+            Modalità vivo
+            <SwitchVisual checked={Boolean(profile.liveModeEnabled)} />
+          </button>
+          <p className="mb-3 mt-2 text-xs text-ink-800">
+            Cosa stai facendo, in certi orari o a caso — sempre aggiornata, visibile a tutti su Vitaecom.
+          </p>
+          <ActionEditor action={profile.actionPhrase} onChange={(actionPhrase) => onUpdate({ actionPhrase })} />
+        </div>
+
         {profile.customSections.map((section) => (
           <CustomSectionView
             key={section.id}

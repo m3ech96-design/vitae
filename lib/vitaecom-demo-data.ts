@@ -16,6 +16,15 @@ export const DEMO_ACCOUNTS: VitaecomAccount[] = [
       "Bevanda Del Mattino: Caffè lungo, sempre",
       "Posto Preferito In Città: Il tavolino vicino alla finestra del bar sotto casa",
     ],
+    // Nuvoletta e frase azione dimostrative — stessa idea della vetrina qui sopra, non
+    // generate da un profilo vero: mostrano come apparirebbero su un vero account altrui.
+    dialogModeEnabled: true,
+    recurringPhrases: [
+      { id: "demo-nina-p1", text: "Oggi la luce era perfetta" },
+      { id: "demo-nina-p2", text: "Un'altra tavola quasi finita" },
+    ],
+    liveModeEnabled: true,
+    actionPhrase: { id: "demo-nina-a1", text: "disegnando con la luce del pomeriggio", mode: "casuale" },
   },
   {
     id: "demo-leo",
@@ -26,6 +35,8 @@ export const DEMO_ACCOUNTS: VitaecomAccount[] = [
       "Sport: Corsa, tre volte a settimana",
       "Obiettivo Di Quest'Anno: Finire la sua prima mezza maratona",
     ],
+    liveModeEnabled: true,
+    actionPhrase: { id: "demo-leo-a1", text: "correndo i suoi soliti otto chilometri", mode: "orario", startTime: "18:00", endTime: "19:30" },
   },
   {
     id: "demo-sara",

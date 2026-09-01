@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { HeartPulse, Wallet, Sparkles, Pencil, Home as HomeIcon, DoorOpen, LocateFixed } from "lucide-react";
+import { HeartPulse, Wallet, Sparkles, Pencil, Home as HomeIcon, DoorOpen, LocateFixed, Dumbbell } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -43,7 +43,8 @@ function greetingForHour(hour: number) {
 }
 
 const SHORTCUTS = [
-  { href: "/salute", icon: HeartPulse, label: "Salute", desc: "Attività e peso" },
+  { href: "/salute", icon: HeartPulse, label: "Salute", desc: "Referti, appuntamenti, farmaci" },
+  { href: "/attivita-peso", icon: Dumbbell, label: "Attività e peso", desc: "Allenamenti e pesate" },
   { href: "/finanze", icon: Wallet, label: "Finanze", desc: "Budget e risparmi" },
   { href: "/rapporti", icon: Sparkles, label: "Rapporti", desc: "Legami e animali" },
 ];
@@ -286,7 +287,7 @@ export default function HomePage() {
         <p className="mb-3 mt-9 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
           Scorciatoie
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {SHORTCUTS.map(({ href, icon: Icon, label, desc }) => (
             <Link key={href} href={href}>
               <GlassCard className="p-3.5 transition hover:border-white/20">

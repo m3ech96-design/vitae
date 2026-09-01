@@ -1,7 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Gem, MessageCircle, Share2 } from "lucide-react";
 import { VitaecomPost } from "@/lib/vitaecom-social-types";
 import { resolveAccount, resolveTaggedAccounts } from "@/lib/vitaecom-resolve";
@@ -19,6 +18,7 @@ import { LatoStato } from "./LatoStato";
 import { MoodPicker } from "./MoodPicker";
 import { PostMenu } from "./PostMenu";
 import { ImageViewer } from "./ImageViewer";
+import { ReactionOrbit } from "./ReactionOrbit";
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -69,9 +69,23 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
   const resolvedVideoUrl = useResolvedVideo(post.videoKey);
   const resolvedEmbedOriginPhoto = useResolvedImage(post.embedOriginPhotoKey);
   const resolvedEmbedOriginVideo = useResolvedVideo(post.embedOriginVideoKey);
-  const [dropletMoodId, setDropletMoodId] = useState<string | null>(null);
+  const [orbitMoodId, setOrbitMoodId] = useState<string | null>(null);
   const [justReactedMoodId, setJustReactedMoodId] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const reactionButtonRef = useRef<HTMLSpanElement>(null);
+  const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+  const [reactionStartX, setReactionStartX] = useState(0);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const measure = () => setCardSize({ width: el.clientWidth, height: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const account = resolveAccount(post.authorId, userAccount);
@@ -93,14 +107,29 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
 
   const handleReact = (moodId: string) => {
     setPostReaction(post.id, moodId);
-    setDropletMoodId(moodId);
-    setJustReactedMoodId(moodId);
-    setTimeout(() => setDropletMoodId(null), 950);
-    setTimeout(() => setJustReactedMoodId(null), 2400);
+    const cardRect = cardRef.current?.getBoundingClientRect();
+    const btnRect = reactionButtonRef.current?.getBoundingClientRect();
+    setReactionStartX(cardRect && btnRect ? btnRect.left + btnRect.width / 2 - cardRect.left : cardSize.width * 0.4);
+    setOrbitMoodId(moodId);
+    // La sfera cammina per ~1.6s lungo tutto il contorno (vedi ReactionOrbit): il Lato
+    // Stato si accende esattamente quando lei arriva, non prima né dopo.
+    setTimeout(() => setOrbitMoodId(null), 1600);
+    setTimeout(() => setJustReactedMoodId(moodId), 1500);
+    setTimeout(() => setJustReactedMoodId(null), 2900);
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl2" style={{ border: `1.5px solid ${color}88`, background: "rgba(255,255,255,0.02)" }}>
+    <div
+      ref={cardRef}
+      className="relative overflow-hidden rounded-xl2"
+      style={{
+        borderTop: `1.5px solid ${color}88`,
+        borderRight: `1.5px solid ${color}88`,
+        borderBottom: `1.5px solid ${color}88`,
+        borderLeft: "none",
+        background: "rgba(255,255,255,0.02)",
+      }}
+    >
       <LatoStato chainRootId={chainRootId} highlightMoodId={justReactedMoodId} />
 
       <div className="flex items-center gap-3 p-4 pb-3">
@@ -163,7 +192,9 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
             <MessageCircle size={18} color={color} strokeWidth={1.6} />
             {post.comments.length > 0 && <span className="text-xs text-ink-600">{post.comments.length}</span>}
           </button>
-          <MoodPicker size={17} color={reactionColor} onPick={handleReact} label="Reagisci con uno stato d'animo" />
+          <span ref={reactionButtonRef} className="inline-flex">
+            <MoodPicker size={17} color={reactionColor} onPick={handleReact} label="Reagisci con uno stato d'animo" />
+          </span>
           <button onClick={onShare} className="focus-ring" aria-label="Condividi sulla tua bacheca">
             <Share2 size={17} color="#8B90A8" strokeWidth={1.6} />
           </button>
@@ -171,19 +202,17 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
         <TaggedAvatars accounts={taggedAccounts} />
       </div>
 
-      {/* La sferetta che "cade" dalla reazione e schizza verso il Lato Stato, in percentuale
-         sulla card così la traiettoria resta coerente qualunque sia l'altezza reale — vedi
-         LatoStato per dove atterra idealmente (il bordo sinistro). */}
-      {dropletMoodId && (
-        <motion.span
-          initial={{ left: "17%", top: "92%", opacity: 1, scale: 1 }}
-          animate={{ left: ["17%", "7%", "1%"], top: ["92%", "68%", "42%"], opacity: [1, 1, 0], scale: [1, 0.75, 0.35] }}
-          transition={{ duration: 0.9, ease: "easeInOut" }}
-          className="pointer-events-none absolute z-20 h-2.5 w-2.5 rounded-full"
-          style={{
-            background: allMoods.find((m) => m.id === dropletMoodId)?.color ?? "#8B90A8",
-            boxShadow: `0 0 8px 2px ${allMoods.find((m) => m.id === dropletMoodId)?.color ?? "#8B90A8"}aa`,
-          }}
+      {/* La sfera di reazione: appare sul contorno del post e lo percorre in senso
+         antiorario fino a diventare la striscia del Lato Stato — vedi ReactionOrbit.tsx
+         per la correzione rispetto alla vecchia animazione (un salto diagonale verso
+         l'angolo, non fedele alle istruzioni originali). */}
+      {orbitMoodId && cardSize.width > 0 && (
+        <ReactionOrbit
+          color={allMoods.find((m) => m.id === orbitMoodId)?.color ?? "#8B90A8"}
+          width={cardSize.width}
+          height={cardSize.height}
+          startX={reactionStartX}
+          stopY={22}
         />
       )}
 

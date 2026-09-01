@@ -3,14 +3,16 @@ import { useMemo, useState } from "react";
 import { X, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { todayIso } from "@/lib/date-format";
-import { ACTIVITY_CATEGORIES, ACTIVITIES } from "@/lib/activity-catalog";
+import { ACTIVITY_CATEGORIES, ACTIVITIES, estimatedCalories } from "@/lib/activity-catalog";
 import { useHealth } from "@/lib/health-context";
+import { useProfile } from "@/lib/profile-context";
 import { useMood } from "@/lib/mood-context";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 
 export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
-  const { addWorkout } = useHealth();
+  const { addWorkout, weightEntries } = useHealth();
+  const { profile } = useProfile();
   const { fireTrigger } = useMood();
   const [categoryId, setCategoryId] = useState(ACTIVITY_CATEGORIES[0].id);
   const [activityId, setActivityId] = useState<string | null>(null);
@@ -19,6 +21,17 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
   const [calories, setCalories] = useState<string>("");
   const [calorieTouched, setCalorieTouched] = useState(false);
   const [date, setDate] = useState(todayIso());
+
+  // Il peso "attuale" è l'ultima pesata registrata in Salute, se c'è — è quella davvero
+  // aggiornata, non il valore scritto una volta nel wizard e mai più toccato (che resta
+  // comunque un ripiego valido se non hai ancora registrato nessuna pesata).
+  const currentWeightKg = useMemo(() => {
+    if (weightEntries.length > 0) {
+      const latest = [...weightEntries].sort((a, b) => b.date.localeCompare(a.date))[0];
+      return latest.value;
+    }
+    return profile.weight;
+  }, [weightEntries, profile.weight]);
 
   const activitiesInCategory = useMemo(
     () =>
@@ -29,10 +42,10 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
   );
 
   const suggestedCalories = useMemo(() => {
-    const cat = ACTIVITY_CATEGORIES.find((c) => c.id === categoryId);
     const m = parseFloat(minutes) || 0;
-    return Math.round(m * (cat?.kcalPerMinute ?? 5));
-  }, [categoryId, minutes]);
+    if (!activityId || m <= 0) return 0;
+    return estimatedCalories(activityId, m, currentWeightKg);
+  }, [activityId, minutes, currentWeightKg]);
 
   const effectiveCalories = calorieTouched ? calories : String(suggestedCalories || "");
 
@@ -129,7 +142,13 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
                 setCalorieTouched(true);
                 setCalories(e.target.value);
               }}
-              hint={!calorieTouched ? "Suggerita — puoi modificarla" : undefined}
+              hint={
+                !calorieTouched
+                  ? currentWeightKg
+                    ? "Suggerita in base al tuo peso — puoi modificarla"
+                    : "Suggerita per un peso medio di riferimento (70 kg) — imposta il tuo in Salute per una stima più precisa"
+                  : undefined
+              }
             />
           </div>
 

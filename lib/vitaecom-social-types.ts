@@ -1,3 +1,5 @@
+import { ActionPhrase, RecurringPhrase } from "./types";
+
 /**
  * Vitaecom, terza stesura: non più un diario privato, un vero social — pensato apposta
  * perché la stessa forma funzioni sia ora (dati locali, un solo utente vero) sia il giorno
@@ -16,6 +18,15 @@ export interface VitaecomAccount {
    * quindi qui i testi sono già pronti, non generati da campi vivi. Ogni riga è già nel
    * formato "Etichetta: valore" pronto per un chip — vedi ShowcaseDrawer. */
   showcaseItems?: string[];
+  /** Nuvoletta di dialogo e frase azione — simmetriche in entrambe le direzioni: il tuo
+   * account le prende dal tuo vero profilo (`UserProfile`, sempre aggiornato), gli account
+   * dimostrativi le portano già scritte qui (stessa idea della vetrina qui sopra: dati
+   * pronti, non generati da campi vivi, finché non esiste un vero account altrui dietro).
+   * Facoltativi apposta: la maggior parte degli account dimostrativi non li ha. */
+  dialogModeEnabled?: boolean;
+  recurringPhrases?: RecurringPhrase[];
+  liveModeEnabled?: boolean;
+  actionPhrase?: ActionPhrase;
 }
 
 export type VitaecomMentionType = "person" | "place" | "task";

@@ -10,6 +10,7 @@ import {
   MapPinned,
   Aperture,
   Newspaper,
+  Dumbbell,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -29,6 +30,7 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/vitaecom", label: "Vitaecom", icon: Aperture },
   { href: "/mondo", label: "Mondo", icon: Users },
   { href: "/salute", label: "Salute", icon: HeartPulse },
+  { href: "/attivita-peso", label: "Attività e peso", icon: Dumbbell },
   { href: "/finanze", label: "Finanze", icon: Wallet },
   { href: "/rapporti", label: "Rapporti", icon: Sparkles },
   { href: "/albero", label: "Albero", icon: GitBranch },

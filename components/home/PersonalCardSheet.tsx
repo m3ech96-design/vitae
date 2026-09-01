@@ -26,7 +26,7 @@ export function PersonalCardSheet({
   onClose,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
 }) {

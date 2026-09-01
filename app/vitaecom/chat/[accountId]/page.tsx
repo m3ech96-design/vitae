@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/lib/profile-context";
 import { useMood } from "@/lib/mood-context";
@@ -11,6 +11,7 @@ import { useResolvedVideo } from "@/lib/use-resolved-video";
 import { NicknameGate } from "@/components/vitaecom/NicknameGate";
 import { ReactionAvatarBurst } from "@/components/vitaecom/ReactionAvatarBurst";
 import { MessageReaction } from "@/components/vitaecom/MessageReaction";
+import { ChatOptionsSheet } from "@/components/vitaecom/ChatOptionsSheet";
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
@@ -84,6 +85,7 @@ function ChatThread({ accountId }: { accountId: string }) {
   const { allMoods } = useMood();
   const { hydrated: chatHydrated, messagesWith, setMessageReaction, reactionPing } = useVitaecomChat();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   const hydrated = profileHydrated && socialHydrated && chatHydrated;
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
@@ -104,6 +106,7 @@ function ChatThread({ accountId }: { accountId: string }) {
       <div className="flex shrink-0 items-center gap-3">
         <ReactionAvatarBurst
           onBack={() => router.back()}
+          onAvatarClick={() => setOptionsOpen(true)}
           avatarUrl={account.avatarUrl}
           nickname={account.nickname}
           triggerAt={ping?.at ?? null}
@@ -128,6 +131,8 @@ function ChatThread({ accountId }: { accountId: string }) {
           <div ref={bottomRef} />
         </div>
       )}
+
+      {optionsOpen && <ChatOptionsSheet thread={thread} nickname={account.nickname} onClose={() => setOptionsOpen(false)} />}
     </div>
   );
 }

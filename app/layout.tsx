@@ -5,6 +5,7 @@ import { HouseholdProvider } from "@/lib/household-context";
 import { TasksProvider } from "@/lib/tasks-context";
 import { FeedProvider } from "@/lib/feed-context";
 import { HealthProvider } from "@/lib/health-context";
+import { MedicalProvider } from "@/lib/medical-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
@@ -17,6 +18,7 @@ import { NavSwitcher } from "@/components/NavSwitcher";
 import { NearbyPlacePrompt } from "@/components/household/NearbyPlacePrompt";
 import { EngagementNotifier } from "@/components/persone/EngagementNotifier";
 import { TaskNotifier } from "@/components/task/TaskNotifier";
+import { MedicationNotifier } from "@/components/medical/MedicationNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
 import "./globals.css";
 
@@ -54,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TasksProvider>
                 <FeedProvider>
                   <HealthProvider>
+                    <MedicalProvider>
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
@@ -65,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <NearbyPlacePrompt />
                             <EngagementNotifier />
                             <TaskNotifier />
+                            <MedicationNotifier />
                             <MoodSuggestionPrompt />
                           </VitaecomDraftProvider>
                           </VitaecomChatProvider>
@@ -72,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
+                    </MedicalProvider>
                   </HealthProvider>
                 </FeedProvider>
               </TasksProvider>

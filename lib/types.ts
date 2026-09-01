@@ -86,6 +86,16 @@ export interface PersonalDetails {
   interestsCustomFields: CustomField[];
 
   customSections: CustomSection[];
+
+  /** Prima esistevano solo per le Persone (`Person`), non per te stesso — bug/limite
+   * segnalato esplicitamente: ora vivono qui, in `PersonalDetails`, così sia `Person` che
+   * `UserProfile` li ereditano allo stesso modo, e la Modalità Vivo/Dialogo diventa
+   * modificabile anche nel proprio profilo, non solo per gli altri. La Frase Azione — su
+   * richiesta esplicita — non è più una lista: al più una, sempre quella in vigore. */
+  dialogModeEnabled: boolean;
+  recurringPhrases: RecurringPhrase[];
+  liveModeEnabled: boolean;
+  actionPhrase?: ActionPhrase;
 }
 
 export function emptyPersonalDetails(): PersonalDetails {
@@ -114,6 +124,9 @@ export function emptyPersonalDetails(): PersonalDetails {
     favoriteCategories: [],
     interestsCustomFields: [],
     customSections: [],
+    dialogModeEnabled: false,
+    recurringPhrases: [],
+    liveModeEnabled: false,
   };
 }
 
@@ -265,11 +278,6 @@ export interface Person extends PersonalDetails {
   ownerId?: string;
   wakeUntil?: string;
   createdAt: string;
-
-  dialogModeEnabled: boolean;
-  recurringPhrases: RecurringPhrase[];
-  liveModeEnabled: boolean;
-  actionPhrases: ActionPhrase[];
 
   relationshipScore: number;
   trueFriendshipScore: number;

@@ -185,95 +185,151 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     receivedRef.current = receivedRequests;
   }, [receivedRequests]);
 
-  const persistPosts = useCallback((next: VitaecomPost[]) => {
-    setPosts(next);
-    try {
-      window.localStorage.setItem(POSTS_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistPosts = useCallback((updater: VitaecomPost[] | ((prev: VitaecomPost[]) => VitaecomPost[])) => {
+    setPosts((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: VitaecomPost[]) => VitaecomPost[])(prev) : updater;
+      try {
+        window.localStorage.setItem(POSTS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistNotifications = useCallback((next: VitaecomNotification[]) => {
-    setNotifications(next);
-    try {
-      window.localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistNotifications = useCallback(
+    (updater: VitaecomNotification[] | ((prev: VitaecomNotification[]) => VitaecomNotification[])) => {
+      setNotifications((prev) => {
+        const next = typeof updater === "function" ? (updater as (n: VitaecomNotification[]) => VitaecomNotification[])(prev) : updater;
+        try {
+          window.localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+        } catch {
+          // storage non disponibile: continua solo in memoria
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistKnown = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setKnownAccountIds((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistKnown = useCallback((next: string[]) => {
-    setKnownAccountIds(next);
-    try {
-      window.localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistSent = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setSentRequests((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(SENT_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistSent = useCallback((next: string[]) => {
-    setSentRequests(next);
-    try {
-      window.localStorage.setItem(SENT_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistReceived = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setReceivedRequests((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(RECEIVED_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistReceived = useCallback((next: string[]) => {
-    setReceivedRequests(next);
-    try {
-      window.localStorage.setItem(RECEIVED_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistKnownNames = useCallback(
+    (
+      updater:
+        | Record<string, { firstName: string; lastName: string }>
+        | ((prev: Record<string, { firstName: string; lastName: string }>) => Record<string, { firstName: string; lastName: string }>)
+    ) => {
+      setKnownNamesState((prev) => {
+        const next =
+          typeof updater === "function"
+            ? (updater as (p: Record<string, { firstName: string; lastName: string }>) => Record<string, { firstName: string; lastName: string }>)(prev)
+            : updater;
+        try {
+          window.localStorage.setItem(KNOWN_NAMES_KEY, JSON.stringify(next));
+        } catch {
+          // storage non disponibile: continua solo in memoria
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistHouseholdMembers = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setHouseholdMembers((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(HOUSEHOLD_MEMBERS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistKnownNames = useCallback((next: Record<string, { firstName: string; lastName: string }>) => {
-    setKnownNamesState(next);
-    try {
-      window.localStorage.setItem(KNOWN_NAMES_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistHouseholdSent = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setHouseholdSentRequests((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(HOUSEHOLD_SENT_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistHouseholdMembers = useCallback((next: string[]) => {
-    setHouseholdMembers(next);
-    try {
-      window.localStorage.setItem(HOUSEHOLD_MEMBERS_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistHouseholdReceived = useCallback((updater: string[] | ((prev: string[]) => string[])) => {
+    setHouseholdReceivedRequests((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: string[]) => string[])(prev) : updater;
+      try {
+        window.localStorage.setItem(HOUSEHOLD_RECEIVED_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistHouseholdSent = useCallback((next: string[]) => {
-    setHouseholdSentRequests(next);
-    try {
-      window.localStorage.setItem(HOUSEHOLD_SENT_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
-  }, []);
-
-  const persistHouseholdReceived = useCallback((next: string[]) => {
-    setHouseholdReceivedRequests(next);
-    try {
-      window.localStorage.setItem(HOUSEHOLD_RECEIVED_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
-  }, []);
-
-  const persistMoodTallies = useCallback((next: Record<string, Record<string, number>>) => {
-    setMoodTalliesState(next);
-    try {
-      window.localStorage.setItem(MOOD_TALLIES_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
-  }, []);
+  /** Forma funzionale — la stessa correzione, con la stessa causa reale, delle altre nove
+   * funzioni "persist" qui sopra: due chiamate di seguito nello stesso gestore di evento
+   * (esattamente cosa faceva `bumpMoodTally` chiamato due volte da `setPostReaction` quando
+   * si cambiava reazione) leggevano entrambe lo stesso stato non ancora aggiornato — la
+   * seconda scrittura sovrascriveva la prima invece di sommarsi, lasciando la quota della
+   * reazione precedente "fantasma" mai tolta dal conteggio del Lato Stato. */
+  const persistMoodTallies = useCallback(
+    (
+      updater:
+        | Record<string, Record<string, number>>
+        | ((prev: Record<string, Record<string, number>>) => Record<string, Record<string, number>>)
+    ) => {
+      setMoodTalliesState((prev) => {
+        const next = typeof updater === "function" ? (updater as (p: Record<string, Record<string, number>>) => Record<string, Record<string, number>>)(prev) : updater;
+        try {
+          window.localStorage.setItem(MOOD_TALLIES_KEY, JSON.stringify(next));
+        } catch {
+          // storage non disponibile: continua solo in memoria
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   /** Una sola porta per ogni cambio di quota — sia una condivisione (+1 sullo stato scelto
    * in "Cosa Provi?") sia una reazione (+1, e se stavi cambiando reazione su un post -1 su
@@ -281,10 +337,12 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
    * modo qualunque sia la fonte. */
   const bumpMoodTally = useCallback(
     (chainRootId: string, moodId: string, delta: number) => {
-      const chain = { ...(moodTalliesRef.current[chainRootId] ?? {}) };
-      chain[moodId] = Math.max(0, (chain[moodId] ?? 0) + delta);
-      if (chain[moodId] === 0) delete chain[moodId];
-      persistMoodTallies({ ...moodTalliesRef.current, [chainRootId]: chain });
+      persistMoodTallies((prev) => {
+        const chain = { ...(prev[chainRootId] ?? {}) };
+        chain[moodId] = Math.max(0, (chain[moodId] ?? 0) + delta);
+        if (chain[moodId] === 0) delete chain[moodId];
+        return { ...prev, [chainRootId]: chain };
+      });
     },
     [persistMoodTallies]
   );
@@ -468,7 +526,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
             createdAt: new Date().toISOString(),
             read: false,
           }));
-          persistNotifications([...notifs, ...notifRef.current]);
+          persistNotifications((prev) => [...notifs, ...prev]);
           return;
         }
 
@@ -497,7 +555,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
           createdAt: new Date().toISOString(),
           read: false,
         };
-        persistNotifications([notif, ...notifRef.current]);
+        persistNotifications((prev) => [notif, ...prev]);
       }, delay);
     },
     [persistPosts, persistNotifications, bumpMoodTally]
@@ -519,10 +577,10 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         likeCount: 0,
         comments: [],
       };
-      persistPosts([post, ...posts]);
+      persistPosts((prev) => [post, ...prev]);
       simulateDemoEngagement(post.id);
     },
-    [posts, persistPosts, simulateDemoEngagement]
+    [persistPosts, simulateDemoEngagement]
   );
 
   /** Una storia — stessa forma di publish(), con `isStory`/`expiresAt` in più. Le
@@ -547,10 +605,10 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         likeCount: 0,
         comments: [],
       };
-      persistPosts([post, ...posts]);
+      persistPosts((prev) => [post, ...prev]);
       simulateDemoEngagement(post.id);
     },
-    [posts, persistPosts, simulateDemoEngagement]
+    [persistPosts, simulateDemoEngagement]
   );
 
   const markStorySeen = useCallback((postId: string) => {
@@ -602,7 +660,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
           ? { embedSourceAuthorId: source.authorId, embedSourceCaption: source.caption }
           : {}),
       };
-      persistPosts([post, ...postsRef.current]);
+      persistPosts((prev) => [post, ...prev]);
       bumpMoodTally(chainRoot, input.sharedMoodId, 1);
       simulateDemoEngagement(post.id);
     },
@@ -611,7 +669,9 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   /** La sfera di reazione su un post — solo la tua: vedi userReactionMoodId sul tipo. Se
    * stavi già cambiando idea su questo stesso post, la quota precedente si toglie dal Lato
-   * Stato e quella nuova si aggiunge, mai un doppio conteggio per la stessa persona. */
+   * Stato e quella nuova si aggiunge, mai un doppio conteggio per la stessa persona —
+   * `bumpMoodTally` (vedi sopra) ora usa la forma funzionale proprio per garantirlo anche
+   * quando le due chiamate di fila qui sotto capitano nello stesso gestore di evento. */
   const setPostReaction = useCallback(
     (postId: string, moodId: string) => {
       const post = postsRef.current.find((p) => p.id === postId);
@@ -619,7 +679,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       const chainRoot = chainRootOf(post);
       const previous = post.userReactionMoodId;
       if (previous === moodId) return;
-      persistPosts(postsRef.current.map((p) => (p.id === postId ? { ...p, userReactionMoodId: moodId } : p)));
+      persistPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, userReactionMoodId: moodId } : p)));
       if (previous) bumpMoodTally(chainRoot, previous, -1);
       bumpMoodTally(chainRoot, moodId, 1);
     },
@@ -628,19 +688,17 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   const toggleLike = useCallback(
     (postId: string) => {
-      persistPosts(
-        posts.map((p) =>
-          p.id === postId ? { ...p, likedByUser: !p.likedByUser, likeCount: p.likeCount + (p.likedByUser ? -1 : 1) } : p
-        )
+      persistPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, likedByUser: !p.likedByUser, likeCount: p.likeCount + (p.likedByUser ? -1 : 1) } : p))
       );
     },
-    [posts, persistPosts]
+    [persistPosts]
   );
 
   const toggleCommentLike = useCallback(
     (postId: string, commentId: string, replyId?: string) => {
-      persistPosts(
-        posts.map((p) => {
+      persistPosts((prev) =>
+        prev.map((p) => {
           if (p.id !== postId) return p;
           return {
             ...p,
@@ -655,7 +713,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         })
       );
     },
-    [posts, persistPosts]
+    [persistPosts]
   );
 
   const addComment = useCallback(
@@ -670,8 +728,8 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         likeCount: 0,
         replies: [],
       };
-      persistPosts(
-        posts.map((p) => {
+      persistPosts((prev) =>
+        prev.map((p) => {
           if (p.id !== postId) return p;
           if (!replyToCommentId) return { ...p, comments: [...p.comments, comment] };
           // Un solo livello: se rispondi a una risposta, il sub-commento finisce comunque
@@ -687,10 +745,10 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         })
       );
     },
-    [posts, persistPosts]
+    [persistPosts]
   );
 
-  const removePost = useCallback((postId: string) => persistPosts(posts.filter((p) => p.id !== postId)), [posts, persistPosts]);
+  const removePost = useCallback((postId: string) => persistPosts((prev) => prev.filter((p) => p.id !== postId)), [persistPosts]);
 
   /** "Non mi interessa questo post" — lo toglie dal tuo Vitaeworld, per sempre, solo per te.
    * Non è una segnalazione (vedi "Segnala questo post", ancora da decidere insieme): qui
@@ -773,11 +831,11 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   const sendKnowRequest = useCallback(
     (accountId: string) => {
       if (sentRef.current.includes(accountId) || knownRef.current.includes(accountId)) return;
-      persistSent([...sentRef.current, accountId]);
+      persistSent((prev) => [...prev, accountId]);
       const delay = 3000 + Math.random() * 4000;
       setTimeout(() => {
-        persistSent(sentRef.current.filter((id) => id !== accountId));
-        persistKnown([...knownRef.current, accountId]);
+        persistSent((prev) => prev.filter((id) => id !== accountId));
+        persistKnown((prev) => [...prev, accountId]);
         const notif: VitaecomNotification = {
           id: newId(),
           fromAccountId: accountId,
@@ -785,7 +843,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
           createdAt: new Date().toISOString(),
           read: false,
         };
-        persistNotifications([notif, ...notifRef.current]);
+        persistNotifications((prev) => [notif, ...prev]);
       }, delay);
     },
     [persistSent, persistKnown, persistNotifications]
@@ -793,21 +851,21 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   const acceptKnowRequest = useCallback(
     (accountId: string) => {
-      persistReceived(receivedRef.current.filter((id) => id !== accountId));
-      persistKnown([...knownRef.current, accountId]);
+      persistReceived((prev) => prev.filter((id) => id !== accountId));
+      persistKnown((prev) => [...prev, accountId]);
     },
     [persistReceived, persistKnown]
   );
 
   const markNotificationsRead = useCallback(() => {
-    persistNotifications(notifications.map((n) => ({ ...n, read: true })));
-  }, [notifications, persistNotifications]);
+    persistNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, [persistNotifications]);
 
   const setKnownName = useCallback(
     (accountId: string, firstName: string, lastName: string) => {
-      persistKnownNames({ ...knownNames, [accountId]: { firstName: firstName.trim(), lastName: lastName.trim() } });
+      persistKnownNames((prev) => ({ ...prev, [accountId]: { firstName: firstName.trim(), lastName: lastName.trim() } }));
     },
-    [knownNames, persistKnownNames]
+    [persistKnownNames]
   );
 
   /**
@@ -819,11 +877,11 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   const sendHouseholdRequest = useCallback(
     (accountId: string) => {
       if (householdSentRef.current.includes(accountId) || householdMembersRef.current.includes(accountId)) return;
-      persistHouseholdSent([...householdSentRef.current, accountId]);
+      persistHouseholdSent((prev) => [...prev, accountId]);
       const delay = 3000 + Math.random() * 4000;
       setTimeout(() => {
-        persistHouseholdSent(householdSentRef.current.filter((id) => id !== accountId));
-        persistHouseholdMembers([...householdMembersRef.current, accountId]);
+        persistHouseholdSent((prev) => prev.filter((id) => id !== accountId));
+        persistHouseholdMembers((prev) => [...prev, accountId]);
         const notif: VitaecomNotification = {
           id: newId(),
           fromAccountId: accountId,
@@ -831,7 +889,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
           createdAt: new Date().toISOString(),
           read: false,
         };
-        persistNotifications([notif, ...notifRef.current]);
+        persistNotifications((prev) => [notif, ...prev]);
       }, delay);
     },
     [persistHouseholdSent, persistHouseholdMembers, persistNotifications]
@@ -839,8 +897,8 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   const respondHouseholdRequest = useCallback(
     (accountId: string, accept: boolean) => {
-      persistHouseholdReceived(householdReceivedRef.current.filter((id) => id !== accountId));
-      if (accept) persistHouseholdMembers([...householdMembersRef.current, accountId]);
+      persistHouseholdReceived((prev) => prev.filter((id) => id !== accountId));
+      if (accept) persistHouseholdMembers((prev) => [...prev, accountId]);
     },
     [persistHouseholdReceived, persistHouseholdMembers]
   );
@@ -854,7 +912,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
    */
   const dissociateFromHousehold = useCallback(
     (accountId: string) => {
-      persistHouseholdMembers(householdMembersRef.current.filter((id) => id !== accountId));
+      persistHouseholdMembers((prev) => prev.filter((id) => id !== accountId));
     },
     [persistHouseholdMembers]
   );

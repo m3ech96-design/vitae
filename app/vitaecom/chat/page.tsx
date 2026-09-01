@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Bell, Gem, UserPlus, UserCheck, AtSign, Home, Sparkles } from "lucide-react";
+import { MessageSquare, Bell, Gem, UserPlus, UserCheck, AtSign, Home, Sparkles, Search, Plus, Users, X } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -12,6 +12,7 @@ import { useProfile } from "@/lib/profile-context";
 import { NicknameGate } from "@/components/vitaecom/NicknameGate";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
+import { NewChatModal } from "@/components/vitaecom/NewChatModal";
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -32,10 +33,17 @@ function ChatList() {
   const { profile } = useProfile();
   const { notifications, hasUnreadNotification, markNotificationsRead, knownAccountIds, householdReceivedRequests, respondHouseholdRequest, mutedAccountIds } = useVitaecomSocial();
   const { allMoods } = useMood();
-  const { messagesWith } = useVitaecomChat();
+  const { messagesWith, groups, messagesInGroup } = useVitaecomChat();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const knownAccounts = DEMO_ACCOUNTS.filter((a) => knownAccountIds.includes(a.id));
+
+  const q = query.trim().toLocaleLowerCase("it-IT");
+  const visibleAccounts = q ? knownAccounts.filter((a) => a.nickname.toLocaleLowerCase("it-IT").includes(q)) : knownAccounts;
+  const visibleGroups = q ? groups.filter((g) => g.name.toLocaleLowerCase("it-IT").includes(q)) : groups;
 
   const goToNotification = (fromAccountId: string) => {
     setNotifOpen(false);
@@ -60,15 +68,75 @@ function ChatList() {
           {hasUnreadNotification && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#B79A6B]" />}
         </button>
       </div>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Conversazioni</h1>
+      <div className="mt-1 flex items-center justify-between">
+        <h1 className="font-display text-2xl text-ink-100">Conversazioni</h1>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            className={`focus-ring flex h-9 w-9 items-center justify-center rounded-full border transition ${searchOpen ? "border-[#B79A6B]/50 text-[#B79A6B]" : "border-white/10 text-ink-400 hover:text-ink-100"}`}
+            aria-label="Cerca nelle conversazioni"
+          >
+            <Search size={15} />
+          </button>
+          <button
+            onClick={() => setNewChatOpen(true)}
+            className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-400 transition hover:text-ink-100"
+            aria-label="Nuova chat"
+          >
+            <Plus size={17} />
+          </button>
+        </div>
+      </div>
+
+      {searchOpen && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl2 border border-white/10 bg-white/[0.03] px-3 py-2">
+          <Search size={14} className="text-ink-600" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cerca una persona o un gruppo"
+            className="flex-1 bg-transparent text-sm text-ink-100 placeholder:text-ink-800 outline-none"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="focus-ring text-ink-800 hover:text-ink-200" aria-label="Svuota">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 space-y-2.5">
-        {knownAccounts.length === 0 && (
+        {visibleAccounts.length === 0 && visibleGroups.length === 0 && (
           <p className="mt-10 text-center text-sm text-ink-800">
-            Non conosci ancora nessuno con cui chattare — vedi la scheda &quot;persone&quot;.
+            {q
+              ? "Nessuna conversazione trovata."
+              : "Non conosci ancora nessuno con cui chattare — vedi la scheda \"persone\"."}
           </p>
         )}
-        {knownAccounts.map((a) => {
+        {visibleGroups.map((g) => {
+          const members = g.memberIds.map((id) => resolveAccount(id, userAccount));
+          const thread = messagesInGroup(g.id);
+          const last = thread[thread.length - 1];
+          return (
+            <Link
+              key={g.id}
+              href={`/vitaecom/chat/gruppo/${g.id}`}
+              className="focus-ring flex items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] p-3"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-ink-400">
+                <Users size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-ink-100">{g.name}</p>
+                <p className="truncate text-xs text-ink-800">
+                  {last ? last.text : `${members.map((m) => `@${m.nickname}`).join(", ")}`}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+        {visibleAccounts.map((a) => {
           const thread = messagesWith(a.id);
           const last = thread[thread.length - 1];
           return (
@@ -76,12 +144,14 @@ function ChatList() {
               <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={48} ring="idle" glowColor="#B79A6B" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink-100">@{a.nickname}</p>
-                <p className="truncate text-xs text-ink-800">{last ? last.text : "Nessun Messaggio Ancora — Scrivi Tu Per Primo."}</p>
+                <p className="truncate text-xs text-ink-800">{last ? last.text : "Nessun messaggio ancora — scrivi tu per primo."}</p>
               </div>
             </Link>
           );
         })}
       </div>
+
+      {newChatOpen && <NewChatModal knownAccounts={knownAccounts} onClose={() => setNewChatOpen(false)} />}
 
       {notifOpen && (
         <PersonalCardSheet title="Notifiche" onClose={() => setNotifOpen(false)}>

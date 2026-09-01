@@ -12,6 +12,12 @@ import { visibleLatoStatoLines } from "@/lib/vitaecom-lato-stato";
  * più spazio (vedi lib/vitaecom-lato-stato.ts). Compare solo quando esiste almeno una quota
  * per la catena di questo post (una condivisione o una reazione): un post mai condiviso né
  * toccato da nessuna reazione resta con il suo bordo normale, invariato.
+ *
+ * Bug reale corretto: la striscia partiva rientrata di 2px rispetto al vero bordo sinistro
+ * (un `pl-0.5` di troppo), mentre il contorno del post lo lasciava intero su quel lato — le
+ * istruzioni chiedevano che il bordo si interrompesse proprio lì, sostituito esattamente da
+ * questa striscia, non affiancato da essa un po' più dentro. Vedi PostCard.tsx per la
+ * corrispondente interruzione del bordo (border-left rimosso).
  */
 export function LatoStato({ chainRootId, highlightMoodId }: { chainRootId: string; highlightMoodId?: string | null }) {
   const { allMoods } = useMood();
@@ -34,7 +40,7 @@ export function LatoStato({ chainRootId, highlightMoodId }: { chainRootId: strin
   if (lines.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-y-0 left-0 z-10 flex flex-col py-2.5 pl-0.5" style={{ width: 7 }}>
+    <div ref={containerRef} className="pointer-events-none absolute inset-y-0 left-0 z-10 flex flex-col py-2.5" style={{ width: 7 }}>
       <div className="flex h-full w-full flex-col gap-[3px]">
         {lines.map((line) => {
           const mood = allMoods.find((m) => m.id === line.moodId);

@@ -178,3 +178,35 @@ export function openTaskCancelInCalendar(task: Task) {
   if (!ics) return;
   downloadICS(ics);
 }
+
+/** Stessa strada di taskToICS, per un appuntamento medico (Salute) — un evento singolo,
+ * mai ricorrente, con l'ora di fine un'ora dopo l'inizio se non specificata. */
+export function medicalAppointmentToICS(appointment: { id: string; title: string; date: string; place?: string; notes?: string }): string {
+  const start = new Date(appointment.date);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const fmt = (d: Date) =>
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+  const now = new Date();
+  const dtStamp = fmt(now);
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Vitae//Salute//IT",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${appointment.id}@vitae-salute`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${escapeICSText(appointment.title)}`,
+  ];
+  if (appointment.place) lines.push(`LOCATION:${escapeICSText(appointment.place)}`);
+  if (appointment.notes) lines.push(`DESCRIPTION:${escapeICSText(appointment.notes)}`);
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+export function openMedicalAppointmentInCalendar(appointment: { id: string; title: string; date: string; place?: string; notes?: string }) {
+  downloadICS(medicalAppointmentToICS(appointment));
+}
