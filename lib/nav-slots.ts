@@ -9,6 +9,7 @@ import {
   GitBranch,
   MapPinned,
   Aperture,
+  Newspaper,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -32,6 +33,7 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/rapporti", label: "Rapporti", icon: Sparkles },
   { href: "/albero", label: "Albero", icon: GitBranch },
   { href: "/map", label: "Mappa", icon: MapPinned },
+  { href: "/news", label: "News", icon: Newspaper },
 ];
 
 export const DEFAULT_SLOTS = ["/task", "/vitaecom", "/mondo"];

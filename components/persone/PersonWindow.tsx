@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { X, Phone, MessageCircle, CalendarClock, Trash2, Sparkles, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Person, PERSON_KIND_LABEL, ANIMAL_KINDS } from "@/lib/types";
+import { Person, PERSON_KIND_LABEL, ANIMAL_KINDS, kindForGenderChange } from "@/lib/types";
 import { describeDiscoveries } from "@/lib/discovery-feed";
 import { diffPatch } from "@/lib/diff-patch";
 import { useHousehold } from "@/lib/household-context";
@@ -84,6 +84,12 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
   const commitDraft = () => {
     const patch = diffPatch(person, draft);
     if (Object.keys(patch).length === 0) return;
+    // Vedi la nota su `kindForGenderChange`: se il Sesso è appena cambiato, allinea anche
+    // "kind" nella stessa scrittura, altrimenti resterebbe indietro rispetto a "gender".
+    if ("gender" in patch) {
+      const newKind = kindForGenderChange(person.kind, patch.gender);
+      if (newKind !== person.kind) patch.kind = newKind;
+    }
     const descriptions = describeDiscoveries(person, patch, (id) => {
       const p = people.find((x) => x.id === id);
       return p ? `${p.firstName} ${p.lastName}`.trim() : undefined;
@@ -92,7 +98,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
     if (descriptions.length > 0) {
       const provenance = discoveryProvenance(person.id, tasks, places);
       descriptions.forEach((d) =>
-        pushEvent(`Hai Scoperto Qualcosa Di Nuovo Su ${displayName}: ${d}${provenance ? ` — ${provenance}` : ""}`)
+        pushEvent(`Hai scoperto qualcosa di nuovo su ${displayName}: ${d}${provenance ? ` — ${provenance}` : ""}`)
       );
       fireTrigger("scoperte:salvate");
     }
@@ -216,7 +222,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                               const nextFirst = patch.firstName ?? draft.firstName;
                               const nextLast = patch.lastName ?? draft.lastName;
                               if (nextFirst.trim() || nextLast.trim()) {
-                                pushEvent(`Hai Scoperto Chi È: Ora È ${nextFirst} ${nextLast}`.trim());
+                                pushEvent(`Hai scoperto chi è: ora è ${nextFirst} ${nextLast}`.trim());
                                 fireTrigger("scoperte:nome-parente");
                               }
                             }

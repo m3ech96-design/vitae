@@ -162,6 +162,28 @@ export const PERSON_KIND_LABEL: Record<PersonKind, string> = {
 
 export const ANIMAL_KINDS: PersonKind[] = ["cane", "gatto"];
 
+/**
+ * Bug reale, trovato con un audit mirato: "kind" (Uomo/Donna/Bambino/Bambina — deciso una
+ * volta sola alla creazione, in AddPersonModal) e "gender" (il campo "Sesso" della scheda
+ * Scoperte, modificabile in qualunque momento) sono due dati diversi che raccontano la
+ * stessa cosa. Le etichette di parentela dell'Albero leggono sempre "gender" (si aggiornano
+ * da sole), ma "Sconosciuto/a" (unknown-relative.ts) e "Defunto/a" (PersonWindow) leggono
+ * "kind" — se "gender" cambia dopo la creazione senza toccare anche "kind", quelle due
+ * etichette restano quelle vecchie mentre l'Albero mostra già quelle giuste: esattamente il
+ * sintomo di "le modifiche non si aggiornano ovunque". Va richiamata ogni volta che il
+ * "Sesso" cambia, per tenere i due dati sempre coerenti — mai per gli animali, dove "kind"
+ * resta Cane/Gatto a prescindere dal sesso.
+ */
+export function kindForGenderChange(currentKind: PersonKind, gender: string | undefined): PersonKind {
+  if (ANIMAL_KINDS.includes(currentKind)) return currentKind;
+  const isChild = currentKind === "bambino" || currentKind === "bambina";
+  if (gender === "Donna" || gender === "Femmina") return isChild ? "bambina" : "donna";
+  if (gender === "Uomo" || gender === "Maschio") return isChild ? "bambino" : "uomo";
+  // Non binario, "preferisco non specificare", o vuoto: non c'è una scelta giusta da
+  // indovinare, quindi "kind" resta quello che era invece di forzarne uno a caso.
+  return currentKind;
+}
+
 export interface RecurringPhrase {
   id: string;
   text: string;

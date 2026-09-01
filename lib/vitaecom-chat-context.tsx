@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { newId } from "./id";
+import { DEFAULT_MOODS } from "./mood-catalog";
 
 const MESSAGES_KEY = "vitae:vitaecom-messages";
 
@@ -16,6 +17,11 @@ export interface VitaecomChatMessage {
    * entrambi insieme, mai generati, mai per un messaggio demo. */
   photoKey?: string;
   videoKey?: string;
+  /** Reazioni allo stato d'animo sul messaggio — la tua è sempre vera; quella dell'altro
+   * account è simulata (vedi sendMessage qui sotto), la stessa idea onesta già usata per
+   * Mi Piace/commenti/reazioni sui post. */
+  userReactionMoodId?: string;
+  otherReactionMoodId?: string;
 }
 
 interface VitaecomChatContextValue {
@@ -23,6 +29,13 @@ interface VitaecomChatContextValue {
   messages: VitaecomChatMessage[];
   messagesWith: (accountId: string) => VitaecomChatMessage[];
   sendMessage: (accountId: string, text: string, media?: { photoKey?: string; videoKey?: string }) => void;
+  setMessageReaction: (messageId: string, moodId: string) => void;
+  /** Un segnale, non uno stato da leggere in continuo: bumpato ogni volta che l'account
+   * dall'altra parte reagisce a un tuo messaggio, con lo stato d'animo appena scelto — la
+   * pagina della conversazione lo osserva per avviare l'animazione dell'avatar (vedi
+   * app/vitaecom/chat/[accountId]/page.tsx), una volta sola per ogni reazione, non a ogni
+   * nuovo render. */
+  reactionPing: Record<string, { at: number; moodId: string }>;
 }
 
 const VitaecomChatContext = createContext<VitaecomChatContextValue | null>(null);
@@ -46,6 +59,7 @@ const DEMO_REPLIES = [
 export function VitaecomChatProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [messages, setMessages] = useState<VitaecomChatMessage[]>([]);
+  const [reactionPing, setReactionPing] = useState<Record<string, { at: number; moodId: string }>>({});
   const messagesRef = useRef<VitaecomChatMessage[]>([]);
 
   useEffect(() => {
@@ -90,6 +104,16 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
 
       const delay = 1800 + Math.random() * 2600;
       setTimeout(() => {
+        // Un solo esito per volta, mai entrambi sullo stesso invio: o una risposta scritta,
+        // o una reazione al messaggio che hai appena mandato — la stessa logica "un account
+        // demo interagisce con qualcosa di tuo dopo una manciata di secondi" già usata per i
+        // post, qui applicata a un messaggio.
+        if (Math.random() < 0.3) {
+          const mood = DEFAULT_MOODS[Math.floor(Math.random() * DEFAULT_MOODS.length)];
+          persist(messagesRef.current.map((m) => (m.id === mine.id ? { ...m, otherReactionMoodId: mood.id } : m)));
+          setReactionPing((prev) => ({ ...prev, [accountId]: { at: Date.now(), moodId: mood.id } }));
+          return;
+        }
         const reply: VitaecomChatMessage = {
           id: newId(),
           accountId,
@@ -103,8 +127,17 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
     [persist]
   );
 
+  /** La tua reazione a un messaggio (tuo o dell'altro account) — sempre vera, sostituisce
+   * quella precedente sullo stesso messaggio se stavi cambiando idea, mai una somma. */
+  const setMessageReaction = useCallback(
+    (messageId: string, moodId: string) => {
+      persist(messagesRef.current.map((m) => (m.id === messageId ? { ...m, userReactionMoodId: moodId } : m)));
+    },
+    [persist]
+  );
+
   return (
-    <VitaecomChatContext.Provider value={{ hydrated, messages, messagesWith, sendMessage }}>
+    <VitaecomChatContext.Provider value={{ hydrated, messages, messagesWith, sendMessage, setMessageReaction, reactionPing }}>
       {children}
     </VitaecomChatContext.Provider>
   );

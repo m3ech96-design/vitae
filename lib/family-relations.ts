@@ -38,7 +38,15 @@ export interface FamilyEntity {
 
 /** A quale ramo appartiene un legame — usato per raggruppare l'Albero in sezioni con un
  * senso, non per un'etichetta o l'altra a caso. */
-export type FamilyBranch = "coniuge" | "provenienza" | "coniuge-famiglia" | "discendenza" | "lontano";
+/** Su richiesta esplicita, "Famiglia Di Provenienza" ora è riservata a SOLO genitori e
+ * fratelli/sorelle — tutto il resto del sangue oltre quel primo cerchio (nonni, prozii, zii,
+ * cugini, nipoti di un fratello/sorella) vive nel proprio ramo "estesa"; le parentele nate
+ * da un matrimonio (suoceri, cognati in entrambe le direzioni, generi/nuore, figliastri, e i
+ * ponti generici senza una parola propria) vivono tutte in "acquisita". Non più "lontano":
+ * un parente raggiungibile solo dal grafo, senza alcun grado nominabile, non compare più
+ * nell'Albero di una singola persona (vedi la nota su `relationshipInfo`), quindi non serve
+ * più nemmeno un suo ramo a parte. */
+export type FamilyBranch = "coniuge" | "provenienza" | "estesa" | "discendenza" | "acquisita";
 
 export interface RelationshipInfo {
   label: string;
@@ -55,11 +63,16 @@ export function isFemale(e?: FamilyEntity): boolean {
 function childWord(e?: FamilyEntity) {
   return isMale(e) ? "Figlio" : isFemale(e) ? "Figlia" : "Figlio/A";
 }
+/** Ognuna di queste, su richiesta esplicita, non ammette più una terza forma ibrida
+ * ("Fratello/Sorella", "Zio/A", "Genitore", "Nonno/A", e le stesse "collegate e annesse" —
+ * "Prozio/A"): sempre e solo le due parole vere, in base al sesso registrato. Quando il
+ * sesso non è (ancora) noto o non è binario, resta la forma maschile — il non marcato della
+ * grammatica italiana in questi casi — non una terza etichetta di comodo. */
 function parentWord(e?: FamilyEntity) {
-  return isMale(e) ? "Padre" : isFemale(e) ? "Madre" : "Genitore";
+  return isFemale(e) ? "Madre" : "Padre";
 }
 function siblingWord(e?: FamilyEntity) {
-  return isMale(e) ? "Fratello" : isFemale(e) ? "Sorella" : "Fratello/Sorella";
+  return isFemale(e) ? "Sorella" : "Fratello";
 }
 function spouseWord(e?: FamilyEntity) {
   return isMale(e) ? "Marito" : isFemale(e) ? "Moglie" : "Coniuge";
@@ -68,21 +81,21 @@ function exSpouseWord(e?: FamilyEntity) {
   return isMale(e) ? "Ex marito" : isFemale(e) ? "Ex moglie" : "Ex coniuge";
 }
 function uncleAuntWord(e?: FamilyEntity) {
-  return isMale(e) ? "Zio" : isFemale(e) ? "Zia" : "Zio/A";
+  return isFemale(e) ? "Zia" : "Zio";
 }
 function greatUncleAuntWord(e?: FamilyEntity) {
-  return isMale(e) ? "Prozio" : isFemale(e) ? "Prozia" : "Prozio/A";
+  return isFemale(e) ? "Prozia" : "Prozio";
 }
 function grandparentWord(e: FamilyEntity | undefined, greats: number) {
-  const base = isMale(e) ? "Nonno" : isFemale(e) ? "Nonna" : "Nonno/A";
+  const base = isFemale(e) ? "Nonna" : "Nonno";
   return greats <= 0 ? base : `${"Bis".repeat(greats)}${base}`;
 }
 function grandchildLabel(greats: number) {
   const base = "Nipote";
-  return greats <= 0 ? `${base} (Di Figlio/A)` : `${"Pro".repeat(Math.max(1, greats))}nipote`;
+  return greats <= 0 ? `${base} (di un figlio o una figlia)` : `${"Pro".repeat(Math.max(1, greats))}nipote`;
 }
 function niblingLabel() {
-  return "Nipote (di fratello/sorella)";
+  return "Nipote (di un fratello o una sorella)";
 }
 function cousinWord(e?: FamilyEntity) {
   return isMale(e) ? "Cugino" : isFemale(e) ? "Cugina" : "Cugino/A";
@@ -96,15 +109,12 @@ function inLawChildWord(e?: FamilyEntity) {
 function inLawSiblingWord(e?: FamilyEntity) {
   return isMale(e) ? "Cognato" : isFemale(e) ? "Cognata" : "Cognato/A";
 }
-function stepParentWord(e?: FamilyEntity) {
-  return isMale(e) ? "Patrigno" : isFemale(e) ? "Matrigna" : "Patrigno/Matrigna";
-}
 function stepChildWord(e?: FamilyEntity) {
   return isMale(e) ? "Figliastro" : isFemale(e) ? "Figliastra" : "Figliastro/A";
 }
 
 function ordinalWord(n: number): string {
-  const words = ["", "Primo", "Secondo", "Terzo", "Quarto", "Quinto", "Sesto", "Settimo", "Ottavo"];
+  const words = ["", "primo", "secondo", "terzo", "quarto", "quinto", "sesto", "settimo", "ottavo"];
   return words[n] || `${n}°`;
 }
 
@@ -156,12 +166,21 @@ function shareAParent(a: FamilyEntity, b: FamilyEntity): boolean {
  * collaterale, a qualunque distanza — mai un elenco da consultare, sempre calcolato.
  * `direction` dice se other discende da focus, se focus discende da other, o se il legame
  * è collaterale — è quello che decide poi la sezione dell'Albero in cui finisce. */
+/** Grado di parentela DI SANGUE di `other` rispetto a `focus`, in linea diretta o
+ * collaterale, a qualunque distanza — mai un elenco da consultare, sempre calcolato.
+ * `direction` dice se other discende da focus, se focus discende da other, o se il legame
+ * è collaterale — è quello che decide poi la sezione dell'Albero in cui finisce. `scope`
+ * distingue il primo cerchio (un genitore o un fratello/sorella — resta "Famiglia Di
+ * Provenienza") da tutto il sangue più lontano (nonni, zii, cugini, nipoti di un
+ * fratello/sorella — finisce in "Famiglia Estesa"): la discendenza (figli, nipoti di figli)
+ * non ha bisogno di questa distinzione, resta comunque tutta in un unico ramo.
+ */
 function bloodLabel(
   focus: FamilyEntity,
   other: FamilyEntity,
   byId: Map<string, FamilyEntity>
-): { label: string; direction: "down" | "up" | "collateral" } | null {
-  if (shareAParent(focus, other)) return { label: siblingWord(other), direction: "collateral" };
+): { label: string; direction: "down" | "up" | "collateral"; scope: "immediato" | "esteso" } | null {
+  if (shareAParent(focus, other)) return { label: siblingWord(other), direction: "collateral", scope: "immediato" };
 
   const common = closestCommonAncestor(focus.id, other.id, byId);
   if (!common) return null;
@@ -170,13 +189,13 @@ function bloodLabel(
   if (focusDist === 0 && otherDist === 0) return null; // stessa persona
   if (focusDist === 0) {
     // other discende da focus in linea diretta
-    if (otherDist === 1) return { label: childWord(other), direction: "down" };
-    return { label: grandchildLabel(otherDist - 2), direction: "down" };
+    if (otherDist === 1) return { label: childWord(other), direction: "down", scope: "immediato" };
+    return { label: grandchildLabel(otherDist - 2), direction: "down", scope: "esteso" };
   }
   if (otherDist === 0) {
     // focus discende da other in linea diretta
-    if (focusDist === 1) return { label: parentWord(other), direction: "up" };
-    return { label: grandparentWord(other, focusDist - 2), direction: "up" };
+    if (focusDist === 1) return { label: parentWord(other), direction: "up", scope: "immediato" };
+    return { label: grandparentWord(other, focusDist - 2), direction: "up", scope: "esteso" };
   }
 
   const closest = Math.min(focusDist, otherDist);
@@ -185,20 +204,20 @@ function bloodLabel(
   if (closest === 1) {
     // un salto da un lato, più salti dall'altro: zio/zia o nipote (di fratello/sorella), e oltre
     if (focusDist === 2 && otherDist === 1)
-      return { label: removed === 1 ? uncleAuntWord(other) : greatUncleAuntWord(other), direction: "collateral" };
+      return { label: removed === 1 ? uncleAuntWord(other) : greatUncleAuntWord(other), direction: "collateral", scope: "esteso" };
     if (focusDist === 1 && otherDist === 2)
-      return { label: removed === 1 ? niblingLabel() : `${niblingLabel()} Alla Lontana`, direction: "collateral" };
-    if (focusDist === 3 && otherDist === 1) return { label: greatUncleAuntWord(other), direction: "collateral" };
-    if (focusDist === 1 && otherDist === 3) return { label: niblingLabel(), direction: "collateral" };
-    return { label: "Parente alla lontana", direction: "collateral" };
+      return { label: removed === 1 ? niblingLabel() : `${niblingLabel()} alla lontana`, direction: "collateral", scope: "esteso" };
+    if (focusDist === 3 && otherDist === 1) return { label: greatUncleAuntWord(other), direction: "collateral", scope: "esteso" };
+    if (focusDist === 1 && otherDist === 3) return { label: niblingLabel(), direction: "collateral", scope: "esteso" };
+    return { label: "Parente alla lontana", direction: "collateral", scope: "esteso" };
   }
 
   // Cugini: il grado è quanto sono lontani dall'antenato comune, "removed" è la differenza
   // di generazione tra i due (un cugino di tuo padre è comunque un cugino, ma "rimosso").
   const degree = closest - 1;
-  const degreeLabel = degree === 1 ? "" : ` Di ${ordinalWord(degree)} Grado`;
-  const label = removed === 0 ? `${cousinWord(other)}${degreeLabel}` : `${cousinWord(other)}${degreeLabel} Alla Lontana`;
-  return { label, direction: "collateral" };
+  const degreeLabel = degree === 1 ? "" : ` di ${ordinalWord(degree)} grado`;
+  const label = removed === 0 ? `${cousinWord(other)}${degreeLabel}` : `${cousinWord(other)}${degreeLabel} alla lontana`;
+  return { label, direction: "collateral", scope: "esteso" };
 }
 
 /** Un tuo genitore ha sposato un genitore di other, e non condividete alcun genitore di
@@ -227,7 +246,9 @@ function stepSiblingBridge(
  * (coniuge, suoceri, cognati, generi/nuore), o per un ponte più lontano — a qualunque
  * distanza. Ogni volta che non esiste un ruolo preciso, il nome della persona-ponte entra
  * nell'etichetta stessa ("Cugino Di Marco"), mai una formula generica senza nome. Restituisce
- * sempre qualcosa per chiunque sia comunque connesso — vedi il ramo "lontano" finale.
+ * sempre qualcosa per chiunque sia comunque connesso — l'ultima riga in fondo, "Parente Alla
+ * Lontana", copre chi non rientra in nessuna delle regole sopra (l'Albero di una singola
+ * persona però non la mostra più, vedi il filtro in app/albero/[id]/page.tsx).
  */
 export function relationshipInfo(
   focusId: string,
@@ -244,31 +265,38 @@ export function relationshipInfo(
   if (focus.partnerPersonId === otherId) return { label: "Partner", branch: "coniuge" };
 
   const blood = bloodLabel(focus, other, byId);
-  if (blood) return { label: blood.label, branch: blood.direction === "down" ? "discendenza" : "provenienza" };
+  if (blood) {
+    const branch: FamilyBranch =
+      blood.direction === "down" ? "discendenza" : blood.scope === "immediato" ? "provenienza" : "estesa";
+    return { label: blood.label, branch };
+  }
 
   const stepParent = stepSiblingBridge(focus, other, byId);
   if (stepParent) return { label: siblingWord(other), branch: "provenienza" };
 
-  // Genitore di focus che ha sposato other: other è patrigno/matrigna. Verificato prima del
-  // ramo generale sotto perché è un caso specifico con parola propria, non un affine qualsiasi.
+  // Genitore di focus che ha sposato other: other è patrigno/matrigna — su richiesta
+  // esplicita non esiste più come concetto a sé, resta "Madre"/"Padre" come chiunque altro
+  // in questo ruolo, e per questo finisce nella stessa categoria "Genitori". Verificato
+  // prima del ramo generale sotto perché ha un ruolo preciso, non un affine qualsiasi.
   for (const pid of [focus.fatherId, focus.motherId]) {
-    if (pid && byId.get(pid)?.spouseId === otherId) return { label: stepParentWord(other), branch: "provenienza" };
+    if (pid && byId.get(pid)?.spouseId === otherId) return { label: parentWord(other), branch: "provenienza" };
   }
 
   // Parente del coniuge vero di focus (suoceri, cognati, figliastri) — solo spouseId: la
   // convivenza non crea affinità in Italia (art. 78 c.c.), quindi per il partner il legame
-  // resta visibile ma con parole più morbide, mai i termini legali.
+  // resta visibile ma con parole più morbide, mai i termini legali. Tutta questa famiglia
+  // acquisita col matrimonio vive nel ramo "acquisita", mai in "Famiglia Di Provenienza".
   if (focus.spouseId) {
     const spouse = byId.get(focus.spouseId);
     if (spouse) {
       const rel = bloodLabel(spouse, other, byId);
       if (rel) {
-        if (rel.direction === "up") return { label: inLawParentWord(other), branch: "coniuge-famiglia" };
+        if (rel.direction === "up") return { label: inLawParentWord(other), branch: "acquisita" };
         if (rel.direction === "collateral" && rel.label.startsWith(siblingWord(other)))
-          return { label: inLawSiblingWord(other), branch: "coniuge-famiglia" };
+          return { label: inLawSiblingWord(other), branch: "acquisita" };
         if (rel.direction === "down" && (rel.label === "Figlio" || rel.label === "Figlia"))
-          return { label: stepChildWord(other), branch: "coniuge-famiglia" };
-        return { label: `${rel.label} Di ${spouse.firstName} (Coniuge)`, branch: "coniuge-famiglia" };
+          return { label: stepChildWord(other), branch: "acquisita" };
+        return { label: `${rel.label} di ${spouse.firstName} (coniuge)`, branch: "acquisita" };
       }
     }
   }
@@ -276,32 +304,41 @@ export function relationshipInfo(
     const partner = byId.get(focus.partnerPersonId);
     if (partner) {
       const rel = bloodLabel(partner, other, byId);
-      if (rel) return { label: `${rel.label} Del Partner`, branch: "coniuge-famiglia" };
+      if (rel) return { label: `${rel.label} del partner`, branch: "acquisita" };
     }
   }
 
   // Coniuge/partner vero di un parente di sangue di focus (cognati, generi/nuore, patrigni
-  // visti dall'altro lato) — stessa distinzione spouseId/partnerPersonId di sopra.
+  // visti dall'altro lato) — stessa distinzione spouseId/partnerPersonId di sopra. Il
+  // cognato — su richiesta esplicita — non vive più in "Famiglia Di Provenienza": è
+  // comunque un legame nato da un matrimonio, non di sangue, quindi va in "acquisita" come
+  // tutto il resto della stessa famiglia. Resta in "provenienza" solo il vero patrigno/
+  // matrigna (visto da questo lato) — rietichettato "Madre"/"Padre" come sopra, e SOLO se
+  // il parente di sangue in questione è un genitore vero (non un nonno o oltre: uno
+  // step-nonno non è "Nonno", resta un ponte generico in "acquisita").
   if (other.spouseId && byId.has(other.spouseId)) {
     const otherSpouse = byId.get(other.spouseId)!;
     const rel = bloodLabel(focus, otherSpouse, byId);
     if (rel) {
       if (rel.direction === "collateral" && rel.label.startsWith(siblingWord(otherSpouse)))
-        return { label: inLawSiblingWord(other), branch: "provenienza" };
+        return { label: inLawSiblingWord(other), branch: "acquisita" };
       if (rel.direction === "down") return { label: inLawChildWord(other), branch: "discendenza" };
-      if (rel.direction === "up") return { label: stepParentWord(other), branch: "provenienza" };
-      return { label: `Coniuge Di ${otherSpouse.firstName}`, branch: "provenienza" };
+      if (rel.direction === "up" && rel.scope === "immediato") return { label: parentWord(other), branch: "provenienza" };
+      return { label: `Coniuge di ${otherSpouse.firstName}`, branch: "acquisita" };
     }
   }
   if (other.partnerPersonId && byId.has(other.partnerPersonId)) {
     const otherPartner = byId.get(other.partnerPersonId)!;
     const rel = bloodLabel(focus, otherPartner, byId);
-    if (rel) return { label: `Partner Di ${otherPartner.firstName}`, branch: rel.direction === "down" ? "discendenza" : "provenienza" };
+    if (rel) return { label: `Partner di ${otherPartner.firstName}`, branch: rel.direction === "down" ? "discendenza" : "acquisita" };
   }
 
   // Comunque connesso (BFS lo trova), ma nessuna delle regole sopra riesce a nominarlo con
-  // precisione — un ponte troppo lungo per un termine italiano. Non sparisce mai in silenzio.
-  return { label: "Parente alla lontana", branch: "lontano" };
+  // precisione — un ponte troppo lungo per un termine italiano. Non sparisce mai in
+  // silenzio dal grafo (resta comunque calcolabile, per esempio per non spezzare
+  // `groupFamilies`), ma l'Albero di una singola persona, su richiesta esplicita, non lo
+  // mostra più: vedi il filtro in app/albero/[id]/page.tsx.
+  return { label: "Parente alla lontana", branch: "acquisita" };
 }
 
 /** Solo l'etichetta, per chi non ha bisogno del ramo (usato raramente fuori dall'Albero). */

@@ -47,6 +47,14 @@ export interface VitaecomPost {
   id: string;
   authorId: string;
   createdAt: string;
+  /** Una storia — stessa forma di un post normale, stesse interazioni (Mi Piace, commenti,
+   * condivisione, reazione con Lato Stato, il menu a tre puntini), solo mostrata nel
+   * visualizzatore a schermo intero invece che nel feed, e per sole 24 ore (vedi
+   * `expiresAt`). Mai nel feed di Vitaeworld/Bacheca/profilo — quelli restano solo post
+   * "normali", filtrati esplicitamente. */
+  isStory?: boolean;
+  /** Solo per una storia — il momento in cui smette di essere mostrata. */
+  expiresAt?: string;
   /** Determina il colore del bordo e il tono della riga sotto il nickname — solo per un
    * post che NON è una condivisione. Una condivisione mostra "si è sentito/a" con
    * `sharedMoodId`, vedi sotto. */
@@ -103,4 +111,29 @@ export interface VitaecomMomentSnapshot {
   moodId?: string;
   recentTaskIds: string[];
   recentPlaceIds: string[];
+}
+
+export const REPORT_REASONS = [
+  "Contenuto inappropriato",
+  "Molestie o bullismo",
+  "Spam o inganno",
+  "Nudo o contenuto sessuale",
+  "Violenza",
+  "Altro",
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/**
+ * Una segnalazione — oggi resta solo sul tuo dispositivo (non esiste ancora un server dove
+ * mandarla davvero, né qualcuno dall'altra parte che la legga), ma la forma dei dati è già
+ * quella che un giorno viaggerà verso una vera coda di moderazione, quando l'app smetterà di
+ * essere solo-locale: non andrà ripensata da capo, solo spedita altrove.
+ */
+export interface PostReport {
+  id: string;
+  postId: string;
+  authorId: string;
+  reason: ReportReason;
+  note?: string;
+  createdAt: string;
 }

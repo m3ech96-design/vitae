@@ -74,7 +74,7 @@ function GuestProfile({ accountId }: { accountId: string }) {
   // Per privacy, uno "Sconosciuto" non ti mostra i suoi post nemmeno sul proprio profilo —
   // vedi KnowPanel: qui, non solo su Vitaeworld.
   const known = knownAccountIds.includes(accountId);
-  const accountPosts = known && !mutedAccountIds.includes(accountId) ? posts.filter((p) => p.authorId === accountId && !hiddenPostIds.includes(p.id)) : [];
+  const accountPosts = known && !mutedAccountIds.includes(accountId) ? posts.filter((p) => p.authorId === accountId && !p.isStory && !hiddenPostIds.includes(p.id)) : [];
   const latestMoodId = accountPosts[0]?.moodId ?? "normale";
   const moodColor = allMoods.find((m) => m.id === latestMoodId)?.color ?? "#8B90A8";
 

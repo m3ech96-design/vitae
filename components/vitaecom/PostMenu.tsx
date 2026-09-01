@@ -2,21 +2,24 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { MoreHorizontal, Trash2, EyeOff, UserX } from "lucide-react";
+import { MoreHorizontal, Trash2, EyeOff, UserX, Flag } from "lucide-react";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { ReportPostSheet } from "./ReportPostSheet";
 
 const MENU_WIDTH = 240;
 
 /**
  * Il pulsante a tre puntini in alto a destra di ogni post — un proprio post ha solo
  * "Elimina post"; un post altrui ha "Non mi interessa questo post" (lo toglie dal tuo
- * Vitaeworld) e "Nascondi tutti i post di questo utente" (niente più suoi post né sue
- * notifiche). "Segnala questo post" manca apposta: il processo di segnalazione — cosa vede
- * chi segnala, cosa succede dopo — resta da decidere insieme prima di costruirlo.
+ * Vitaeworld), "Nascondi tutti i post di questo utente" (niente più suoi post né sue
+ * notifiche) e "Segnala questo post" (un motivo tra quelli previsti, registrato in locale —
+ * vedi ReportPostSheet per la nota onesta su cosa succede davvero oggi, senza un vero
+ * server dall'altra parte).
  */
 export function PostMenu({ postId, authorId, isOwn }: { postId: string; authorId: string; isOwn: boolean }) {
-  const { removePost, hidePost, muteAccount } = useVitaecomSocial();
+  const { removePost, hidePost, muteAccount, reportPost } = useVitaecomSocial();
   const [open, setOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -111,6 +114,15 @@ export function PostMenu({ postId, authorId, isOwn }: { postId: string; authorId
                     >
                       <UserX size={15} className="text-ink-600" /> Nascondi tutti i post di questo utente
                     </button>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        setReportOpen(true);
+                      }}
+                      className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-aura-pink hover:bg-aura-pink/[0.08]"
+                    >
+                      <Flag size={15} /> Segnala questo post
+                    </button>
                   </>
                 )}
               </motion.div>
@@ -118,6 +130,13 @@ export function PostMenu({ postId, authorId, isOwn }: { postId: string; authorId
           </AnimatePresence>,
           document.body
         )}
+
+      {reportOpen && (
+        <ReportPostSheet
+          onSubmit={(reason, note) => reportPost(postId, authorId, reason, note)}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
     </>
   );
 }

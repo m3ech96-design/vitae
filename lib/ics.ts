@@ -1,4 +1,4 @@
-import { Task, taskGroup } from "./types";
+import { Task, taskGroup, Weekday } from "./types";
 
 /** Crea una task di qualunque tipo, eccetto "Attività Quotidiana", genera l'evento nel
  * calendario predefinito del sistema — rispettando data, orario di inizio e orario di fine.
@@ -34,6 +34,26 @@ function toICSDate(dateIso: string): string {
 
 function escapeICSText(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+/** La ricorrenza di Vitae, tradotta in RRULE — così l'evento nel calendario di sistema si
+ * ripete davvero da solo, invece di restare la singola data di creazione. "Nessuna" non
+ * genera nessuna riga (evento singolo, come sempre). */
+function recurrenceToRRule(recurrence: Task["recurrence"], customDays: Weekday[]): string | null {
+  switch (recurrence) {
+    case "quotidiano":
+      return "RRULE:FREQ=DAILY";
+    case "settimanale":
+      return "RRULE:FREQ=WEEKLY";
+    case "mensile":
+      return "RRULE:FREQ=MONTHLY";
+    case "annuale":
+      return "RRULE:FREQ=YEARLY";
+    case "personalizzato":
+      return customDays.length > 0 ? `RRULE:FREQ=WEEKLY;BYDAY=${customDays.join(",")}` : null;
+    default:
+      return null;
+  }
 }
 
 export function taskToICS(task: Task): string | null {
@@ -73,12 +93,14 @@ export function taskToICS(task: Task): string | null {
   const dtStamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(
     now.getUTCHours()
   )}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+  const rrule = recurrenceToRRule(task.recurrence, task.customDays);
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Vitae//Task//IT",
     "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,
@@ -86,17 +108,51 @@ export function taskToICS(task: Task): string | null {
     allDay ? `DTEND;VALUE=DATE:${dtEnd}` : `DTEND:${dtEnd}`,
     `SUMMARY:${escapeICSText(task.title)}`,
   ];
+  if (rrule) lines.push(rrule);
   if (task.notes) lines.push(`DESCRIPTION:${escapeICSText(task.notes)}`);
   lines.push("END:VEVENT", "END:VCALENDAR");
 
   return lines.join("\r\n");
 }
 
-/** Apre il file .ics generato: sia Android che iOS riconoscono il tipo e offrono di
- * aggiungerlo al calendario di sistema da soli. */
-export function openTaskInCalendar(task: Task) {
-  const ics = taskToICS(task);
-  if (!ics) return;
+/**
+ * Un file .ics non è un canale a doppio senso: aprirlo fa creare all'app di calendario del
+ * sistema una sua copia indipendente dell'evento, e da quel momento Vitae non ha modo di
+ * sapere quale evento sia diventato né di cancellarlo da remoto — nessuna web app può farlo,
+ * è lo stesso limite di piattaforma già documentato per notifiche e geolocalizzazione.
+ * Quello che si può fare, senza fingere un collegamento che non esiste: generare un secondo
+ * .ics con lo stesso UID e METHOD:CANCEL. Le app di calendario che sanno riconoscere un
+ * annullamento (Google Calendar, Outlook, e buona parte delle app Android) tolgono da sole
+ * l'evento corrispondente; altre (in particolare Calendario di iOS aperto da un file al di
+ * fuori di un vero invito) potrebbero non far nulla — in quel caso resta da togliere a mano,
+ * come specificato all'utente nell'interfaccia quando gli si offre questo file.
+ */
+export function taskCancelICS(task: Task): string | null {
+  if (task.type === "quotidiana") return null;
+  const now = new Date();
+  const dtStamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(
+    now.getUTCHours()
+  )}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+  const uid = `${task.id}@vitae`;
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Vitae//Task//IT",
+    "CALSCALE:GREGORIAN",
+    "METHOD:CANCEL",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}`,
+    "SEQUENCE:1",
+    "STATUS:CANCELLED",
+    `SUMMARY:${escapeICSText(task.title)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+  return lines.join("\r\n");
+}
+
+function downloadICS(ics: string) {
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -106,4 +162,19 @@ export function openTaskInCalendar(task: Task) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Apre il file .ics generato: sia Android che iOS riconoscono il tipo e offrono di
+ * aggiungerlo al calendario di sistema da soli. */
+export function openTaskInCalendar(task: Task) {
+  const ics = taskToICS(task);
+  if (!ics) return;
+  downloadICS(ics);
+}
+
+/** Offerto quando si elimina una task già esportata (vedi nota su `taskCancelICS`). */
+export function openTaskCancelInCalendar(task: Task) {
+  const ics = taskCancelICS(task);
+  if (!ics) return;
+  downloadICS(ics);
 }

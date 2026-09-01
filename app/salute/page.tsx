@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus, Clock, Flame, Zap, Scale } from "lucide-react";
 import { useHealth } from "@/lib/health-context";
 import { Workout } from "@/lib/types";
-import { addDaysIso, todayIso } from "@/lib/date-format";
+import { addDaysIso, todayIso, formatDateShort } from "@/lib/date-format";
 import { ActivityOrb } from "@/components/health/ActivityOrb";
 import { AddWorkoutModal } from "@/components/health/AddWorkoutModal";
 import { WorkoutDetail } from "@/components/health/WorkoutDetail";
@@ -29,6 +29,7 @@ export default function SalutePage() {
   const [addWorkoutOpen, setAddWorkoutOpen] = useState(false);
   const [addWeightOpen, setAddWeightOpen] = useState(false);
   const [openWorkoutId, setOpenWorkoutId] = useState<string | null>(null);
+  const [editWeightId, setEditWeightId] = useState<string | null>(null);
 
   const weekAgo = addDaysIso(todayIso(), -6);
   const weekWorkouts = useMemo(() => workouts.filter((w) => w.date >= weekAgo), [workouts, weekAgo]);
@@ -42,6 +43,11 @@ export default function SalutePage() {
   );
 
   const openWorkout: Workout | undefined = workouts.find((w) => w.id === openWorkoutId);
+  const editWeightEntry = weightEntries.find((w) => w.id === editWeightId);
+  const recentWeightEntries = useMemo(
+    () => [...weightEntries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
+    [weightEntries]
+  );
 
   if (!hydrated) return null;
 
@@ -110,6 +116,19 @@ export default function SalutePage() {
             <p className="mt-2 text-xs text-ink-800">Obiettivo: {weightGoal} Kg</p>
           )}
         </GlassCard>
+        {recentWeightEntries.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {recentWeightEntries.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={() => setEditWeightId(entry.id)}
+                className="focus-ring rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-ink-400 transition hover:border-aura-emerald/50 hover:text-ink-100"
+              >
+                {entry.value} kg · {formatDateShort(entry.date)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <p className="mt-8 text-center text-[11px] leading-relaxed text-ink-800">
@@ -120,6 +139,7 @@ export default function SalutePage() {
 
       {addWorkoutOpen && <AddWorkoutModal onClose={() => setAddWorkoutOpen(false)} />}
       {addWeightOpen && <WeightModal onClose={() => setAddWeightOpen(false)} />}
+      {editWeightEntry && <WeightModal entry={editWeightEntry} onClose={() => setEditWeightId(null)} />}
       {openWorkout && <WorkoutDetail workout={openWorkout} onClose={() => setOpenWorkoutId(null)} />}
     </div>
   );

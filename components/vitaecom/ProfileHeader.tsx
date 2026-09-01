@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Flag } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { VitaecomAccount, VitaecomPost } from "@/lib/vitaecom-social-types";
@@ -30,7 +31,7 @@ export function ProfileHeader({
 }) {
   const router = useRouter();
   const { activeMood, activeMoodIntensity, allMoods, shareMoodOnVitaecom } = useMood();
-  const { knownAccountIds } = useVitaecomSocial();
+  const { knownAccountIds, reports } = useVitaecomSocial();
   const known = knownAccountIds.includes(account.id);
 
   const normale = allMoods.find((m) => m.id === "normale");
@@ -104,6 +105,21 @@ export function ProfileHeader({
             >
               <MoreHorizontal size={14} />
             </button>
+          )}
+          {/* "Segnalazioni" — solo tue, mai una scheda che gli altri account hanno: per
+             questo vive qui, ancorata al tuo stesso profilo, non tra le schede assegnabili
+             della barra di navigazione (vedi app/segnalazioni/page.tsx per la nota onesta
+             sui limiti di questo, oggi solo "fuori dai menu", non un vero controllo
+             d'accesso). */}
+          {isOwner && (
+            <Link
+              href="/segnalazioni"
+              className="focus-ring absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-aura-pink/50 hover:text-aura-pink"
+              aria-label="Segnalazioni"
+            >
+              <Flag size={13} />
+              {reports.length > 0 && <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-aura-pink" />}
+            </Link>
           )}
           <button
             ref={avatarRef}

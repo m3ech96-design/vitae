@@ -13,8 +13,10 @@ interface HealthContextValue {
   weightEntries: WeightEntry[];
   weightGoal: number | null;
   addWorkout: (input: Omit<Workout, "id" | "createdAt">) => void;
+  updateWorkout: (id: string, patch: Partial<Omit<Workout, "id" | "createdAt">>) => void;
   removeWorkout: (id: string) => void;
   addWeightEntry: (value: number, date: string) => void;
+  updateWeightEntry: (id: string, patch: Partial<Omit<WeightEntry, "id">>) => void;
   removeWeightEntry: (id: string) => void;
   setWeightGoal: (value: number | null) => void;
 }
@@ -42,49 +44,68 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const persistWorkouts = useCallback((next: Workout[]) => {
-    setWorkouts(next);
-    try {
-      window.localStorage.setItem(WORKOUTS_KEY, JSON.stringify(next));
-    } catch {
-      // ignorato
-    }
+  /** Forma funzionale — vedi la stessa correzione, con la stessa causa reale, in
+   * household-context.tsx (`persistPeople`): due chiamate di seguito nello stesso gestore
+   * di evento, basate su una copia dell'array catturata al render, facevano sì che la
+   * seconda sovrascrivesse silenziosamente la prima invece di sommarsi. */
+  const persistWorkouts = useCallback((updater: Workout[] | ((prev: Workout[]) => Workout[])) => {
+    setWorkouts((prev) => {
+      const next = typeof updater === "function" ? (updater as (w: Workout[]) => Workout[])(prev) : updater;
+      try {
+        window.localStorage.setItem(WORKOUTS_KEY, JSON.stringify(next));
+      } catch {
+        // ignorato
+      }
+      return next;
+    });
   }, []);
 
-  const persistWeight = useCallback((next: WeightEntry[]) => {
-    setWeightEntries(next);
-    try {
-      window.localStorage.setItem(WEIGHT_KEY, JSON.stringify(next));
-    } catch {
-      // ignorato
-    }
+  const persistWeight = useCallback((updater: WeightEntry[] | ((prev: WeightEntry[]) => WeightEntry[])) => {
+    setWeightEntries((prev) => {
+      const next = typeof updater === "function" ? (updater as (w: WeightEntry[]) => WeightEntry[])(prev) : updater;
+      try {
+        window.localStorage.setItem(WEIGHT_KEY, JSON.stringify(next));
+      } catch {
+        // ignorato
+      }
+      return next;
+    });
   }, []);
 
   const addWorkout = useCallback(
     (input: Omit<Workout, "id" | "createdAt">) => {
-      persistWorkouts([
-        ...workouts,
-        { ...input, id: newId(), createdAt: new Date().toISOString() },
-      ]);
+      persistWorkouts((prev) => [...prev, { ...input, id: newId(), createdAt: new Date().toISOString() }]);
     },
-    [workouts, persistWorkouts]
+    [persistWorkouts]
+  );
+
+  const updateWorkout = useCallback(
+    (id: string, patch: Partial<Omit<Workout, "id" | "createdAt">>) =>
+      persistWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w))),
+    [persistWorkouts]
   );
 
   const removeWorkout = useCallback(
-    (id: string) => persistWorkouts(workouts.filter((w) => w.id !== id)),
-    [workouts, persistWorkouts]
+    (id: string) => persistWorkouts((prev) => prev.filter((w) => w.id !== id)),
+    [persistWorkouts]
   );
 
   const addWeightEntry = useCallback(
     (value: number, date: string) => {
-      persistWeight([...weightEntries, { id: newId(), value, date }]);
+      persistWeight((prev) => [...prev, { id: newId(), value, date }]);
     },
-    [weightEntries, persistWeight]
+    [persistWeight]
+  );
+
+  const updateWeightEntry = useCallback(
+    (id: string, patch: Partial<Omit<WeightEntry, "id">>) =>
+      persistWeight((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w))),
+    [persistWeight]
   );
 
   const removeWeightEntry = useCallback(
-    (id: string) => persistWeight(weightEntries.filter((w) => w.id !== id)),
-    [weightEntries, persistWeight]
+    (id: string) => persistWeight((prev) => prev.filter((w) => w.id !== id)),
+    [persistWeight]
   );
 
   const setWeightGoal = useCallback((value: number | null) => {
@@ -104,12 +125,26 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       weightEntries,
       weightGoal,
       addWorkout,
+      updateWorkout,
       removeWorkout,
       addWeightEntry,
+      updateWeightEntry,
       removeWeightEntry,
       setWeightGoal,
     }),
-    [hydrated, workouts, weightEntries, weightGoal, addWorkout, removeWorkout, addWeightEntry, removeWeightEntry, setWeightGoal]
+    [
+      hydrated,
+      workouts,
+      weightEntries,
+      weightGoal,
+      addWorkout,
+      updateWorkout,
+      removeWorkout,
+      addWeightEntry,
+      updateWeightEntry,
+      removeWeightEntry,
+      setWeightGoal,
+    ]
   );
 
   return <HealthContext.Provider value={value}>{children}</HealthContext.Provider>;

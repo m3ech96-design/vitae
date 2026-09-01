@@ -25,15 +25,27 @@ button, a, [role="button"] {
 }
 
 /* Blocca lo zoom (pizzico e doppio tap) in tutta l'app — nessun browser deve poter
- * zoomare — tranne che sulla mappa e sulle immagini, dove resta lo zoom nativo. */
+ * zoomare, l'app non deve mai zoomarsi — tranne che sulla mappa, dove il suo stesso
+ * ingrandimento (gestito da Leaflet via JS, non dal browser) resta l'interazione voluta.
+ * Le immagini erano escluse in precedenza per lasciare lo zoom nativo su di loro: proprio
+ * quello causava lo zoom indesiderato dell'intera pagina toccandole (persistente finché non
+ * si chiude e riapre l'app) — tolta l'eccezione, restano ferme come il resto dell'interfaccia. */
 html, body {
   touch-action: pan-x pan-y;
 }
 
 .leaflet-container,
-.leaflet-container *,
-img {
+.leaflet-container * {
   touch-action: auto;
+}
+
+/* iOS Safari zooma da solo la pagina quando il testo di un campo attivo è più piccolo di
+ * 16px — e quello zoom resta anche dopo aver chiuso la tastiera, esattamente il bug
+ * descritto ("devo chiudere e riaprire l'app"). Vale ovunque, comprese le classi Tailwind
+ * più piccole (text-sm, text-xs) già usate su alcuni campi di ricerca — da cui !important,
+ * l'unico modo per vincere sempre indipendentemente da quale classe arrivi dopo. */
+input, textarea, select {
+  font-size: 16px !important;
 }
 
 html, body {

@@ -103,6 +103,29 @@ Prima base del progetto: fondamenta tecniche + Wizard di creazione utente.
   Finanze, Rapporti e Animali (ancora "Presto") — invece di continuare ad aggiungere icone
   alla barra principale ogni volta che finisco un modulo.
 
+## Direzione futura: da solo-locale a multi-utente con un server vero
+
+**Importante per chiunque continui questo progetto, non solo una nota di passaggio**: Vitae
+non resterà per sempre un'app solo-locale con un solo account reale e degli account
+dimostrativi. Un giorno passerà a più persone vere, collegate tra loro da un server vero —
+questo cambia come conviene progettare quello che manca ancora, non quello già costruito.
+
+Cosa significa in pratica, da qui in avanti:
+- Dove ha senso, i dati scritti oggi in locale vanno pensati già nella forma che un domani
+  viaggerà verso quel server, così da spedire quando arriverà, non da ripensare da capo (è
+  già così per `PostReport` in `lib/vitaecom-social-types.ts` — le segnalazioni sui post).
+- **Nascondere qualcosa dai menu non è mai un controllo d'accesso vero.** La pagina
+  `/segnalazioni` (Checkpoint 38) è raggiungibile solo da un pulsante sul tuo profilo, mai
+  dalle schede assegnabili della barra di navigazione — ma questo oggi funziona solo perché
+  esiste un solo account reale (te). Quando arriveranno account reali multipli, quella
+  sezione (e ogni altra riservata a chi amministra, non a chiunque) andrà ristretta per
+  davvero lato server, con un vero controllo su chi può vederla — un lavoro suo, da non dare
+  per scontato solo perché oggi un link non compare in un menu.
+- Il resto dell'app (Mondo, Persone, Vitaecom, Home...) resta pensato per un solo utente
+  reale alla volta: quando si parlerà di account multipli veri, andrà deciso insieme cosa
+  diventa condiviso tra le persone collegate (es. il riquadro Casa di una famiglia vera) e
+  cosa resta privato di ciascuno — non è una scelta da anticipare da soli ora.
+
 ## Checkpoint — cose corrette dopo una rilettura del brief originale
 
 - **Title Case ovunque**: il testo scritto dall'utente (titoli task, note, indirizzi, frasi
@@ -1469,6 +1492,229 @@ Nel farlo, un'altra violazione Title Case preesistente trovata e corretta nella 
 
 Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
 correttamente su tutte le 19 rotte.
+
+## Checkpoint 35 — reazioni ai messaggi in chat, e l'aura fiammeggiante dell'avatar
+
+**Ogni messaggio è reagibile con uno stato d'animo**, stessa meccanica dei post: una sfera
+sotto il messaggio (nome dello stato al posto della sfera una volta reagito, sempre
+cliccabile per cambiarlo) genera "Ti sei sentito/a [stato]" quando reagisci tu, "Si è
+sentito/a [stato]" quando reagisce l'altro lato (simulato — vedi sotto), e "Vi siete
+sentiti" con le due sfere sovrapposte, cliccabili in un elenco, quando reagite entrambi. Il
+contorno del messaggio prende il colore dello stato di chi ha reagito; se avete reagito
+entrambi con stati diversi, diventa un gradiente liquido dei due colori (stessa animazione
+già costruita per il Lato Stato dei post, non un secondo linguaggio visivo).
+
+Non esistendo un vero interlocutore dall'altra parte del filo, la sua reazione è simulata
+con la stessa onestà già usata altrove: dopo un tuo messaggio, l'account demo a volte reagisce
+con uno stato invece di rispondere a parole (mai entrambe le cose insieme).
+
+**L'avatar dell'altro account, in chat, non ha più l'aura permanente** — l'aveva sempre
+avuta per errore di distrazione, non per scelta: ora è spenta come richiesto. Quando arriva
+una sua reazione, si accende invece un'animazione (`ReactionAvatarBurst.tsx`): il tasto
+indietro si trasforma in una sfera dello stato d'animo, raggiunge il bordo dell'avatar, lo
+gira una volta intera, torna al punto di partenza e ridiventa freccia — poi un'aura
+fiammeggiante esplode intorno all'avatar con scintille bianche e del colore dello stato,
+dura un secondo e scompare per sempre (non un nuovo respiro continuo). Circa due-tre secondi
+in tutto, come richiesto.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 19 rotte.
+
+## Checkpoint 36 — la scheda "News"
+
+Nuova scheda "News", assegnabile a uno slot della barra di navigazione con la stessa
+pressione lunga già costruita per personalizzarla (o raggiungibile da "Altro", come ogni
+scheda non assegnata). Notizie vere, non finte: quattro categorie (Attualità, Cronaca,
+Cultura, Tecnologia) lette da RSS pubblici di ANSA, un'agenzia di stampa — non un singolo
+giornale schierato — con visuale a scorrimento verticale dentro ciascuna categoria e i tab
+delle categorie scorrevoli in orizzontale sopra. Ogni notizia mostra il testo così come
+arriva dal feed, minimizzato a due righe con un tasto "Espandi"; l'immagine, quando il feed
+la fornisce (non sempre: molti articoli ANSA non ne hanno una nel feed stesso); e due azioni,
+condividere su Vitaecom o aprire l'articolo vero per intero sul sito di origine. Il recupero
+gira lato server (`/api/news`), sia perché il browser non potrebbe leggere questi feed per il
+CORS della fonte, sia per non rifare la stessa chiamata a ogni apertura (cache di 10 minuti).
+
+**Condividere una news su Vitaecom** apre un piccolo foglio per aggiungere un pensiero
+facoltativo; il link vero finisce nel testo del post e viene riconosciuto ed incorporato
+dallo stesso `LinkEmbed` già usato per qualunque link scritto in un post — nessun componente
+nuovo, nessuna finta identità sul post: rimanda sempre alla fonte.
+
+**Una nota onesta, non solo tecnica.** Il servizio RSS di ANSA dichiara esplicitamente di
+essere pensato "per fini non commerciali... per la sola visualizzazione mediante... Reader" —
+esattamente quello che questa scheda fa (un lettore personale per un solo utente, mai
+distribuito né monetizzato), non una ripubblicazione dei loro contenuti come se fossero
+nostri: per questo ogni notizia porta solo titolo e la breve descrizione già presente nel
+feed stesso — mai un testo integrale scaricato dalla pagina dell'articolo, che tra l'altro
+ANSA non mette nemmeno nel proprio RSS — e rimanda sempre all'originale per leggerlo davvero.
+Se in futuro questa scheda dovesse crescere (altre fonti, testi più lunghi), vale la pena
+riguardare insieme i termini d'uso della fonte scelta prima di procedere, non darli per
+scontati una volta e basta.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 21 rotte.
+
+## Checkpoint 37 — "Segnala questo post", e una nota sul futuro con un server vero
+
+**Prima, un'indicazione importante ricevuta e da tenere a mente d'ora in avanti**: quest'app
+dovrà un giorno passare a più persone collegate tra loro da un server vero — non resterà per
+sempre solo-locale con un utente reale e account dimostrativi. Non cambia nulla in quello già
+costruito, ma cambia come conviene progettare quello che manca ancora: dati e scelte fatte
+oggi pensando già a quel domani, invece di lasciare che tutto vada ripensato da capo quando
+arriverà.
+
+La prima conseguenza pratica: **"Segnala questo post"**, lasciato apposta in sospeso al
+Checkpoint 31. Un motivo tra quelli previsti (Contenuto inappropriato, Molestie o bullismo,
+Spam o inganno, Nudo o contenuto sessuale, Violenza, Altro — quest'ultimo con un campo
+libero), poi la conferma. Oggi la segnalazione resta solo sul tuo dispositivo — non esiste
+ancora un server dove mandarla né un moderatore che la legga — ma la sua forma (`PostReport`
+in `vitaecom-social-types.ts`: chi, cosa, perché, quando) è già quella che un giorno
+viaggerà verso una vera coda di moderazione: quando quel server esisterà, sarà da spedire,
+non da ripensare. Segnalare nasconde anche il post dal tuo Vitaeworld, una scelta ragionevole
+più che una regola — difficilmente vuoi ancora vederlo dopo averlo segnalato.
+
+Restano in sospeso, e per motivi diversi tra loro: la moderazione automatica dei contenuti
+sessualmente espliciti (serve comunque un vero servizio di visione artificiale lato server —
+ora so che un giorno esisterà, ma "un giorno" non è "ora"), e le stories verticali (restano
+un brainstorming da fare insieme prima di costruire qualcosa).
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 21 rotte.
+
+## Checkpoint 38 — "Segnalazioni" arriva solo a te
+
+Confermato: le segnalazioni devono arrivare a te, e solo a te — gli altri account non hanno
+questa sezione. Nuova pagina `/segnalazioni` con l'elenco di ogni post segnalato (chi,
+perché, un'anteprima del post), e due azioni per ciascuna: "Segna come esaminata" (la toglie
+dalla lista senza toccare il post, che intanto è già nascosto dal tuo Vitaeworld da quando
+l'hai segnalato) o "Elimina il post" per davvero.
+
+Per questo non vive tra le schede assegnabili della barra di navigazione insieme a tutte le
+altre — quelle sono la superficie che un domani, con account reali multipli, sarà la stessa
+per chiunque; questa no. Si raggiunge da un piccolo pulsante dedicato, ancorato al tuo
+profilo Vitaecom (lo stesso angolo dove i profili altrui hanno "Esplora Altro"), con un
+puntino quando c'è qualcosa da esaminare.
+
+**Una precisazione onesta, non un dettaglio da nascondere**: oggi questa restrizione è solo
+"non è nella navigazione normale", non un vero controllo d'accesso — in un'app solo-locale
+con un solo account reale non ce n'è bisogno, e nasconde un link non è mai sicurezza vera.
+Quando arriveranno account reali multipli tramite il server di cui abbiamo parlato, questa
+sezione andrà ristretta per davvero lato server — un lavoro suo, non qualcosa che si risolve
+da solo perché oggi il link non compare nei menu.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 22 rotte.
+
+## Checkpoint 39 — le storie verticali, l'ultimo pezzo del brief originale
+
+Dopo il brainstorming fatto insieme: una storia è a tutti gli effetti un post (stesso tipo
+`VitaecomPost`, solo con `isStory`/`expiresAt` in più) — per questo riceve "tutte le
+interazioni di un post normale", come confermato: Mi Piace, commenti, condivisione, la sfera
+di reazione con il proprio Lato Stato a schermo intero, il menu a tre puntini (Elimina/Non mi
+interessa/Nascondi/Segnala). Nessun sistema di interazioni a parte da costruire e mantenere
+— le stesse funzioni già esistenti, riusate qui.
+
+**La fila in cima a Vitaeworld**: il tuo cerchietto per primo (con un "+" per aggiungerne una
+nuova anche quando ne hai già una attiva), poi chi altro ha almeno una storia ancora attiva
+— scompaiono da sole dopo 24 ore. Anello acceso per chi ha qualcosa che non hai ancora visto
+per intero, spento per chi hai già visto tutto; stessa regola di privacy dei post, uno
+"Sconosciuto" non compare nemmeno qui.
+
+**Il visualizzatore**: avanzamento automatico (tempo fisso per foto/testo, la durata vera del
+video quando c'è), tocco a sinistra/destra per tornare indietro o andare avanti — tra le
+storie della stessa persona e poi tra persone diverse — tenere premuto mette in pausa. Senza
+foto né video resta comunque una storia valida, mostrata come testo su un fondo sfumato nel
+colore dello stato d'animo, mai una card vuota.
+
+Due account demo (Nina e Leo) hanno già una storia attiva pronta da vedere, per provare
+subito il visualizzatore — per questo sono stati resi entrambi "conosciuti" fin dalla
+primissima apertura (prima lo era solo Leo, per la richiesta di Casa già seminata).
+
+Con questo, l'intero brief originale è coperto per la prima volta davvero fino in fondo.
+
+Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
+correttamente su tutte le 22 rotte.
+
+## Checkpoint 40 — audit lungo in corso: bug reali di stato, Novità, calendario, zoom, Albero
+
+Sessione di correzioni su una lista lunga, ancora in corso (il resto arriva nei prossimi
+checkpoint). Quanto segue è già stato verificato con `tsc --noEmit` e `npm run build` puliti
+dopo ogni pezzo, non solo alla fine.
+
+**Il bug più importante trovato in questa sessione — una race condition reale**: in
+`household-context.tsx`, `addPerson`/`updatePerson`/`removePerson` calcolavano il nuovo
+array leggendo `people` così com'era al render in corso, non lo stato più aggiornato. Quando
+due di queste scritture partivano nello stesso gestore di evento — esattamente il caso di
+"Esiste, Ma Non È Chi È" (crea una persona, poi aggiorna subito il genitore che la
+referenzia) o l'assegnazione di più figli insieme in "Figli" — la seconda sovrascriveva la
+prima in silenzio, perdendo la persona appena creata o il legame appena scritto. Corretto
+convertendo tutto alla forma funzionale di `setState`; stessa correzione applicata anche a
+`health-context.tsx` per coerenza. Lo stesso pattern esiste ancora, non ancora corretto, in
+`finance-context`, `mood-context`, `needs-context`, `places-context`, `tasks-context`,
+`vitaecom-chat-context`, `vitaecom-social-context` — un rischio latente reale, da sistemare
+in un prossimo giro.
+
+**"Cambio Di Sesso" che non si propaga ovunque — causa trovata**: `kind` (deciso una volta
+sola alla creazione) e `gender` (il campo "Sesso" delle Scoperte, modificabile sempre) sono
+due dati diversi per la stessa cosa. Le etichette dell'Albero leggono sempre `gender` (si
+aggiornano da sole); "Sconosciuto/a" e "Defunto/a" leggevano invece `kind`, che restava
+quello di sempre. Ora cambiare "Sesso" nelle Scoperte allinea anche `kind` nella stessa
+scrittura (mai per gli animali, dove non ha senso) — vedi `kindForGenderChange` in
+`lib/types.ts`.
+
+**"Deceased - False" nelle Novità**: `deceased` (un campo di `Person`, non di
+`PersonalDetails`) finiva nel ramo generico di `describeDiscoveries`, che non lo riconosceva
+e stampava il nome tecnico del campo. Genera una riga solo quando il decesso viene impostato
+("È Deceduto"/"È Deceduta" secondo il sesso), mai quando lo si toglie o cambia solo la data.
+
+**Pesate e attività, ora modificabili**: mancavano `updateWorkout`/`updateWeightEntry` — non
+un bug di per sé, semplicemente non erano mai state scritte. Aggiunta una vera modalità di
+modifica in `WorkoutDetail.tsx` e una cronologia toccabile delle pesate in `salute/page.tsx`.
+
+**Ricorrenza task → calendario di sistema**: l'export `.ics` creava sempre un evento singolo,
+mai davvero ricorrente. Ora genera un vero `RRULE` in base al tipo di ricorrenza — corretto
+anche un bug collegato, la ricorrenza "Personalizzato" non veniva rispettata nemmeno dentro
+l'app (ignorava i giorni scelti). **Eliminare una task** ora prova anche ad annullare
+l'evento nel calendario di sistema (stesso UID, `METHOD:CANCEL`) — nessuna web app può
+davvero cancellare da remoto un evento già copiato altrove, stesso limite di piattaforma già
+documentato per notifiche e geolocalizzazione: alcune app di calendario (Google, Outlook,
+gran parte di quelle Android) riconoscono l'annullamento da sole, Calendario di iOS
+potrebbe non farlo.
+
+**Zoom bloccato per davvero**: due cause reali, non una. La regola CSS lasciava lo zoom
+nativo attivo su ogni `<img>` dell'app (pensata solo per la mappa, applicata per errore
+ovunque) — tolta, resta solo sulla mappa. Gli input senza una dimensione di testo esplicita
+finivano sotto i 16px su iOS Safari, che quindi zoomava la pagina da solo all'apertura
+tastiera e restava zoomata finché non si chiudeva e riapriva l'app — forzato
+`font-size: 16px` su tutti i campi.
+
+**Albero Genealogico, riorganizzato su richiesta esplicita**:
+- Eliminato il concetto di Patrigno/Matrigna: chi ha sposato un genitore resta "Madre"/
+  "Padre" come chiunque altro, e finisce da solo nella categoria "Genitori" — la sezione
+  "Patrigno E Matrigna" non esiste più.
+- "Famiglia Di Provenienza" ora contiene SOLO genitori e fratelli/sorelle, come richiesto.
+  Tutto il resto del sangue (nonni, prozii, zii, cugini, nipoti di un fratello/sorella) vive
+  nel nuovo ramo "Famiglia Estesa"; ogni legame nato da un matrimonio (suoceri, cognati in
+  entrambe le direzioni, generi/nuore, figliastri, e i ponti generici senza una parola
+  propria) vive in "Famiglia Acquisita" — i cognati, in particolare, non compaiono più nella
+  Famiglia Di Provenienza.
+- Eliminata "Altri Legami": l'ultima categoria di sicurezza si chiama ora "Legami Acquisiti"
+  ed è sempre un vero nome, mai un'etichetta vuota.
+- "Fratello"/"Sorella", "Zio"/"Zia" (e "Prozio"/"Prozia", collegata), "Madre"/"Padre",
+  "Nonno"/"Nonna" non ammettono più una terza forma ibrida ("Fratello/Sorella" eccetera):
+  sempre una delle due parole vere, in base al sesso — il maschile resta il non marcato
+  della lingua quando il sesso non è noto o non binario, non un'etichetta di comodo.
+  Verificato con un piccolo albero di prova, non solo dichiarato.
+- L'Albero di una singola persona non mostra più "Parente Alla Lontana": un legame
+  raggiungibile solo dal grafo, senza alcun grado nominabile, restava solo rumore.
+- Corretti anche alcuni residui di Title Case rimasti da prima in questo stesso file
+  (i titoli dei rami, "Coniuge Di Marco" e simili ponti generici, il grado dei cugini).
+
+**Ancora da fare**, nell'ordine in cui arriveranno: pulsante profilo unificato (wizard +
+impostazioni, modalità vivo/dialogo, frase azione singola), ricerca chat e pulsante "+",
+menu avatar in chat (trova nella chat / media inviati / link inviati), calorie analitiche
+per attività basate sul peso, le nuove schede Alimentazione/Diario/Hobby/Wishlist (le prime
+due da valutare insieme prima di costruirle), i bug di reazioni/Lato Stato/animazione
+liquida del profilo altrui.
 
 ## Sviluppo in locale
 

@@ -32,7 +32,7 @@ function Bacheca() {
   }, [hydrated]);
 
   if (!hydrated || !profileHydrated) return null;
-  const ownPosts = posts.filter((p) => p.authorId === "user");
+  const ownPosts = posts.filter((p) => p.authorId === "user" && !p.isStory);
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
 
   return (

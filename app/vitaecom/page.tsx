@@ -8,6 +8,7 @@ import { NicknameGate } from "@/components/vitaecom/NicknameGate";
 import { PostCard } from "@/components/vitaecom/PostCard";
 import { PostComments } from "@/components/vitaecom/PostComments";
 import { ShareComposer } from "@/components/vitaecom/ShareComposer";
+import { StoriesRail } from "@/components/vitaecom/StoriesRail";
 
 function VitaeworldFeed() {
   const { hydrated, posts, knownAccountIds, hiddenPostIds, mutedAccountIds } = useVitaecomSocial();
@@ -34,12 +35,17 @@ function VitaeworldFeed() {
       </div>
       <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa sta succedendo</h1>
 
+      <div className="mt-5">
+        <StoriesRail />
+      </div>
+
       {/* Per privacy, un account "Sconosciuto" non ti mostra i suoi post da nessuna parte
          (vedi KnowPanel) — qui, il posto dove più si nota. I tuoi restano sempre visibili.
          "Non mi interessa"/"Nascondi utente" (vedi PostMenu) sono un filtro tuo in più,
          sopra quello: mai per i tuoi post, sempre applicato a quelli altrui. */}
       <div className="mt-6 space-y-5">
         {posts
+          .filter((post) => !post.isStory)
           .filter((post) => post.authorId === "user" || knownAccountIds.includes(post.authorId))
           .filter((post) => post.authorId === "user" || (!hiddenPostIds.includes(post.id) && !mutedAccountIds.includes(post.authorId)))
           .map((post) => (

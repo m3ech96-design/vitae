@@ -56,7 +56,7 @@ export function FamilyRelationEditor({
         options={options}
         onChange={(id) => onUpdate({ fatherId: id })}
         unknownOption={
-          focus.fatherId ? undefined : { label: "Esiste, Ma Non So Chi È", onCreate: () => onCreateUnknownParent("father") }
+          focus.fatherId ? undefined : { label: "Esiste, ma non so chi è", onCreate: () => onCreateUnknownParent("father") }
         }
       />
       <PersonPicker
@@ -65,7 +65,7 @@ export function FamilyRelationEditor({
         options={options}
         onChange={(id) => onUpdate({ motherId: id })}
         unknownOption={
-          focus.motherId ? undefined : { label: "Esiste, Ma Non So Chi È", onCreate: () => onCreateUnknownParent("mother") }
+          focus.motherId ? undefined : { label: "Esiste, ma non so chi è", onCreate: () => onCreateUnknownParent("mother") }
         }
       />
       <div>

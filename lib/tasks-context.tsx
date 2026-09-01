@@ -6,6 +6,7 @@ import { usePlaces } from "./places-context";
 import { SPENDING_PLACE_TYPES } from "./places-meta";
 import { capArray } from "./cap-array";
 import { shouldAutoComplete } from "./task-status";
+import { openTaskCancelInCalendar } from "./ics";
 
 const TASKS_KEY = "vitae:tasks";
 
@@ -138,6 +139,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const removeTask = useCallback(
     (id: string) => {
+      // Simmetrico alla creazione: aggiungere una task non "quotidiana" genera da sola
+      // l'evento nel calendario di sistema, quindi eliminarla prova ad annullarlo allo
+      // stesso modo — vedi la nota su `taskCancelICS` per il limite reale di questa strada
+      // (nessuna web app può cancellare da remoto un evento già copiato altrove).
+      const removed = tasks.find((t) => t.id === id);
+      if (removed && removed.type !== "quotidiana") openTaskCancelInCalendar(removed);
       persist(tasks.filter((t) => t.id !== id));
     },
     [tasks, persist]

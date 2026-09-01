@@ -85,7 +85,7 @@ export function AddPlaceModal({
         } else {
           updatePerson(person.id, { eduWorkCustomFields: [...person.eduWorkCustomFields, field] });
         }
-        pushEvent(`Hai Scoperto Qualcosa Di Nuovo Su ${person.firstName} ${person.lastName}: ${label} — ${finalName}`);
+        pushEvent(`Hai scoperto qualcosa di nuovo su ${person.firstName} ${person.lastName}: ${label} — ${finalName}`);
       }
     }
 

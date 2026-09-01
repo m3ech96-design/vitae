@@ -1,8 +1,9 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { VitaecomPost, VitaecomComment, VitaecomTag } from "./vitaecom-social-types";
+import { VitaecomPost, VitaecomComment, VitaecomTag, PostReport, ReportReason } from "./vitaecom-social-types";
 import { buildDemoPosts, DEMO_ACCOUNTS } from "./vitaecom-demo-data";
 import { chainRootOf } from "./vitaecom-lato-stato";
+import { STORY_DURATION_MS } from "./vitaecom-stories";
 import { DEFAULT_MOODS } from "./mood-catalog";
 import { newId } from "./id";
 
@@ -20,6 +21,8 @@ const HOUSEHOLD_SEEDED_KEY = "vitae:vitaecom-household-seeded";
 const MOOD_TALLIES_KEY = "vitae:vitaecom-mood-tallies";
 const HIDDEN_POSTS_KEY = "vitae:vitaecom-hidden-posts";
 const MUTED_ACCOUNTS_KEY = "vitae:vitaecom-muted-accounts";
+const REPORTS_KEY = "vitae:vitaecom-reports";
+const SEEN_STORIES_KEY = "vitae:vitaecom-seen-stories";
 
 interface NewPostInput {
   caption: string;
@@ -50,6 +53,10 @@ interface VitaecomSocialContextValue {
   hasUnreadNotification: boolean;
   markNotificationsRead: () => void;
   publish: (input: NewPostInput) => void;
+  /** Una storia — vedi il commento sopra l'implementazione. */
+  publishStory: (input: NewPostInput) => void;
+  seenStoryIds: string[];
+  markStorySeen: (postId: string) => void;
   /** Condividi un post — vedi il commento sopra l'implementazione per come si scelgono i
    * contenuti da incorporare. */
   sharePost: (input: { sourcePostId: string; caption: string; sharedMoodId: string; includeSourceAddition: boolean }) => void;
@@ -68,6 +75,9 @@ interface VitaecomSocialContextValue {
   mutedAccountIds: string[];
   hidePost: (postId: string) => void;
   muteAccount: (accountId: string) => void;
+  reports: PostReport[];
+  reportPost: (postId: string, authorId: string, reason: ReportReason, note?: string) => void;
+  dismissReport: (reportId: string) => void;
   /**
    * "Persona Conosciuta" o "Sconosciuto" (vedi ProfileHeader) — conoscersi è sempre
    * reciproco una volta accettato, non due stati separati da tenere in sincrono a mano.
@@ -132,6 +142,8 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   const moodTalliesRef = useRef<Record<string, Record<string, number>>>({});
   const [hiddenPostIds, setHiddenPostIds] = useState<string[]>([]);
   const [mutedAccountIds, setMutedAccountIds] = useState<string[]>([]);
+  const [reports, setReports] = useState<PostReport[]>([]);
+  const [seenStoryIds, setSeenStoryIds] = useState<string[]>([]);
   const mutedAccountIdsRef = useRef<string[]>([]);
   const postsRef = useRef<VitaecomPost[]>([]);
   const notifRef = useRef<VitaecomNotification[]>([]);
@@ -354,6 +366,10 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       if (rawHidden) setHiddenPostIds(JSON.parse(rawHidden) as string[]);
       const rawMuted = window.localStorage.getItem(MUTED_ACCOUNTS_KEY);
       if (rawMuted) setMutedAccountIds(JSON.parse(rawMuted) as string[]);
+      const rawReports = window.localStorage.getItem(REPORTS_KEY);
+      if (rawReports) setReports(JSON.parse(rawReports) as PostReport[]);
+      const rawSeenStories = window.localStorage.getItem(SEEN_STORIES_KEY);
+      if (rawSeenStories) setSeenStoryIds(JSON.parse(rawSeenStories) as string[]);
       const rawHouseholdMembers = window.localStorage.getItem(HOUSEHOLD_MEMBERS_KEY);
       if (rawHouseholdMembers) setHouseholdMembers(JSON.parse(rawHouseholdMembers) as string[]);
       const rawHouseholdSent = window.localStorage.getItem(HOUSEHOLD_SENT_KEY);
@@ -363,15 +379,18 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       // apertura — stessa idea di KNOW_SEEDED_KEY qui sopra: per provare subito
       // "Accetta"/"Rifiuta" come destinatario, non solo come chi la manda. Chi te la manda
       // deve già essere una Persona Conosciuta (ha senso solo così), quindi lo seminiamo
-      // anche tra i tuoi conosciuti se non lo fosse già.
+      // anche tra i tuoi conosciuti se non lo fosse già — e con lui anche Nina, per lo
+      // stesso motivo ma per le storie demo (vedi vitaecom-demo-data.ts): senza conoscerla,
+      // la sua non comparirebbe nella fila in cima a Vitaeworld alla primissima apertura.
       if (!window.localStorage.getItem(HOUSEHOLD_SEEDED_KEY)) {
         const seededAccount = DEMO_ACCOUNTS[1];
         const seededReceived = [seededAccount.id];
         setHouseholdReceivedRequests(seededReceived);
         window.localStorage.setItem(HOUSEHOLD_RECEIVED_KEY, JSON.stringify(seededReceived));
         setKnownAccountIds((prev) => {
-          if (prev.includes(seededAccount.id)) return prev;
-          const merged = [...prev, seededAccount.id];
+          const toAdd = [seededAccount.id, DEMO_ACCOUNTS[0].id].filter((id) => !prev.includes(id));
+          if (toAdd.length === 0) return prev;
+          const merged = [...prev, ...toAdd];
           window.localStorage.setItem(KNOWN_KEY, JSON.stringify(merged));
           return merged;
         });
@@ -505,6 +524,47 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     },
     [posts, persistPosts, simulateDemoEngagement]
   );
+
+  /** Una storia — stessa forma di publish(), con `isStory`/`expiresAt` in più. Le
+   * interazioni che riceve (Mi Piace, commenti, reazioni, condivisione) sono le stesse di
+   * un post normale, perché è a tutti gli effetti un post: solo il visualizzatore che la
+   * mostra, e il filtro che la tiene fuori dai feed normali, sono diversi. */
+  const publishStory = useCallback(
+    (input: NewPostInput) => {
+      const post: VitaecomPost = {
+        id: newId(),
+        authorId: "user",
+        createdAt: new Date().toISOString(),
+        isStory: true,
+        expiresAt: new Date(Date.now() + STORY_DURATION_MS).toISOString(),
+        moodId: input.moodId,
+        caption: input.caption,
+        captionByAI: input.captionByAI,
+        photoKey: input.photoKey,
+        videoKey: input.videoKey,
+        tags: input.tags,
+        likedByUser: false,
+        likeCount: 0,
+        comments: [],
+      };
+      persistPosts([post, ...posts]);
+      simulateDemoEngagement(post.id);
+    },
+    [posts, persistPosts, simulateDemoEngagement]
+  );
+
+  const markStorySeen = useCallback((postId: string) => {
+    setSeenStoryIds((prev) => {
+      if (prev.includes(postId)) return prev;
+      const next = [...prev, postId];
+      try {
+        window.localStorage.setItem(SEEN_STORIES_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
+  }, []);
 
   /**
    * Condividere un post: il contenuto ORIGINALE (il primo della catena) si incorpora
@@ -666,6 +726,44 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     });
   }, []);
 
+  /** "Segnala questo post" — scrive la segnalazione (vedi PostReport per la forma, già
+   * pensata per un domani con un vero server) e, come una scelta ragionevole più che una
+   * regola rigida, nasconde subito anche il post dal tuo Vitaeworld: difficilmente vuoi
+   * ancora vederlo dopo averlo segnalato. Non è un secondo "Non mi interessa" duplicato —
+   * quello resta un filtro tuo senza motivo dichiarato, questo porta sempre un perché. */
+  const reportPost = useCallback(
+    (postId: string, authorId: string, reason: ReportReason, note?: string) => {
+      const report: PostReport = { id: newId(), postId, authorId, reason, note: note?.trim() || undefined, createdAt: new Date().toISOString() };
+      setReports((prev) => {
+        const next = [report, ...prev];
+        try {
+          window.localStorage.setItem(REPORTS_KEY, JSON.stringify(next));
+        } catch {
+          // storage non disponibile: continua solo in memoria
+        }
+        return next;
+      });
+      hidePost(postId);
+    },
+    [hidePost]
+  );
+
+  /** Segna una segnalazione come esaminata — la toglie dalla sezione "Segnalazioni" senza
+   * toccare il post (che intanto è già nascosto dal tuo Vitaeworld da quando è stata fatta):
+   * la lasci lì se preferisci ricontrollarla, o se un domani con un vero server questa
+   * diventerà la conferma che manda l'esito a chi gestisce la moderazione. */
+  const dismissReport = useCallback((reportId: string) => {
+    setReports((prev) => {
+      const next = prev.filter((r) => r.id !== reportId);
+      try {
+        window.localStorage.setItem(REPORTS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
+  }, []);
+
   /**
    * Un account demo che accetta da solo dopo una manciata di secondi — stessa idea già usata
    * per Mi Piace/commenti sui tuoi post nuovi (vedi simulateDemoEngagement): senza un vero
@@ -770,6 +868,9 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         hasUnreadNotification: notifications.some((n) => !n.read),
         markNotificationsRead,
         publish,
+        publishStory,
+        seenStoryIds,
+        markStorySeen,
         sharePost,
         moodTallies,
         setPostReaction,
@@ -781,6 +882,9 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         mutedAccountIds,
         hidePost,
         muteAccount,
+        reports,
+        reportPost,
+        dismissReport,
         knownAccountIds,
         sentRequests,
         receivedRequests,

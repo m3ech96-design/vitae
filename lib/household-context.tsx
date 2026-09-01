@@ -118,20 +118,38 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const persistPeople = useCallback((next: Person[]) => {
-    setPeople(next);
-    try {
-      window.localStorage.setItem(PEOPLE_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistPeople = useCallback((updater: Person[] | ((prev: Person[]) => Person[])) => {
+    // Corretto un bug reale (il pulsante "Esiste, Ma Non So Chi È" — e in generale qualunque
+    // sequenza addPerson+updatePerson nello stesso gestore di evento): `people` qui era la
+    // versione dell'array catturata al render corrente. Chiamare `addPerson` e poi subito
+    // `updatePerson` nello stesso click faceva sì che la seconda chiamata ricalcolasse il
+    // nuovo array da una copia di `people` ancora SENZA la persona appena creata da
+    // `addPerson` — il secondo `setPeople` sovrascriveva il primo, perdendo silenziosamente
+    // il genitore appena creato (il campo fatherId/motherId restava impostato su un id che
+    // non esisteva più). La forma funzionale di `setState` risolve sempre contro lo stato
+    // pendente più recente, indipendentemente dall'ordine di battitura nello stesso evento.
+    setPeople((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: Person[]) => Person[])(prev) : updater;
+      try {
+        window.localStorage.setItem(PEOPLE_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
+
+  /** Sempre allineato all'ultimo render — usato solo per letture "al volo" dentro callback
+   * (es. il file dell'avatar da liberare in `removePerson`) che non devono essere loro
+   * stesse dentro l'updater funzionale di `persistPeople`, per restare pure. */
+  const peopleRef = useRef<Person[]>(people);
+  peopleRef.current = people;
 
   const addPerson: HouseholdContextValue["addPerson"] = useCallback(
     (person) => {
       const id = newId();
-      persistPeople([
-        ...people,
+      persistPeople((prev) => [
+        ...prev,
         {
           ...person,
           id,
@@ -160,23 +178,23 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
       ]);
       return id;
     },
-    [people, persistPeople]
+    [persistPeople]
   );
 
   const updatePerson: HouseholdContextValue["updatePerson"] = useCallback(
     (id, patch) => {
-      persistPeople(people.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+      persistPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     },
-    [people, persistPeople]
+    [persistPeople]
   );
 
   const removePerson = useCallback(
     (id: string) => {
-      const person = people.find((p) => p.id === id);
+      const person = peopleRef.current.find((p) => p.id === id);
       if (person?.avatarUrl && !isDataUrl(person.avatarUrl)) deleteImage(person.avatarUrl);
-      persistPeople(people.filter((p) => p.id !== id));
+      persistPeople((prev) => prev.filter((p) => p.id !== id));
     },
-    [people, persistPeople]
+    [persistPeople]
   );
 
   const setTrackingEnabled = useCallback((v: boolean) => {

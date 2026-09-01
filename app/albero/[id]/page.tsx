@@ -27,34 +27,42 @@ import { personColor } from "@/lib/person-color";
  * lib/family-relations.ts, calcolato lì, non indovinato qui da una stringa), poi CHE TIPO
  * di legame è, dentro quel ramo. Così i tuoi stessi genitori e fratelli non finiscono più
  * mescolati agli affini del coniuge, ed "Elimina l'ambiguità" resta vero anche con famiglie
- * allargate e centinaia di persone.
+ * allargate e centinaia di persone. Su richiesta esplicita: "Famiglia Di Provenienza" ora
+ * contiene SOLO genitori e fratelli/sorelle — tutto il resto del sangue (nonni, zii, cugini,
+ * nipoti di un fratello/sorella) vive nel suo ramo dedicato "Famiglia Estesa"; ogni legame
+ * nato da un matrimonio (suoceri, cognati in entrambe le direzioni, generi/nuore,
+ * figliastri) vive in "Famiglia Acquisita" — mai più mescolato nella famiglia di sangue.
  */
 const BRANCH_ORDER: { key: FamilyBranch; title: string }[] = [
-  { key: "coniuge", title: "Coniuge E Partner" },
-  { key: "provenienza", title: "Famiglia Di Provenienza" },
+  { key: "coniuge", title: "Coniuge e partner" },
+  { key: "provenienza", title: "Famiglia di provenienza" },
+  { key: "estesa", title: "Famiglia estesa" },
   { key: "discendenza", title: "Discendenza" },
-  { key: "coniuge-famiglia", title: "Famiglia Del Coniuge" },
-  { key: "lontano", title: "Parenti Alla Lontana" },
+  { key: "acquisita", title: "Famiglia acquisita" },
 ];
 
 /** Dentro ogni ramo, il grado del legame — riconosciuto dal prefisso dell'etichetta perché
  * ora esistono varianti aperte (gradi di cugini, "alla lontana", nomi propri nei ponti più
- * lunghi) che un elenco chiuso non coprirebbe mai del tutto. L'ultima voce fa da rete: nulla
- * resta fuori in silenzio, nemmeno dentro il ramo giusto. */
+ * lunghi) che un elenco chiuso non coprirebbe mai del tutto. "Patrigno E Matrigna" non
+ * esiste più come categoria a sé (quel legame è ormai "Madre"/"Padre" a tutti gli effetti,
+ * finisce da solo sotto "Genitori"); "Altri Legami" nemmeno, su richiesta esplicita —
+ * l'ultima voce resta comunque una rete di sicurezza per i pochi ponti senza una parola
+ * fissa (es. "Coniuge Di Elena"), ma con un nome vero invece di uno vuoto, e compare
+ * comunque solo dentro "Famiglia Acquisita" nella pratica. */
 const DEGREE_CATEGORIES: { title: string; test: (label: string) => boolean }[] = [
   { title: "Genitori", test: (l) => l === "Padre" || l === "Madre" },
   { title: "Figli", test: (l) => l === "Figlio" || l === "Figlia" || l === "Figlio/A" },
-  { title: "Fratelli E Sorelle", test: (l) => /^(Fratello|Sorella)$/.test(l) },
+  { title: "Fratelli e sorelle", test: (l) => /^(Fratello|Sorella)$/.test(l) },
+  { title: "Coniuge e partner", test: (l) => /^(Marito|Moglie|Coniuge|Ex marito|Ex moglie|Ex coniuge|Partner)$/.test(l) },
   { title: "Nonni", test: (l) => /^(Bis)*Nonn/.test(l) },
   { title: "Nipoti", test: (l) => l.includes("Nipote") },
-  { title: "Zii E Zie", test: (l) => /^(Prozi|Zi[oa])/.test(l) },
+  { title: "Zii e zie", test: (l) => /^(Prozi|Zi[oa])/.test(l) },
   { title: "Cugini", test: (l) => l.includes("Cugin") },
   { title: "Suoceri", test: (l) => /^Suocer/.test(l) },
   { title: "Cognati", test: (l) => /^Cognat/.test(l) },
-  { title: "Generi E Nuore", test: (l) => /^(Gener|Nuora)/.test(l) },
-  { title: "Patrigno E Matrigna", test: (l) => /^(Patrigno|Matrigna)/.test(l) },
+  { title: "Generi e nuore", test: (l) => /^(Gener|Nuora)/.test(l) },
   { title: "Figliastri", test: (l) => /^Figliastr/.test(l) },
-  { title: "Altri Legami", test: () => true },
+  { title: "Legami acquisiti", test: () => true },
 ];
 
 export default function FamilyTreePage({ params }: { params: { id: string } }) {
@@ -182,7 +190,12 @@ export default function FamilyTreePage({ params }: { params: { id: string } }) {
       const info = relationshipInfo(params.id, id, byId);
       return entity && info ? { entity, label: info.label, branch: info.branch } : null;
     })
-    .filter((m): m is { entity: FamilyEntity; label: string; branch: FamilyBranch } => Boolean(m));
+    .filter((m): m is { entity: FamilyEntity; label: string; branch: FamilyBranch } => Boolean(m))
+    // Su richiesta esplicita: l'Albero di una singola persona non mostra più i "parenti alla
+    // lontana" — un legame raggiungibile solo dal grafo, senza alcun grado nominabile, non
+    // aggiunge nulla e affolla solo la lista. Il grafo/`connectedFamilyIds` resta comunque
+    // intatto per chi lo usa altrove (es. il raggruppamento delle famiglie in Mondo).
+    .filter((m) => m.label !== "Parente alla lontana");
 
   const searchQuery = search.trim().toLocaleLowerCase("it-IT");
   const visibleMembers = searchQuery
@@ -216,7 +229,7 @@ export default function FamilyTreePage({ params }: { params: { id: string } }) {
     });
     updatePerson(focusPerson.id, patch);
     const fullName = `${focusPerson.firstName} ${focusPerson.lastName}`.trim();
-    descriptions.forEach((d) => pushEvent(`Hai Scoperto Qualcosa Di Nuovo Su ${fullName}: ${d}`));
+    descriptions.forEach((d) => pushEvent(`Hai scoperto qualcosa di nuovo su ${fullName}: ${d}`));
   };
 
   // Amici e Migliori Amici: per una persona sono quelli scelti qui, toccando il suo avatar;
