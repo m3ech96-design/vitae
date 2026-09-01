@@ -1520,6 +1520,7 @@ in tutto, come richiesto.
 Build verificata da zero (`npm install` + `npm run build`) — compila ed è tipizzata
 correttamente su tutte le 19 rotte.
 
+<<<<<<< HEAD
 ## Checkpoint 36 — la scheda "News"
 
 Nuova scheda "News", assegnabile a uno slot della barra di navigazione con la stessa
@@ -1716,6 +1717,8 @@ per attività basate sul peso, le nuove schede Alimentazione/Diario/Hobby/Wishli
 due da valutare insieme prima di costruirle), i bug di reazioni/Lato Stato/animazione
 liquida del profilo altrui.
 
+=======
+>>>>>>> 3a75f45c1f7675983c7651c0fe45471953b79606
 ## Sviluppo in locale
 
 ```bash
