@@ -6,8 +6,6 @@ import { useProfile } from "@/lib/profile-context";
 import { hashToUnit } from "@/lib/hash";
 import { relationshipColor, relationshipLabel } from "@/lib/relationship";
 import { totalOutings } from "@/lib/frequency";
-import { toFamilyEntities } from "@/lib/family-entities";
-import { connectedFamilyIds } from "@/lib/family-relations";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { RelationshipMedallion } from "./RelationshipMedallion";
 
@@ -91,12 +89,9 @@ export function RelationshipConstellation({
 
   const { nodes, dust, avatarSize, overflowCount } = useMemo(() => {
     // La Costellazione è un cielo di legami "scelti" (amicizie, inimicizie, quanto vi
-    // frequentate) — i parenti hanno già la loro scena dedicata (l'Albero) e ci finiscono
-    // comunque quasi tutti per definizione, affollando qui senza motivo; chi ti è del tutto
-    // indifferente (vedi lib/relationship.ts) non ha nessun legame da mostrare in un cielo
-    // che parla apposta di intensità.
-    const familyIds = new Set(connectedFamilyIds("user", toFamilyEntities(profile, people)));
-    const eligible = people.filter((p) => !familyIds.has(p.id) && relationshipLabel(p) !== "Indifferenza");
+    // frequentate) — chi ti è del tutto indifferente (vedi lib/relationship.ts) non ha
+    // nessun legame da mostrare in un cielo che parla apposta di intensità.
+    const eligible = people.filter((p) => relationshipLabel(p) !== "Indifferenza");
 
     // Chi entra tra i medaglioni individuali: prima per intensità del legame (le
     // interazioni che hai registrato in Rapporti), poi — a parità, il caso più comune,
@@ -176,7 +171,7 @@ export function RelationshipConstellation({
     });
 
     return { nodes: result, dust, avatarSize, overflowCount: overflow.length };
-  }, [people, tasks, places, profile]);
+  }, [people, tasks, places]);
 
   const userAvatarSize = Math.max(52, avatarSize);
 
@@ -244,7 +239,7 @@ export function RelationshipConstellation({
           onClick={onShowAll}
           className="focus-ring mx-auto mt-5 flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs text-ink-600 hover:text-ink-200"
         >
-          +{overflowCount} Altri Legami, Meno Vicini — Sfogliali Nella Griglia
+          +{overflowCount} altri legami, meno vicini — sfogliali nella griglia
         </button>
       )}
     </div>

@@ -1,4 +1,10 @@
-const CACHE_NAME = "vitae-shell-v1";
+// "vitae-shell-v2": il nome della cache va cambiato ogni volta che gli asset della shell
+// (icone comprese) cambiano davvero — è l'unico modo per cui il service worker si accorge
+// di essere diverso e rifà install/activate, ripulendo la cache vecchia. Restare fermi sullo
+// stesso nome per checkpoint su checkpoint (come "v1" per molto tempo) è la causa reale già
+// trovata dietro "l'icona dell'app è sparita": un'icona rimasta in cache da tanto tempo fa,
+// mai più rinfrescata perché il browser non aveva motivo di rieseguire l'installazione.
+const CACHE_NAME = "vitae-shell-v2";
 const SHELL_URLS = ["/", "/wizard", "/profilo", "/home", "/map", "/task", "/mondo", "/salute", "/rapporti", "/finanze", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {

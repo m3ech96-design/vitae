@@ -1,5 +1,5 @@
 /**
- * Un avatar "vuoto": esiste a tutti gli effetti — Scoperte, Impostazioni, Impegni, Albero,
+ * Un avatar "vuoto": esiste a tutti gli effetti — Scoperte, Impostazioni, Impegni,
  * esattamente come qualunque altra persona — ma senza nome, perché non lo conosci ancora.
  * Non è un nome segnaposto da confrontare ("Padre Sconosciuto" eccetera): è la semplice
  * assenza di nome E cognome, così il giorno che scrivi anche solo uno dei due (in

@@ -32,7 +32,7 @@ export function LinkHomeCard() {
   const confirm = () => {
     if (!coords || !address.trim()) return;
     addPlace({
-      name: `Casa Di ${profile.firstName || "Utente"}`,
+      name: `Casa di ${profile.firstName || "utente"}`,
       type: "casa",
       address: address.trim(),
       lat: coords.lat,
@@ -75,7 +75,7 @@ export function LinkHomeCard() {
         {coords && (
           <div>
             <AddressAutocomplete
-              label={resolvingAddress ? "Indirizzo (sto cercando…)" : "Conferma L'Indirizzo"}
+              label={resolvingAddress ? "Indirizzo (sto cercando…)" : "Conferma l'indirizzo"}
               placeholder="Es. Via Roma 12, Milano"
               value={address}
               onChange={setAddress}
@@ -85,8 +85,8 @@ export function LinkHomeCard() {
               }}
             />
             <p className="mt-1.5 text-[10px] text-ink-800">
-              Scritto Da Solo In Base Al Punto Toccato — Correggilo Pure, Specie Per Il Numero
-              Civico, E Resta Comunque Il Punto Sulla Mappa A Contare Per Davvero.
+              Scritto da solo in base al punto toccato — correggilo pure, specie per il numero
+              civico, e resta comunque il punto sulla mappa a contare per davvero.
             </p>
           </div>
         )}
@@ -97,7 +97,7 @@ export function LinkHomeCard() {
             onClick={() => setSearchOpen((v) => !v)}
             className="focus-ring text-[11px] text-ink-800 hover:text-ink-400"
           >
-            {searchOpen ? "Nascondi ricerca indirizzo" : "Preferisci Cercare L'Indirizzo Invece?"}
+            {searchOpen ? "Nascondi ricerca indirizzo" : "Preferisci cercare l'indirizzo invece?"}
           </button>
         )}
 

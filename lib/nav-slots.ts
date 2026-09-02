@@ -6,11 +6,15 @@ import {
   HeartPulse,
   Wallet,
   Sparkles,
-  GitBranch,
   MapPinned,
   Aperture,
   Newspaper,
   Dumbbell,
+  Utensils,
+  Heart,
+  BookHeart,
+  Palette,
+  PawPrint,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -31,9 +35,13 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/mondo", label: "Mondo", icon: Users },
   { href: "/salute", label: "Salute", icon: HeartPulse },
   { href: "/attivita-peso", label: "Attività e peso", icon: Dumbbell },
+  { href: "/alimentazione", label: "Alimentazione", icon: Utensils },
+  { href: "/wishlist", label: "Wishlist", icon: Heart },
+  { href: "/diario", label: "Diario", icon: BookHeart },
+  { href: "/hobby", label: "Hobby", icon: Palette },
+  { href: "/animali", label: "Animali", icon: PawPrint },
   { href: "/finanze", label: "Finanze", icon: Wallet },
   { href: "/rapporti", label: "Rapporti", icon: Sparkles },
-  { href: "/albero", label: "Albero", icon: GitBranch },
   { href: "/map", label: "Mappa", icon: MapPinned },
   { href: "/news", label: "News", icon: Newspaper },
 ];
@@ -77,5 +85,24 @@ export function useNavSlots() {
     });
   }, []);
 
-  return { slots, hydrated, setSlot };
+  /** Scambia due schede già in barra — usata quando la pressione lunga su uno slot sceglie
+   * una scheda che occupa già un altro slot: invece di lasciare un doppione e far sparire la
+   * scheda di partenza, ognuna prende il posto dell'altra. Un solo aggiornamento funzionale,
+   * non due `setSlot` di fila: due scritture separate sullo stesso array nello stesso
+   * gestore di evento leggerebbero altrimenti lo stesso stato non ancora aggiornato, la
+   * stessa causa di bug già vista più volte in questo progetto. */
+  const swapSlots = useCallback((a: number, b: number) => {
+    setSlotsState((prev) => {
+      const next = [...prev];
+      [next[a], next[b]] = [next[b], next[a]];
+      try {
+        window.localStorage.setItem(SLOTS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
+  }, []);
+
+  return { slots, hydrated, setSlot, swapSlots };
 }

@@ -102,8 +102,8 @@ function ChatThread({ accountId }: { accountId: string }) {
   if (!hydrated) return null;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-5 pb-32 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
-      <div className="flex shrink-0 items-center gap-3">
+    <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col pb-32">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-white/[0.05] bg-void-950/90 px-5 pb-3 pt-[max(env(safe-area-inset-top),1.1rem)] backdrop-blur-md sm:px-6">
         <ReactionAvatarBurst
           onBack={() => router.back()}
           onAvatarClick={() => setOptionsOpen(true)}
@@ -112,25 +112,27 @@ function ChatThread({ accountId }: { accountId: string }) {
           triggerAt={ping?.at ?? null}
           moodColor={pingMoodColor}
         />
-        <p className="font-display text-sm text-ink-100">@{account.nickname}</p>
+        <p className="font-display text-base text-ink-100">@{account.nickname}</p>
       </div>
 
-      {!known ? (
-        <p className="mt-10 text-center text-sm text-ink-800">
-          Conosci prima @{account.nickname} per poterle scrivere — vai al suo profilo e tocca &quot;Inizia a
-          conoscere&quot;.
-        </p>
-      ) : (
-        <div className="mt-6 flex-1 space-y-3 pb-4">
-          {thread.length === 0 && (
-            <p className="mt-10 text-center text-sm text-ink-800">Scrivi il primo messaggio a @{account.nickname}.</p>
-          )}
-          {thread.map((m) => (
-            <MessageBubble key={m.id} message={m} onReact={(moodId) => setMessageReaction(m.id, moodId)} />
-          ))}
-          <div ref={bottomRef} />
-        </div>
-      )}
+      <div className="px-5 sm:px-6">
+        {!known ? (
+          <p className="mt-10 text-center text-sm text-ink-800">
+            Conosci prima @{account.nickname} per poterle scrivere — vai al suo profilo e tocca &quot;Inizia a
+            conoscere&quot;.
+          </p>
+        ) : (
+          <div className="mt-6 flex-1 space-y-3 pb-4">
+            {thread.length === 0 && (
+              <p className="mt-10 text-center text-sm text-ink-800">Scrivi il primo messaggio a @{account.nickname}.</p>
+            )}
+            {thread.map((m) => (
+              <MessageBubble key={m.id} message={m} onReact={(moodId) => setMessageReaction(m.id, moodId)} />
+            ))}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
 
       {optionsOpen && <ChatOptionsSheet thread={thread} nickname={account.nickname} onClose={() => setOptionsOpen(false)} />}
     </div>

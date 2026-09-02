@@ -651,6 +651,11 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
         chainRootId: chainRoot,
         sharedFromPostId: source.id,
         sharedMoodId: input.sharedMoodId,
+        // La reazione del condivisore è già "Cosa provi?" scelta qui sopra — non un secondo
+        // slot vuoto da riempire in più: senza questo, la sfera di reazione sul post appena
+        // creato risultava ancora vuota, e sceglierne una aggiungeva una SECONDA quota per la
+        // stessa persona sulla stessa catena (esattamente il bug segnalato).
+        userReactionMoodId: input.sharedMoodId,
         embedOriginAuthorId: rootPost.authorId,
         embedOriginCaption: rootPost.caption,
         embedOriginPhotoKey: rootPost.photoKey,

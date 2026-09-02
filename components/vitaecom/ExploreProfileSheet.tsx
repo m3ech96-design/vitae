@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { X, Compass } from "lucide-react";
 
 /**
- * "Esplora Altro" su un account Vitaecom che non è il tuo. Scoperte/Rapporto/Albero
+ * "Esplora Altro" su un account Vitaecom che non è il tuo. Scoperte/Rapporto
  * mostravano dati veri solo collegando l'account a una Persona di Mondo — un ponte
  * eliminato apposta: tenerlo vivo avrebbe tolto senso a scoprire man mano una persona che
  * oggi è ancora sconosciuta, e comunque avrebbe finto una seconda identità per la stessa
@@ -13,7 +13,7 @@ import { X, Compass } from "lucide-react";
  * ripiego che si sarebbe dovuto disfare subito dopo.
  *
  * Finché quell'unione non esiste, questo pannello resta onesto: dice cosa manca e perché,
- * invece di mostrare tre schede vuote o dati presi in prestito da un'altra persona.
+ * invece di mostrare due schede vuote o dati presi in prestito da un'altra persona.
  */
 export function ExploreProfileSheet({ nickname, onClose }: { accountId?: string; nickname: string; onClose: () => void }) {
   return (
@@ -36,7 +36,7 @@ export function ExploreProfileSheet({ nickname, onClose }: { accountId?: string;
         <div className="px-6 py-7 text-center">
           <Compass size={22} className="mx-auto text-ink-800" />
           <p className="mt-3.5 text-sm text-ink-200">
-            Scoperte, rapporto e albero per @{nickname} arriveranno quando Mondo e persone diventeranno un&apos;unica
+            Scoperte e rapporto per @{nickname} arriveranno quando Mondo e persone diventeranno un&apos;unica
             scheda.
           </p>
           <p className="mt-2.5 text-xs text-ink-800">

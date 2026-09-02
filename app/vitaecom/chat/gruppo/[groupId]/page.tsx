@@ -48,35 +48,37 @@ function GroupThread({ groupId }: { groupId: string }) {
   const members = group.memberIds.map((id) => resolveAccount(id, userAccount));
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-5 pb-32 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
-      <div className="flex shrink-0 items-center gap-3">
+    <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col pb-32">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-white/[0.05] bg-void-950/90 px-5 pb-3 pt-[max(env(safe-area-inset-top),1.1rem)] backdrop-blur-md sm:px-6">
         <button onClick={() => router.push("/vitaecom/chat")} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Indietro">
-          <ArrowLeft size={18} />
+          <ArrowLeft size={20} />
         </button>
-        <div className="flex -space-x-2.5">
+        <div className="flex -space-x-3">
           {members.slice(0, 3).map((m) => (
-            <AuraAvatar key={m.id} imageUrl={m.avatarUrl} firstName={m.nickname} size={30} ring="none" className="ring-2 ring-void-950" />
+            <AuraAvatar key={m.id} imageUrl={m.avatarUrl} firstName={m.nickname} size={38} ring="none" className="ring-2 ring-void-950" />
           ))}
         </div>
         <div className="min-w-0">
-          <p className="truncate font-display text-sm text-ink-100">{group.name}</p>
+          <p className="truncate font-display text-base text-ink-100">{group.name}</p>
           <p className="flex items-center gap-1 truncate text-[10px] text-ink-800">
             <Users size={10} /> {members.map((m) => `@${m.nickname}`).join(", ")}
           </p>
         </div>
       </div>
 
-      <div className="mt-6 flex-1 space-y-3 pb-4">
-        {thread.length === 0 && <p className="mt-10 text-center text-sm text-ink-800">Scrivi il primo messaggio a {group.name}.</p>}
-        {thread.map((m) => (
-          <div key={m.id} className="flex justify-end">
-            <div className="max-w-[75%] rounded-xl2 bg-[#B79A6B]/20 px-3.5 py-2.5 text-sm text-ink-100">
-              <p className="whitespace-pre-wrap">{m.text}</p>
-              <p className="mt-1 text-[10px] text-ink-800">{timeOf(m.createdAt)}</p>
+      <div className="px-5 sm:px-6">
+        <div className="mt-6 flex-1 space-y-3 pb-4">
+          {thread.length === 0 && <p className="mt-10 text-center text-sm text-ink-800">Scrivi il primo messaggio a {group.name}.</p>}
+          {thread.map((m) => (
+            <div key={m.id} className="flex justify-end">
+              <div className="max-w-[75%] rounded-xl2 bg-[#B79A6B]/20 px-3.5 py-2.5 text-sm text-ink-100">
+                <p className="whitespace-pre-wrap">{m.text}</p>
+                <p className="mt-1 text-[10px] text-ink-800">{timeOf(m.createdAt)}</p>
+              </div>
             </div>
-          </div>
-        ))}
-        <div ref={bottomRef} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
       </div>
     </div>
   );

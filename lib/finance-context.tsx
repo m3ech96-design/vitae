@@ -9,11 +9,19 @@ const PLANNED_KEY = "vitae:finance-planned";
 const SINGLE_KEY = "vitae:finance-single";
 const GOALS_KEY = "vitae:finance-goals";
 const SAVINGS_KEY = "vitae:finance-savings";
+const CYCLE_START_DAY_KEY = "vitae:finance-cycle-start-day";
 
 interface FinanceContextValue {
   hydrated: boolean;
   monthlyBudget: number | null;
   setMonthlyBudget: (v: number | null) => void;
+  /** Giorno del mese (1-28) in cui inizia il ciclo di budget corrente — 1 di default, cioè
+   * il comportamento originale (mese di calendario). Cambiarlo sposta anche il confine di
+   * "Attualità" nella tabella cronologica: i dati del ciclo precedente restano lì per
+   * sempre, semplicemente smettono di contare nell'anello corrente — "diventano solo dati",
+   * come richiesto, senza bisogno di cancellare o archiviare nulla a parte. */
+  cycleStartDay: number;
+  setCycleStartDay: (day: number) => void;
   recurringExpenses: RecurringExpense[];
   addRecurringExpense: (label: string, amount: number, category: ExpenseCategory, recurrence: ExpenseRecurrence) => void;
   toggleRecurringExpense: (id: string) => void;
@@ -35,6 +43,14 @@ interface FinanceContextValue {
 
 const FinanceContext = createContext<FinanceContextValue | null>(null);
 
+/** Forma funzionale fin da questa riscrittura — lo stesso pattern ormai standard nel resto
+ * del progetto (vedi food-context.tsx, wishlist-context.tsx, hobby-context.tsx): due
+ * scritture di fila sullo stesso elenco nello stesso gestore di evento (es. `markPlannedPaid`,
+ * che tocca `plannedExpenses` e poi `singleExpenses`) non devono mai poter leggere uno stato
+ * non ancora aggiornato. Prima di questa riscrittura `persist` accettava solo l'array intero
+ * già calcolato dal chiamante — esattamente la forma già corretta altrove in questo progetto
+ * dopo aver trovato lo stesso difetto più volte.
+ */
 function usePersistedList<T>(key: string) {
   const [items, setItems] = useState<T[]>([]);
   useEffect(() => {
@@ -46,13 +62,16 @@ function usePersistedList<T>(key: string) {
     }
   }, [key]);
   const persist = useCallback(
-    (next: T[]) => {
-      setItems(next);
-      try {
-        window.localStorage.setItem(key, JSON.stringify(next));
-      } catch {
-        // ignorato
-      }
+    (updater: T[] | ((prev: T[]) => T[])) => {
+      setItems((prev) => {
+        const next = typeof updater === "function" ? (updater as (v: T[]) => T[])(prev) : updater;
+        try {
+          window.localStorage.setItem(key, JSON.stringify(next));
+        } catch {
+          // ignorato
+        }
+        return next;
+      });
     },
     [key]
   );
@@ -62,6 +81,7 @@ function usePersistedList<T>(key: string) {
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number | null>(null);
+  const [cycleStartDay, setCycleStartDayState] = useState(1);
   const [recurringExpenses, persistRecurring] = usePersistedList<RecurringExpense>(RECURRING_KEY);
   const [plannedExpenses, persistPlanned] = usePersistedList<PlannedExpense>(PLANNED_KEY);
   const [singleExpenses, persistSingle] = usePersistedList<SingleExpense>(SINGLE_KEY);
@@ -72,6 +92,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = window.localStorage.getItem(BUDGET_KEY);
       if (raw) setMonthlyBudgetState(parseFloat(raw));
+      const rawCycle = window.localStorage.getItem(CYCLE_START_DAY_KEY);
+      if (rawCycle) {
+        const n = parseInt(rawCycle, 10);
+        if (n >= 1 && n <= 28) setCycleStartDayState(n);
+      }
     } catch {
       // ignorato
     } finally {
@@ -89,40 +114,48 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setCycleStartDay = useCallback((day: number) => {
+    const clamped = Math.min(28, Math.max(1, Math.round(day)));
+    setCycleStartDayState(clamped);
+    try {
+      window.localStorage.setItem(CYCLE_START_DAY_KEY, String(clamped));
+    } catch {
+      // ignorato
+    }
+  }, []);
+
   const addRecurringExpense = useCallback(
-    (label: string, amount: number, category: ExpenseCategory, recurrence: ExpenseRecurrence) => {
-      persistRecurring([
-        ...recurringExpenses,
+    (label: string, amount: number, category: ExpenseCategory, recurrence: ExpenseRecurrence) =>
+      persistRecurring((prev) => [
+        ...prev,
         { id: newId(), label, amount, category, recurrence, active: true, createdAt: new Date().toISOString() },
-      ]);
-    },
-    [recurringExpenses, persistRecurring]
+      ]),
+    [persistRecurring]
   );
   const toggleRecurringExpense = useCallback(
-    (id: string) => persistRecurring(recurringExpenses.map((e) => (e.id === id ? { ...e, active: !e.active } : e))),
-    [recurringExpenses, persistRecurring]
+    (id: string) => persistRecurring((prev) => prev.map((e) => (e.id === id ? { ...e, active: !e.active } : e))),
+    [persistRecurring]
   );
   const removeRecurringExpense = useCallback(
-    (id: string) => persistRecurring(recurringExpenses.filter((e) => e.id !== id)),
-    [recurringExpenses, persistRecurring]
+    (id: string) => persistRecurring((prev) => prev.filter((e) => e.id !== id)),
+    [persistRecurring]
   );
 
   const addPlannedExpense = useCallback(
-    (label: string, amount: number, dueDate: string, category: ExpenseCategory) => {
-      persistPlanned([
-        ...plannedExpenses,
+    (label: string, amount: number, dueDate: string, category: ExpenseCategory) =>
+      persistPlanned((prev) => [
+        ...prev,
         { id: newId(), label, amount, dueDate, category, paid: false, createdAt: new Date().toISOString() },
-      ]);
-    },
-    [plannedExpenses, persistPlanned]
+      ]),
+    [persistPlanned]
   );
   const markPlannedPaid = useCallback(
     (id: string) => {
       const item = plannedExpenses.find((p) => p.id === id);
       if (!item) return;
-      persistPlanned(plannedExpenses.map((p) => (p.id === id ? { ...p, paid: true } : p)));
-      persistSingle([
-        ...singleExpenses,
+      persistPlanned((prev) => prev.map((p) => (p.id === id ? { ...p, paid: true } : p)));
+      persistSingle((prev) => [
+        ...prev,
         {
           id: newId(),
           label: item.label,
@@ -133,46 +166,38 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         },
       ]);
     },
-    [plannedExpenses, persistPlanned, singleExpenses, persistSingle]
+    [plannedExpenses, persistPlanned, persistSingle]
   );
   const removePlannedExpense = useCallback(
-    (id: string) => persistPlanned(plannedExpenses.filter((p) => p.id !== id)),
-    [plannedExpenses, persistPlanned]
+    (id: string) => persistPlanned((prev) => prev.filter((p) => p.id !== id)),
+    [persistPlanned]
   );
 
   const addSingleExpense = useCallback(
-    (label: string, amount: number, date: string, category: ExpenseCategory) => {
-      persistSingle([...singleExpenses, { id: newId(), label, amount, date, category, createdAt: new Date().toISOString() }]);
-    },
-    [singleExpenses, persistSingle]
+    (label: string, amount: number, date: string, category: ExpenseCategory) =>
+      persistSingle((prev) => [...prev, { id: newId(), label, amount, date, category, createdAt: new Date().toISOString() }]),
+    [persistSingle]
   );
   const removeSingleExpense = useCallback(
-    (id: string) => persistSingle(singleExpenses.filter((e) => e.id !== id)),
-    [singleExpenses, persistSingle]
+    (id: string) => persistSingle((prev) => prev.filter((e) => e.id !== id)),
+    [persistSingle]
   );
 
   const addSavingsGoal = useCallback(
-    (label: string, targetAmount: number) => {
-      persistGoals([...savingsGoals, { id: newId(), label, targetAmount, currentAmount: 0, createdAt: new Date().toISOString() }]);
-    },
-    [savingsGoals, persistGoals]
+    (label: string, targetAmount: number) =>
+      persistGoals((prev) => [...prev, { id: newId(), label, targetAmount, currentAmount: 0, createdAt: new Date().toISOString() }]),
+    [persistGoals]
   );
   const contributeSavingsGoal = useCallback(
-    (id: string, amount: number) => {
-      persistGoals(savingsGoals.map((g) => (g.id === id ? { ...g, currentAmount: Math.max(0, g.currentAmount + amount) } : g)));
-    },
-    [savingsGoals, persistGoals]
+    (id: string, amount: number) =>
+      persistGoals((prev) => prev.map((g) => (g.id === id ? { ...g, currentAmount: Math.max(0, g.currentAmount + amount) } : g))),
+    [persistGoals]
   );
-  const removeSavingsGoal = useCallback(
-    (id: string) => persistGoals(savingsGoals.filter((g) => g.id !== id)),
-    [savingsGoals, persistGoals]
-  );
+  const removeSavingsGoal = useCallback((id: string) => persistGoals((prev) => prev.filter((g) => g.id !== id)), [persistGoals]);
 
   const addSavingsEntry = useCallback(
-    (amount: number, note?: string) => {
-      persistSavings([...savingsEntries, { id: newId(), amount, date: new Date().toISOString(), note }]);
-    },
-    [savingsEntries, persistSavings]
+    (amount: number, note?: string) => persistSavings((prev) => [...prev, { id: newId(), amount, date: new Date().toISOString(), note }]),
+    [persistSavings]
   );
 
   const value = useMemo(
@@ -180,6 +205,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       hydrated,
       monthlyBudget,
       setMonthlyBudget,
+      cycleStartDay,
+      setCycleStartDay,
       recurringExpenses,
       addRecurringExpense,
       toggleRecurringExpense,
@@ -202,6 +229,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       hydrated,
       monthlyBudget,
       setMonthlyBudget,
+      cycleStartDay,
+      setCycleStartDay,
       recurringExpenses,
       addRecurringExpense,
       toggleRecurringExpense,

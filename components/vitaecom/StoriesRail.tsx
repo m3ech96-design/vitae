@@ -31,7 +31,7 @@ export function StoriesRail() {
 
   return (
     <>
-      <div className="flex gap-3.5 overflow-x-auto pb-1 pt-1">
+      <div className="flex gap-3.5 overflow-x-auto px-0.5 pb-2.5 pt-2.5">
         <div className="flex shrink-0 flex-col items-center gap-1.5">
           <span className="relative inline-flex">
             <button

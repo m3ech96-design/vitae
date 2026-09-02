@@ -6,10 +6,8 @@ type FriendField = "friendPersonIds" | "bestFriendPersonIds";
 
 /**
  * Amici e Migliori Amici di una Persona (non dell'utente: i suoi sono derivati dai Rapporti,
- * vedi il testo informativo nella pagina che usa questo componente). Non fanno parte della
- * parentela vera e propria — per questo vivono qui, accanto al resto dei legami di questa
- * persona, invece che tra le Scoperte. Con la ricerca invece del muro di pulsanti: anche qui
- * le persone possono essere centinaia.
+ * vedi il testo informativo nella pagina che usa questo componente). Con la ricerca invece
+ * del muro di pulsanti: anche qui le persone possono essere centinaia.
  */
 export function FriendshipEditor({
   person,

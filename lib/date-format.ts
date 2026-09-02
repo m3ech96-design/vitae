@@ -29,7 +29,7 @@ export function weekdayShort(iso: string): string {
 
 /** "[anno nascita] - [anno morte]", entrambi in formato yyyy — quello che non conosci (o non
  * hai impostato) diventa "????", non uno spazio vuoto: non si nasconde mai un dato mancante,
- * lo si mostra com'è. Usata sia nell'Albero Genealogico sia nella scheda della persona. */
+ * lo si mostra com'è. Usata nella scheda della persona. */
 export function lifespanLabel(birthday: string | undefined, deceasedYear: number | undefined): string {
   const birthYear = birthday ? String(new Date(birthday + "T00:00:00").getFullYear()) : "????";
   const deathYear = deceasedYear ? String(deceasedYear) : "????";

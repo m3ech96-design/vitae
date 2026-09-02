@@ -23,7 +23,7 @@ export function DynamicFieldList({
   fields,
   onChange,
   allowThumbnail = false,
-  addLabel = "Aggiungi Campo",
+  addLabel = "Aggiungi campo",
 }: {
   fields: CustomField[];
   onChange: (fields: CustomField[]) => void;
@@ -128,7 +128,7 @@ export function DynamicFieldList({
                   className="focus-ring flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-600 hover:text-ink-200"
                 >
                   <ImagePlus size={14} />
-                  {thumb ? "Immagine selezionata (tocca per ricentrare)" : "Aggiungi Miniatura (Facoltativo)"}
+                  {thumb ? "Immagine selezionata (tocca per ricentrare)" : "Aggiungi miniatura (facoltativo)"}
                 </button>
               )}
             />

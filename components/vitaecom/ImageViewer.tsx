@@ -1,26 +1,115 @@
 "use client";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X, Gem, MessageCircle, Share2 } from "lucide-react";
 import { VitaecomPost } from "@/lib/vitaecom-social-types";
 import { resolveAccount } from "@/lib/vitaecom-resolve";
 import { useMood } from "@/lib/mood-context";
-import { chainRootOf } from "@/lib/vitaecom-lato-stato";
 import { AuraAvatar } from "../ui/AuraAvatar";
-import { LatoStato } from "./LatoStato";
 
 /** Palette "tipo inverno" per gli aloni ai margini — ghiaccio, non i violetti/ciano
  * dell'Aura usuale dell'app: qui è lo sfondo di un'immagine, deve restare dietro, non
  * competere con la foto al centro. */
-const WINTER_HALOS = ["#8ECAE6", "#A8DADC", "#DDE6F7", "#ADB9E3"];
+const WINTER_HALOS = ["#8ECAE6", "#A8DADC", "#DDE6F7", "#ADB9E3", "#C9E4F6", "#B8D8D8"];
+
+type Edge = "top" | "bottom" | "left" | "right";
+const EDGES: Edge[] = ["top", "bottom", "left", "right"];
+const PER_EDGE = 7;
+
+interface Halo {
+  id: string;
+  edge: Edge;
+  offsetPct: number;
+  inset: number;
+  size: number;
+  color: string;
+  duration: number;
+  delay: number;
+  driftA: number;
+  driftB: number;
+}
+
+/**
+ * "Decine di aloni... che si mischiano tra loro in modo animato... come vapori di colore",
+ * lungo ogni lato — non i 4 cerchi fissi sul solo lato destro che c'erano prima (uno stub
+ * mai completato). Generati proceduralmente (28 in tutto, 7 per lato) invece di scritti a
+ * mano uno per uno: posizione, fase e velocità leggermente irregolari per ognuno, così il
+ * movimento non sembra un pattern che si ripete a specchio. Ogni figura resta dentro una
+ * fascia stretta vicino al proprio bordo (mai oltre un ~16% di margine verso il centro) e a
+ * opacità bassa: molte macchie sfocate e trasparenti che si sovrappongono leggono come
+ * fumo/vapore che si mescola, non come cerchi distinti — e restando confinate ai margini,
+ * mai sopra la foto al centro, non diventano mai invadenti.
+ */
+function buildHalos(): Halo[] {
+  const halos: Halo[] = [];
+  let seed = 0;
+  for (const edge of EDGES) {
+    for (let i = 0; i < PER_EDGE; i++) {
+      seed++;
+      halos.push({
+        id: `${edge}-${i}`,
+        edge,
+        offsetPct: (i / PER_EDGE) * 100 + ((seed * 13) % 11),
+        inset: -8 + ((seed * 7) % 10),
+        size: 22 + ((seed * 5) % 16),
+        color: WINTER_HALOS[seed % WINTER_HALOS.length],
+        duration: 15 + ((seed * 3) % 12),
+        delay: (seed % 9) * 0.9,
+        driftA: seed % 2 === 0 ? 16 + (seed % 5) : -(16 + (seed % 5)),
+        driftB: seed % 3 === 0 ? 12 + (seed % 4) : -(12 + (seed % 4)),
+      });
+    }
+  }
+  return halos;
+}
+
+function HaloLayer() {
+  const halos = useMemo(buildHalos, []);
+  return (
+    <>
+      {halos.map((h) => {
+        const base: React.CSSProperties = {
+          position: "absolute",
+          width: `${h.size}vh`,
+          height: `${h.size}vh`,
+          background: h.color,
+          borderRadius: "9999px",
+        };
+        if (h.edge === "top" || h.edge === "bottom") {
+          base.left = `${h.offsetPct}%`;
+          base.transform = "translateX(-50%)";
+          base[h.edge] = `${h.inset}vh`;
+        } else {
+          base.top = `${h.offsetPct}%`;
+          base.transform = "translateY(-50%)";
+          base[h.edge] = `${h.inset}vw`;
+        }
+        const isHorizontalEdge = h.edge === "top" || h.edge === "bottom";
+        return (
+          <motion.div
+            key={h.id}
+            className="pointer-events-none absolute rounded-full blur-[75px]"
+            style={base}
+            animate={
+              isHorizontalEdge
+                ? { x: [0, h.driftA, 0, -h.driftA, 0], opacity: [0.1, 0.2, 0.13, 0.19, 0.1] }
+                : { y: [0, h.driftB, 0, -h.driftB, 0], opacity: [0.1, 0.2, 0.13, 0.19, 0.1] }
+            }
+            transition={{ duration: h.duration, repeat: Infinity, ease: "easeInOut", delay: h.delay }}
+          />
+        );
+      })}
+    </>
+  );
+}
 
 /**
  * Il visualizzatore a schermo intero di un'immagine di Vitaecom — buio, con aloni di colore
- * che si muovono in loop ai margini (mai a sinistra: lì c'è il Lato Stato, a schermo
- * intero), l'immagine al centro zoomabile senza uno scatto di ritorno (resta dove la lasci,
- * anche chiudendo e riaprendo — non è un dettaglio da nascondere: lo zoom vive solo per
- * questa apertura, non è persistito), e una finestra in basso, che appare toccando lo
- * schermo, con le informazioni del post.
+ * che si muovono in loop lungo tutti e quattro i margini (il Lato Stato qui non compare più,
+ * su richiesta esplicita), l'immagine al centro zoomabile senza uno scatto di ritorno (resta
+ * dove la lasci, anche chiudendo e riaprendo — non è un dettaglio da nascondere: lo zoom vive
+ * solo per questa apertura, non è persistito), e una finestra in basso, che appare toccando
+ * lo schermo, con le informazioni del post.
  */
 export function ImageViewer({
   post,
@@ -47,7 +136,6 @@ export function ImageViewer({
 
   const account = resolveAccount(post.authorId, userAccount);
   const mood = allMoods.find((m) => m.id === (post.sharedMoodId ?? post.moodId));
-  const chainRootId = chainRootOf(post);
 
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
 
@@ -85,20 +173,9 @@ export function ImageViewer({
 
   return (
     <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
-      {/* Gli aloni — mai sul lato sinistro, riservato al Lato Stato. */}
-      {WINTER_HALOS.map((color, i) => (
-        <motion.div
-          key={color}
-          className="pointer-events-none absolute h-[46vh] w-[46vh] rounded-full opacity-30 blur-[90px]"
-          style={{ background: color, right: i % 2 === 0 ? "-8%" : "34%", top: i < 2 ? "-10%" : undefined, bottom: i >= 2 ? "-14%" : undefined }}
-          animate={{ x: [0, i % 2 === 0 ? -30 : 30, 0], y: [0, i < 2 ? 24 : -24, 0] }}
-          transition={{ duration: 16 + i * 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ))}
+      <HaloLayer />
 
       <div className="relative h-full w-full">
-        <LatoStato chainRootId={chainRootId} />
-
         <button
           onClick={onClose}
           className="focus-ring glass-strong absolute right-4 top-[max(env(safe-area-inset-top),0.9rem)] z-20 flex h-9 w-9 items-center justify-center rounded-full text-ink-200"
@@ -169,3 +246,4 @@ export function ImageViewer({
     </div>
   );
 }
+

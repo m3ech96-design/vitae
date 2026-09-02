@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { X, Phone, MessageCircle, CalendarClock, Trash2, Sparkles, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, Phone, MessageCircle, CalendarClock, Trash2, Sparkles, Check, PawPrint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Person, PERSON_KIND_LABEL, ANIMAL_KINDS, kindForGenderChange } from "@/lib/types";
 import { describeDiscoveries } from "@/lib/discovery-feed";
@@ -37,9 +38,10 @@ import { ActionEditor } from "./ActionEditor";
 import { CommonGroundSection } from "./CommonGroundSection";
 import { DeceasedDateFields } from "./DeceasedDateFields";
 
-type Tab = "scoperte" | "impostazioni" | "impegni" | "albero";
+type Tab = "scoperte" | "impostazioni" | "impegni";
 
 export function PersonWindow({ person, onClose }: { person: Person; onClose: () => void }) {
+  const router = useRouter();
   const { people, home, updatePerson, removePerson } = useHousehold();
   const { profile } = useProfile();
   const { pushEvent } = useFeed();
@@ -71,6 +73,11 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
   const displayName = isEmptyAvatar(draft) ? emptyAvatarLabel(person.kind) : fullName;
   const commonGroups = isAnimal ? [] : commonGround(profile, draft);
   const hasUnsavedChanges = Object.keys(diffPatch(person, draft)).length > 0;
+  // Calcolato da `draft` (mai da `person`), quindi cambia all'istante appena il Sesso viene
+  // toccato nel menu qui sotto — non deve aspettare che "Salva" scriva il dato e che il
+  // genitore ripropaghi un `person` fresco: quel giro può bastare a far percepire "il sesso
+  // resta fermo al valore precedente" anche quando il dato sotto è già cambiato.
+  const liveKind = kindForGenderChange(draft.kind, draft.gender);
 
   /**
    * Ogni campo delle Scoperte scrive qui, non nel dato reale — così scrivere una frase non
@@ -148,7 +155,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
             {displayName}
           </p>
           <span className="mt-1 rounded-full border border-white/10 px-3 py-1 text-xs text-ink-600">
-            {PERSON_KIND_LABEL[person.kind]} &middot; {statusLabel}
+            {PERSON_KIND_LABEL[liveKind]} &middot; {statusLabel}
           </span>
           {person.deceased && (
             <p className="mt-1.5 text-xs text-ink-800">{lifespanLabel(person.birthday, person.deceasedYear)}</p>
@@ -237,6 +244,18 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
 
               {isAnimal ? (
                 <div>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push(`/animali/${person.id}`);
+                    }}
+                    className="focus-ring mb-5 flex w-full items-center justify-between rounded-xl2 border border-aura-violet/30 bg-aura-violet/[0.06] px-4 py-3 text-left transition hover:bg-aura-violet/[0.1]"
+                  >
+                    <span className="flex items-center gap-2 text-sm text-ink-100">
+                      <PawPrint size={15} className="text-aura-violet" /> Scheda completa in Animali
+                    </span>
+                    <span className="text-[11px] text-ink-600">Salute, peso, vaccinazioni…</span>
+                  </button>
                   <p className="mb-4 font-display text-sm text-ink-100">Cura dell&apos;animale</p>
                   <AnimalCareSection person={draft} onUpdate={updateDraft} />
                 </div>
@@ -343,7 +362,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
                     person.deceased ? "border-ink-600/60 bg-white/[0.04] text-ink-100" : "border-white/10 text-ink-600"
                   }`}
                 >
-                  {person.kind === "donna" || person.kind === "bambina" ? "Defunta" : "Defunto"}
+                  {liveKind === "donna" || liveKind === "bambina" ? "Defunta" : "Defunto"}
                   <SwitchVisual checked={Boolean(person.deceased)} tone="ink" />
                 </button>
                 {person.deceased && (

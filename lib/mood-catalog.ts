@@ -173,7 +173,7 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
   { key: "animali:sfamato", label: "Dar da mangiare a un animale affamato", category: "Animali", defaultMoodIds: ["sollevato"] },
   {
     key: "famiglia:nuovo-legame",
-    label: "Collegare un nuovo parente nell'albero genealogico",
+    label: "Collegare un nuovo parente nella propria famiglia",
     category: "Famiglia",
     defaultMoodIds: ["curioso", "nostalgico"],
   },

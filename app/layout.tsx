@@ -6,6 +6,11 @@ import { TasksProvider } from "@/lib/tasks-context";
 import { FeedProvider } from "@/lib/feed-context";
 import { HealthProvider } from "@/lib/health-context";
 import { MedicalProvider } from "@/lib/medical-context";
+import { FoodProvider } from "@/lib/food-context";
+import { WishlistProvider } from "@/lib/wishlist-context";
+import { DiaryProvider } from "@/lib/diary-context";
+import { HobbyProvider } from "@/lib/hobby-context";
+import { AnimalHealthProvider } from "@/lib/animal-health-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
@@ -19,6 +24,7 @@ import { NearbyPlacePrompt } from "@/components/household/NearbyPlacePrompt";
 import { EngagementNotifier } from "@/components/persone/EngagementNotifier";
 import { TaskNotifier } from "@/components/task/TaskNotifier";
 import { MedicationNotifier } from "@/components/medical/MedicationNotifier";
+import { AnimalNotifier } from "@/components/animali/AnimalNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
 import "./globals.css";
 
@@ -57,6 +63,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <FeedProvider>
                   <HealthProvider>
                     <MedicalProvider>
+                    <FoodProvider>
+                    <WishlistProvider>
+                    <DiaryProvider>
+                    <HobbyProvider>
+                    <AnimalHealthProvider>
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
@@ -69,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <EngagementNotifier />
                             <TaskNotifier />
                             <MedicationNotifier />
+                            <AnimalNotifier />
                             <MoodSuggestionPrompt />
                           </VitaecomDraftProvider>
                           </VitaecomChatProvider>
@@ -76,6 +88,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
+                    </AnimalHealthProvider>
+                    </HobbyProvider>
+                    </DiaryProvider>
+                    </WishlistProvider>
+                    </FoodProvider>
                     </MedicalProvider>
                   </HealthProvider>
                 </FeedProvider>

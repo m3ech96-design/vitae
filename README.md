@@ -1949,6 +1949,419 @@ istante. Verificato con un test dedicato che replica lo scenario esatto (cambio 
 uno stato d'animo a un altro): prima il risultato finale contava entrambi gli stati, ora
 solo quello nuovo.
 
+## Checkpoint 49 — nuova scheda "Alimentazione", da dove si era interrotta
+
+Ripresa da capo, non da un file recuperato: la sessione precedente si era fermata subito dopo
+averla annunciata, senza codice arrivato in un checkpoint pacchettizzato — questo è quindi il
+primo codice reale della scheda, non una continuazione di file esistenti.
+
+**Ingredienti, salvati per sempre e richiamabili per nome** (`lib/food-context.tsx`,
+`lib/food-types.ts`, forma funzionale sicura fin dal primo giorno, non corretta dopo, come
+richiesto dallo standard ormai stabilito in questo progetto): alla creazione di un
+ingrediente chiede i macronutrienti veri (Grassi, di cui saturi; Carboidrati, di cui
+zuccheri; Fibre; Proteine; Sale) e calcola da soli le calorie con la formula di Atwater
+(grassi×9 + carboidrati×4 + proteine×4) — mai chieste a mano, sempre derivate.
+
+**Decisione corretta sulla "dimensione di servizio"**, dopo un primo giro sbagliato: i macro
+si chiedono SEMPRE "per 100" — per 100 g se l'unità è grammi o "altro", per 100 ml se è
+millilitri — mai "per 1 unità" a mano. La base vera di un cibo è il suo peso, non un'unità di
+comodo come "un uovo" (due uova non pesano mai davvero uguale). Per questo "altro" porta con
+sé anche il peso reale di 1 unità (`gramsPerUnit`, es. 50 g per "1 uovo"): registrare "2 uova"
+converte da solo la quantità in grammi (2 × 50 = 100 g) e applica esattamente lo stesso
+calcolo "per 100" di qualunque altro ingrediente — mai un secondo valore inventato a parte.
+Il modulo di creazione mostra anche un'anteprima derivata ("per 1 uovo: X kcal, Y g grassi...")
+per verificare subito il calcolo, non solo alla fine quando si registra un pasto. Salvato una
+volta, l'ingrediente si ritrova sempre dalla ricerca (`EntryModal.tsx`) quando componi un
+pasto, in quantità variabile ogni volta — mai da reinserire i macro una seconda volta.
+
+**Il menu del giorno** (`app/alimentazione/page.tsx`, `MealSlotSection.tsx`): Colazione,
+Pranzo, Cena sempre visibili; fino a 3 categorie "Spuntino" aggiungibili nelle tre posizioni
+richieste (tra colazione e pranzo, tra pranzo e cena, dopo cena) — non una quarta libera, dato
+che le tre posizioni nominate sono già tutte quelle possibili. Ogni voce del menu è
+aggiungibile, modificabile (quantità, orario, ingrediente) ed eliminabile. Suggerimento
+automatico quando uno slot è ancora vuoto: cosa avevi mangiato lì esattamente una settimana
+fa, se c'è.
+
+**Cronologia libera, senza una pagina a parte**: la stessa scheda mostra il giorno selezionato
+(oggi di default) con frecce avanti/indietro senza limite di distanza più la striscia "Aura"
+già usata in Task (`DayStrip.tsx`, riusata invariata) per i salti rapidi — sfogliare un giorno
+di tre mesi fa mostra lo stesso menu completo di quel giorno, modificabile come oggi, non solo
+consultabile.
+
+**Obiettivi e acqua** (`FoodGoalsModal.tsx`, `DailyTotalsCard.tsx`, `WeeklyCaloriesCard.tsx`,
+`WaterTracker.tsx`): minimo/massimo di calorie sia giornaliero sia settimanale (la settimana è
+la stessa finestra mobile "ultimi 7 giorni" già usata in Attività e Peso, non il calendario
+lun-dom, per coerenza); barra colorata in base al range (ambra sotto il minimo, smeraldo nel
+range, rosa sopra il massimo). Acqua: obiettivo giornaliero in litri, +/- 0,25 L a tocco.
+
+**Quattro statistiche curiose** (`FoodFunStats.tsx`, `lib/food-stats.ts`, verificate con un
+test dedicato prima di considerarle finite, non solo dichiarate):
+- *Il cibo che mangi di più/di meno*: contati come numero di volte in cui l'ingrediente
+  compare in un pasto — non la quantità totale, che tra unità diverse (g, ml, "altro") non
+  sarebbe confrontabile in modo onesto.
+- *Migliore abbuffata*: il giorno con più calorie in assoluto in tutta la cronologia; si apre
+  mostrando il menu completo di quel giorno, non solo il numero.
+- *Digiuno più lungo*: i pasti si raggruppano per giorno+categoria (l'orario più presto tra le
+  sue voci ne segna l'inizio); il digiuno più lungo è il gap più grande tra due pasti
+  consecutivi in tutta la cronologia. Dichiarato: misura tra pasti registrati, non il tempo
+  vero a stomaco vuoto — impossibile da sapere con certezza da un diario alimentare.
+
+**Ancora da fare**: Diario (già completamente specificata, prossima) e Hobby — quest'ultima
+esplicitamente da valutare insieme prima di costruirla, come richiesto ("deve essere una
+scheda che offre molta precisione, qualsiasi sia il tipo di hobby" è un problema di design
+vero, non solo di esecuzione).
+
+## Checkpoint 50 — nuova scheda "Wishlist"
+
+**Articoli, con "tutti i dettagli possibili" come campi liberi**, non uno schema fisso per
+categoria di prodotto (che sarebbe comunque arbitrario e mai completo): stessa scelta già
+fatta per Interessi nel wizard, qui riusata di proposito (`DynamicFieldList.tsx`, lo stesso
+componente, non una copia). Foto con ritaglio (`ImageCropInput`, come ovunque nell'app), nome,
+prezzo, sito (nome + URL, cliccabile), periodo stimato di acquisto come testo libero — una
+stima è per natura imprecisa ("a Natale", "tra 2-3 mesi"), forzarla in una data avrebbe
+mentito sulla precisione che non c'è.
+
+**Luogo (marker) con Fila/Corsia/Numero/Scaffale**: non un indirizzo a sé per ogni articolo,
+ma un collegamento a un vero Luogo della Mappa (stesso meccanismo già usato dalle Task,
+`<select>` tra i luoghi esistenti) più le quattro etichette di posizione richieste, specifiche
+per quell'articolo in quel negozio — due articoli nello stesso supermercato possono stare in
+corsie diverse.
+
+**Obiettivo di risparmio, tetto sempre = prezzo**: mai un obiettivo impostato a parte, come
+richiesto esplicitamente. Anello di riempimento 0-100% (`SavingsRing.tsx`, stessa tecnica SVG
+già usata in Finanze per `BudgetRing.tsx`) con aggiunta/rimozione fondi libere; capping
+verificato con un test dedicato — aggiungere oltre il prezzo si ferma esattamente al prezzo,
+togliere più di quanto accantonato si ferma a zero, mai un numero assurdo in mezzo.
+
+**Due viste, come richiesto**: griglia (`WishlistCard.tsx`) e verticale a schede intere
+(`WishlistShortView.tsx`) con l'"effetto magnetico" fatto con lo scroll-snap nativo del CSS
+(`snap-y snap-mandatory` + `snap-start` su ogni scheda) — non una libreria, il browser stesso
+ancora ogni scheda a schermo appena lo scroll si ferma, esattamente il comportamento
+richiesto.
+
+**Trovato per strada**: un residuo Title Case in `DynamicFieldList.tsx` ("Aggiungi Campo",
+"Aggiungi Miniatura (Facoltativo)") — visibile ancora oggi nelle sezioni Corpo e
+Istruzione/Lavoro del wizard, dove quel componente non riceve un'etichetta personalizzata.
+Corretto qui perché il componente andava comunque riusato per la Wishlist, non per una nuova
+sessione di audit.
+
+**Nota onesta, non nuova ma confermata qui**: `places-context.tsx` (da cui la Wishlist legge
+i luoghi collegabili) non è ancora stato convertito alla forma funzionale sicura, insieme a
+`finance-context`, `mood-context`, `needs-context`, `tasks-context`, `vitaecom-chat-context` —
+lo stesso rischio latente già dichiarato al Checkpoint 40, ancora da sistemare in un prossimo
+giro, non toccato qui per non allargare lo scope di questo checkpoint.
+
+**Ancora da fare**: Diario e Hobby (quest'ultima da valutare insieme).
+
+## Checkpoint 51 — nuova scheda "Diario"
+
+**Nota vocale, un tipo di media che mancava del tutto**: `audio-store.ts` (IndexedDB, stessa
+tecnica già usata per immagini e video — mai in localStorage come base64 diretto, satura la
+quota in fretta) e `VoiceRecorderInput.tsx` (MediaRecorder del browser: registra, riascolta
+prima di allegarla davvero, oppure elimina e riprova). Aggiunta anche al sistema di backup,
+accanto a immagini e video.
+
+**Anteprima video "che scorre", adattata onestamente al contesto**: la richiesta descriveva
+un effetto a hover del mouse (come YouTube), ma questa è prima di tutto un'app da telefono —
+un dito sullo schermo non genera hover, quindi quell'effetto letteralmente non scatterebbe
+mai sulla piattaforma principale. `video-thumbnail.ts` campiona N fotogrammi lungo la durata
+del video (canvas + un `<video>` invisibile, mai il video intero ricaricato ad ogni sguardo:
+cache in memoria per chiave); `use-video-scrub-preview.ts` li fa scorrere in ciclo automatico
+—identico su telefono e desktop— ma solo mentre la miniatura è davvero visibile a schermo
+(IntersectionObserver: decine di miniature che campionano frame fuori vista sarebbero solo
+consumo di batteria, mai un effetto visto). Resta "sceglibile o no" come richiesto, con un
+interruttore nelle impostazioni della scheda (`vitae:diary-scrub-preview`) — globale, non per
+singolo video: un controllo su ogni video non avrebbe aggiunto un beneficio reale.
+
+**Stato d'animo del momento**: riusato `MoodPicker.tsx` (la stessa sfera-pulsante già usata
+per "Cosa provi?" in Vitaecom), non un selettore nuovo — stesso elenco di stati, inclusi
+quelli creati dall'utente.
+
+**Cronologia a calendario vera** (`DiaryCalendar.tsx`): griglia mensile reale (lunedì primo
+giorno), non la striscia orizzontale di 7 giorni già usata altrove — qui serve sfogliare mesi
+interi, non solo la settimana corrente. I giorni con almeno una nota sono segnati; toccarne
+uno mostra le note di quel giorno e permette di scriverne una nuova per quella data, passata
+compresa — stessa filosofia già scelta per Alimentazione ("cronologia libera, sempre
+modificabile, non solo consultabile").
+
+**"Sfoglia", il diario a libro** (`DiarySfoglia.tsx`): una nota alla volta, transizione a
+rotazione per il cambio pagina — non uno slide/fade generico, ma lo stesso linguaggio visivo
+già in uso in `BottomNav.tsx` per il cambio scheda (`rotateY`), qui applicato a un contesto
+nuovo invece di inventarne uno a parte, come richiesto ("utilizza grafica, transizione e
+animazioni già usate, ma non essere scontato"). Ordine crescente/decrescente, "Cerca parola
+nel diario" con evidenziazione di tutte le occorrenze nel testo (non solo la prima).
+
+Verificato con un test dedicato: l'evidenziazione trova ogni occorrenza della parola cercata,
+l'ordinamento cronologico e il suo contrario sono coerenti anche con più note nello stesso
+giorno, il filtro di ricerca mantiene l'ordine, e la griglia del calendario calcola le caselle
+vuote iniziali correttamente sia per un mese che comincia di lunedì sia per uno che comincia
+in un altro giorno.
+
+**Un'unica card per tre contesti**: `DiaryEntryCard.tsx` è la stessa in "Oggi", nel giorno
+selezionato del Calendario e in una pagina di Sfoglia (con l'evidenziazione in più, un prop
+facoltativo) — modificare o eliminare una nota funziona identico ovunque la incontri, non tre
+implementazioni leggermente diverse.
+
+**Icone modifica/elimina sempre visibili, non a comparsa con l'hover**: alcuni componenti più
+vecchi del progetto (`DynamicFieldList.tsx`, `ThumbGridField.tsx`, `SavingsVessel.tsx`)
+nascondono questi pulsanti dietro `group-hover`, che su un telefono a tocco può non attivarsi
+mai in modo affidabile. Non corretto in quei file per non allargare lo scope, ma evitato qui
+fin da subito nella card nuova.
+
+**Ancora da fare**: solo Hobby, esplicitamente da valutare insieme prima di costruirla.
+
+## Checkpoint 52 — nuova scheda "Hobby" (architettura a blocchi componibili)
+
+Non 5 moduli fissi (come discusso e poi scartato insieme): ogni hobby è un guscio (nome,
+copertina, campi liberi) più un elenco di **blocchi**, aggiungibili in qualunque numero e
+combinazione, anche ripetendo lo stesso tipo più volte con un titolo diverso (due blocchi
+Metrica sullo stesso hobby, per esempio — "Km" e "Dislivello" separati). Il vocabolario dei
+tipi è chiuso a sei, il numero di blocchi per hobby no.
+
+**I sei tipi di blocco** (`lib/hobby-types.ts`, `lib/hobby-context.tsx`, `lib/hobby-stats.ts`):
+- **Checklist**: stato a tre valori (da fare/in corso/fatta, non solo due — molte attività
+  restano a metà per giorni), priorità, difficoltà e soddisfazione a stelle, foto multiple,
+  luogo, persone collegate, tag.
+- **Metrica**: unità libera, **direzione dichiarata** (crescente o decrescente — un tempo sul
+  giro migliora scendendo, un record di sollevamento migliora salendo: il record personale
+  calcolato sbaglierebbe verso senza saperlo), aggregazione cumulativa o puntuale (il valore
+  "attuale" è la somma di tutto oppure solo l'ultima voce, mai confuso l'uno con l'altro),
+  grafico (riuso di `MiniLineChart.tsx` da Salute), obiettivo con barra, confronto 7gg/7gg,
+  heatmap di costanza (`HeatmapGrid.tsx`, stesso linguaggio di `ActivityHeatmap.tsx`
+  generalizzato su un elenco di date invece che sui Workout).
+- **Inventario**: pezzi posseduti con foto multiple, provenienza, prezzo pagato e valore
+  stimato oggi (valore totale della collezione e plus/minus calcolati da soli, mai contare un
+  pezzo a zero solo perché manca la stima), condizione, numero di catalogo, quantità, tag
+  scambio.
+- **Progetti**: galleria con stato a cinque livelli (idea/in corso/in pausa/finito/
+  abbandonato — un artigiano ha sempre cose a metà), materiali con costo (costo totale
+  calcolato), difficoltà e voto a stelle, destinazione (per te/regalo/in vendita).
+- **Libreria**: copertina, stato a quattro livelli, voto e recensione, genere, lunghezza
+  libera, contatore riletture, "consigliato da" (persona collegata).
+- **Partite**: avversario (persona collegata o testo libero), risultato, punteggio libero,
+  torneo, ruolo, **copertina del blocco stesso** oltre alla foto per singola partita —
+  richiesta esplicitamente per i videogiochi (stessa idea della copertina di Libreria, qui
+  applicata al blocco intero: rappresenta il gioco, non la singola partita). Percentuale
+  vittorie, striscia corrente, striscia di vittorie più lunga in assoluto, calcolate da sole.
+
+**Pulizia a cascata delle foto**: eliminare un hobby, un blocco, o una singola voce ripulisce
+sempre tutte le foto collegate da IndexedDB (`collectHobbyPhotoKeys`/`collectBlockPhotoKeys`
+in `hobby-types.ts`) — mai foto orfane lasciate indietro, indipendentemente da quale dei tre
+livelli venga cancellato.
+
+**Semplificazioni dichiarate rispetto al brainstorming**: niente ricorrenza sulle voci
+Checklist (chi ha bisogno di manutenzione periodica può ancora usare il modulo Task); niente
+media mobile sovrapposta al grafico Metrica (resta il confronto 7gg/7gg); niente calcolo Elo
+per le Partite (il punteggio libero e le statistiche vittorie/sconfitte restano, un vero
+sistema di rating è tutt'altro progetto).
+
+Verificato con un test dedicato: aggregazione cumulativa vs puntuale della Metrica, record
+personale coerente con la direzione dichiarata, valore e plus/minus dell'Inventario, calcolo
+di vittorie/sconfitte/striscia corrente/striscia più lunga delle Partite (compreso il caso in
+cui una sconfitta in mezzo interrompe correttamente il conteggio), costo totale dei Progetti.
+
+Aggiunta anche la chiave `vitae:hobbies` al sistema di backup, dimenticata insieme alle altre
+già segnalate in Checkpoint 50.
+
+## Checkpoint 53 — un giro di bug puntuali dal nuovo elenco, prima di aggiornare
+
+Nessuna scheda nuova questa volta: una raccolta di correzioni mirate, ognuna con una causa
+reale trovata, non solo un sintomo tamponato.
+
+**Sesso "fermo" al valore precedente in Mondo**: la label dell'header di `PersonWindow.tsx`
+(e quella "Defunto/a") leggevano `person.kind` — la prop del genitore, non lo stato locale
+`draft` — quindi restavano al valore vecchio finché il genitore non ripropagava un `person`
+fresco. Corretto con un `liveKind` ricalcolato da `draft` a ogni render, indipendente dal
+timing del genitore.
+
+**Albero genealogico eliminato**: route `/albero`, `FamilyMenu.tsx` (già codice morto), voce
+di navigazione, tab morto in `PersonWindow`, testo in `ExploreProfileSheet.tsx`, un innesco
+di stato d'animo riformulato, e i commenti ormai obsoleti in 5 file diversi.
+
+**Concetto di parentela eliminato del tutto**, su richiesta esplicita successiva: cancellati
+`lib/family-relations.ts`, `lib/family-reciprocal.ts`, `lib/family-entities.ts` e
+`FamilyRelationEditor.tsx` (mai importato da nessuna parte). Tolti dal tipo `Person` i quattro
+campi `fatherId`/`motherId`/`spouseId`/`exSpouseIds`, verificato che non servissero altrove.
+Conservato `partnerPersonId` (concetto distinto, usato ovunque per motivi non di parentela).
+`RelationshipConstellation.tsx` non esclude più i parenti dal proprio calcolo (non aveva più
+senso senza "una scena dedicata" per loro).
+
+**Aura tagliata nelle stories**: il contenitore aveva `overflow-x-auto` con 4px di padding
+verticale, insufficiente per il picco dell'animazione di pulsazione (scala del 6% oltre il
+proprio bordo, più il blur). Padding raddoppiato.
+
+**Lato Stato**: aggiunto il limite di 4 linee mancante (era genericamente fino a 8); rimosso
+dal visualizzatore immagini. Gli aloni invernali del visualizzatore, mai completati davvero
+(erano 4, fissi, un solo lato), ricostruiti da zero: 28, generati proceduralmente, su tutti e
+quattro i lati, con animazione sfasata per il vero effetto "vapori che si mescolano" — non
+letteralmente un hover del mouse (l'originale lo descriveva così, ma questa è prima di tutto
+un'app da telefono: adattato a un ciclo automatico che funziona identico su touch e desktop,
+dichiarato onestamente.
+
+**Barra di navigazione più traslucida**: opacità di fondo dimezzata (0.52 → 0.30 in `.glass-nav`).
+
+**Icona dell'app sparita — causa reale trovata**: il service worker non aveva mai cambiato
+nome di cache (`vitae-shell-v1` fin dal principio), quindi il browser non aveva mai un motivo
+per rieseguire l'installazione e rinfrescare l'icona in cache. Cambiato nome cache
+(`vitae-shell-v2`) e aggiunto un controllo aggiornamento attivo in `ServiceWorkerRegister.tsx`
+(alla registrazione e ad ogni ritorno in primo piano) — non si aspetta più che il browser se
+ne accorga per conto suo quando gli va.
+
+**Reazioni multiple sui post condivisi**: la condivisione non inizializzava
+`userReactionMoodId` sul post appena creato, quindi il condivisore poteva aggiungerne una
+seconda con la sfera di reazione. Corretto sia il dato (`sharePost` ora registra subito la
+propria reazione) sia l'interfaccia (icona statica al posto della sfera interattiva sulla
+propria condivisione).
+
+**Finestra avatar Vitaecom in Casa che restava nel riquadro — causa reale trovata**:
+`GlassCard` applica sempre `overflow-hidden` (per gli angoli arrotondati), e su iOS Safari un
+antenato con `overflow-hidden` intrappola visivamente i discendenti `position: fixed`,
+comportamento diverso da quello "da manuale" su desktop. Corretto portando i due overlay di
+`VitaecomHouseholdAvatarCell.tsx` fuori dall'albero DOM con `createPortal` — stesso pattern
+già in uso in altri 6 file dell'app, applicato qui dove mancava. Rischio sistemico dichiarato:
+qualunque modale aperto da dentro un `GlassCard` potrebbe avere lo stesso problema su iOS
+Safari; corretto solo il caso segnalato, non fatto un audit di ogni modale esistente.
+
+**Header della chat**: avatar ingrandito (36→46px — la geometria dell'animazione in
+`ReactionAvatarBurst.tsx` è tutta derivata da tre costanti, quindi si è ricalcolata da sola),
+nickname più grande, header ora `sticky top-0` con sfondo e bordo invece di scorrere via con i
+messaggi. Applicato sia alla chat singola sia a quella di gruppo.
+
+**Modifica della posizione di Casa in Mappa**: nuovo pannello dentro `PlaceWindow.tsx`, solo
+per la Casa — stessa mappa-a-tocco + ricerca indirizzo già usata in `LinkHomeCard.tsx` per il
+collegamento iniziale, qui per correggerla dopo. La Casa resta la stessa voce (stessa
+cronologia visite), non va ricreata da capo per spostarla.
+
+**Prima immagine delle news dal link di riferimento**: quando l'RSS non porta già
+un'immagine, `/api/news` ora prova a leggerla dalla pagina vera dell'articolo — `og:image`
+prima, poi `twitter:image`, poi la prima `<img>` trovata, con timeout breve (3,5s) e mai un
+fallimento che blocca il resto delle news. Solo per chi non ha già un'immagine dall'RSS
+stesso: mai un fetch in più quando non serve.
+
+**Spaziatura home**: aumentata tra le card non fisse (`space-y-4` → `space-y-6`).
+
+**Trovati per strada e corretti**: un Title Case residuo in `RelationshipConstellation.tsx`
+("Altri Legami, Meno Vicini..."), e tre in `LinkHomeCard.tsx` ("Conferma L'Indirizzo",
+"Preferisci Cercare L'Indirizzo Invece?", e il testo scritto sotto al campo indirizzo).
+
+**Analizzato ma non ancora costruito, su richiesta esplicita di analisi prima**: la tabella
+cronologica delle spese in Finanze — il dato (`items` in `computeMonthlySpending`) esiste già,
+manca solo l'interfaccia; il ciclo di reset personalizzato e il reset del grafico budget
+richiedono invece una modifica reale alla logica di calcolo, oggi legata ai confini del mese
+di calendario.
+
+**Ancora da fare, in ordine di quanto discusso**: i tre pezzi di Finanze appena analizzati,
+poi editing posizione persone/luoghi rimasti, sistema widget per la home (con le 100 idee da
+brainstormare), selettore di 500 testate per le news, messaggistica/notifiche di casa, flusso
+"Avanti" nel wizard, e la scheda Animali da valutare insieme.
+
+## Checkpoint 54 — Finanze: ciclo personalizzato, reset, tabella cronologica
+
+I tre pezzi analizzati nel checkpoint precedente, costruiti insieme perché il reset ha senso
+solo una volta che esiste un ciclo con un confine preciso da spostare.
+
+**Ciclo di budget personalizzato** (`lib/finance.ts`, `currentCycleRange`): non più legato al
+mese di calendario — un giorno del mese a scelta (1-28, sempre valido anche a febbraio) segna
+dove inizia e finisce il ciclo corrente. Con il giorno impostato a 1 il comportamento resta
+identico a prima: nessuna rottura per chi non lo tocca mai. Gestito anche l'attraversamento di
+fine anno (un ciclo che inizia a dicembre e finisce a gennaio dell'anno dopo).
+
+**Reset e ricomincia**: nessun dato da cancellare o archiviare a parte — "resettare" significa
+semplicemente spostare il giorno di inizio ciclo a oggi. Tutto quello che apparteneva al ciclo
+precedente smette da solo di contare nell'anello (perché non rientra più nel nuovo intervallo
+di date), ma resta per sempre nella tabella cronologica sotto — esattamente "diventano solo
+dati senza effetti", come richiesto, senza inventare un secondo stato "archiviato" da
+sincronizzare con il primo.
+
+**Tabella cronologica** (`ChronologicalExpensesTable.tsx`, alimentata da `allExpenseItems` in
+`lib/finance.ts`): ogni spesa reale di sempre — task completate, visite a un luogo, spese
+manuali — più recente prima, paginata a blocchi di 20. Le spese ricorrenti restano fuori
+apposta: sono configurazione, non un evento con una data vera, non hanno senso in una
+cronologia di transazioni.
+
+**`finance-context.tsx` riscritto con la forma funzionale sicura** fin da questa versione — 
+era uno dei moduli già dichiarati a rischio al Checkpoint 40 (insieme a mood-context,
+needs-context, places-context, tasks-context, vitaecom-chat-context, ancora da convertire).
+Toccarlo per aggiungere il ciclo era comunque necessario; farlo con il pattern sicuro fin da
+subito, non quello vecchio da correggere dopo, era la scelta più responsabile visto che il
+reset stesso è esattamente il tipo di operazione (due scritture di fila) più a rischio.
+
+Verificato con un test dedicato: il calcolo del ciclo coincide col vecchio comportamento
+quando il giorno è 1, gestisce correttamente sia il caso "oggi è prima del giorno di inizio
+ciclo nel mese corrente" sia il suo opposto, attraversa la fine dell'anno senza sbagliare, e
+la proiezione usa la vera lunghezza del ciclo (non 30 giorni fissi).
+
+**Trovati per strada e corretti**: due Title Case in `BudgetRing.tsx` ("Imposta Budget", "Di
+Questo Passo, Fine Mese A" — quest'ultimo comunque da riformulare in "fine ciclo", non più
+"fine mese") e uno in `SingleExpensesSection.tsx` ("Regalo Compleanno").
+
+**Ancora da fare**: editing posizione persone/luoghi rimasti, sistema widget per la home (con
+le 100 idee da brainstormare), selettore di 500 testate per le news, messaggistica/notifiche
+di casa, flusso "Avanti" nel wizard, e la scheda Animali da valutare insieme.
+
+## Checkpoint 55 — scambio schede in barra, e wizard agganciato alle Scoperte
+
+**Scambio di posizione tra schede già in barra** (`lib/nav-slots.ts`, `BottomNav.tsx`): la
+pressione lunga su uno slot ora propone anche le altre due schede già in barra, non solo
+quelle in "Altro" — sceglierne una scambia le due posizioni (nuova `swapSlots`, un solo
+aggiornamento funzionale su entrambi gli slot insieme, non due scritture separate che
+rischierebbero di leggere lo stato sbagliato) invece di far sparire quella di partenza senza
+lasciarle un posto.
+
+**Wizard iniziale agganciato alle Scoperte**: il pulsante che chiudeva l'Identità essenziale
+(nome, cognome, immagine, compleanno, nickname, sesso) ora si chiama "Avanti" e prosegue,
+invece di terminare subito, nelle stesse quattro sezioni già mostrate tutte insieme in "Il tuo
+profilo" (`IdentityCoreFields`, `EducationWorkSection`, `CorpoSection`, `InterestsSection`) —
+qui una alla volta, con "Indietro" per tornare sul passo precedente e un indicatore a
+pallini. "Il tuo profilo" resta identica a prima, sempre consultabile e modificabile con
+calma: questo wizard non è l'unico posto dove vivono questi campi, solo il primo invito a
+guardarli. L'animazione di chiusura (il respiro di luce prima di entrare in Home) si è
+spostata sull'ultimo passo vero, non più sul primissimo "Avanti".
+
+Semplificazione dichiarata: `IdentityCoreFields` include comunque i campi Compleanno e Sesso
+al suo interno (non sono nascondibili via props), quindi il passo "Identità" li ri-mostra già
+compilati dal passo precedente — una piccola ridondanza visiva, non un errore funzionale,
+accettata per non dover creare una seconda variante del componente solo per questo wizard.
+
+## Checkpoint 56 — nuova scheda "Animali"
+
+Non un'architettura a blocchi come Hobby: le esigenze di cura di un animale sono molto più
+uniformi tra loro rispetto alla varietà di hobby possibili, quindi qui sezioni fisse ma
+complete, gran parte ricalcata da Salute — resa per-animale invece che per l'utente.
+
+**`lib/animal-health-context.tsx`**: vaccinazioni, farmaci, appuntamenti, referti, allergie,
+peso — ognuno taggato con `animalId`, stesso pattern funzionale sicuro di `medical-context.tsx`
+(letteralmente lo stesso helper `useCollection`, non riscritto da zero). `removeAllForAnimal`
+ripulisce tutto — foto dei referti comprese, da IndexedDB — quando un animale viene eliminato,
+altrimenti quei record resterebbero orfani per sempre.
+
+**`AnimalNotifier.tsx` — il pezzo richiesto esplicitamente**: notifica pappa, vaccinazioni in
+scadenza, farmaci e appuntamenti leggendo sempre `people` direttamente, mai le liste già
+filtrate per il riquadro Casa/Fuori Casa della Home — un animale con `kind` cane/gatto esiste
+sempre in `people` a prescindere dal suo stato calcolato (casa/fuori casa/nel mondo), quindi
+il notificatore funziona identico che l'animale compaia o meno in quel riquadro. Montato
+globalmente nel layout radice, stesso meccanismo (e stesso limite onesto: un controllo al
+minuto ad app aperta, non una vera push) già usato da `TaskNotifier`/`MedicationNotifier`.
+
+**Anagrafica** (razza, nascita/adozione, microchip, segni particolari, sterilizzato/a) nuova
+sui campi `Person`. **Scheda d'emergenza** che riassume allergie/farmaci in corso/microchip a
+colpo d'occhio. **Cura quotidiana** (pasti, carattere) riusata senza duplicarla — la sezione
+esisteva già, vive ora anche nella nuova pagina di dettaglio oltre che in Impostazioni.
+
+**Doppio collegamento dall'avatar in Casa**, su richiesta esplicita: cliccare l'avatar di un
+animale nel riquadro Casa apre ancora la stessa finestra di sempre (Scoperte/Impostazioni),
+con in più — proprio in cima alla sezione Cura dell'animale — un pulsante diretto alla scheda
+sanitaria completa in Animali. Nessuno dei due percorsi sostituisce l'altro.
+
+Verificato con un test dedicato: l'orario pappa considera correttamente un pasto già
+registrato oggi (non lo richiede più) mentre ignora un pasto di ieri (l'orario di oggi resta
+dovuto), la scadenza vaccino continua a ripresentarsi finché non passata una nuova data, e le
+chiavi di deduplica restano distinte tra animali diversi con lo stesso orario.
+
+**Ancora da fare**: editing posizione persone/luoghi rimasti, sistema widget per la home (con
+le 100 idee da brainstormare), selettore di 500 testate per le news, messaggistica/notifiche
+di casa.
+
 ## Sviluppo in locale
 
 ```bash

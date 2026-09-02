@@ -90,6 +90,9 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
   const userAccount = { id: "user", nickname: profile.nickname || profile.firstName, avatarUrl: profile.avatarUrl };
   const account = resolveAccount(post.authorId, userAccount);
   const isShare = Boolean(post.sharedMoodId);
+  // Chi condivide sceglie già il proprio stato d'animo in "Cosa provi?" — non deve poter
+  // aggiungerne un secondo con la sfera di reazione sulla propria stessa condivisione.
+  const isOwnShare = isShare && post.authorId === "user";
   const mood = allMoods.find((m) => m.id === post.moodId);
   const sharedMood = allMoods.find((m) => m.id === post.sharedMoodId);
   const headerMood = isShare ? sharedMood : mood;
@@ -193,7 +196,13 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
             {post.comments.length > 0 && <span className="text-xs text-ink-600">{post.comments.length}</span>}
           </button>
           <span ref={reactionButtonRef} className="inline-flex">
-            <MoodPicker size={17} color={reactionColor} onPick={handleReact} label="Reagisci con uno stato d'animo" />
+            {isOwnShare ? (
+              <span title="Hai già scelto il tuo stato d'animo condividendo" aria-label="Reazione già inserita in fase di condivisione">
+                <Gem size={17} color={reactionColor} strokeWidth={1.6} />
+              </span>
+            ) : (
+              <MoodPicker size={17} color={reactionColor} onPick={handleReact} label="Reagisci con uno stato d'animo" />
+            )}
           </span>
           <button onClick={onShare} className="focus-ring" aria-label="Condividi sulla tua bacheca">
             <Share2 size={17} color="#8B90A8" strokeWidth={1.6} />

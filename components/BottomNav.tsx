@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home as HomeIcon, MoreHorizontal, X, Check } from "lucide-react";
+import { Home as HomeIcon, MoreHorizontal, X, Check, ArrowLeftRight } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -49,12 +49,23 @@ function NavButton({ item, active, onLongPress }: { item: NavItemDef; active: bo
 }
 
 /** Il foglio che si apre tenendo premuta una delle tre schede personalizzabili — sceglie
- * cosa mettere in quello slot tra tutte le schede non già assegnate a un altro slot
- * (comprese quelle oggi in "Altro": prenderne una di lì libera automaticamente il suo posto
- * lì, non serve nessuna azione in più). Home e Altro non sono mai tra le opzioni: restano
- * fissi, come richiesto. */
-function SlotPicker({ current, taken, onPick, onClose }: { current: string; taken: string[]; onPick: (href: string) => void; onClose: () => void }) {
-  const options = ALL_NAV_ITEMS.filter((i) => i.href === current || !taken.includes(i.href));
+ * cosa mettere in quello slot tra TUTTE le altre schede, comprese quelle già in barra negli
+ * altri due slot: sceglierne una lì scambia le due posizioni invece di lasciarla
+ * semplicemente sparire, così ogni scheda in barra resta sempre raggiungibile da qualche
+ * parte. Home e Altro non sono mai tra le opzioni: restano fissi, come richiesto. */
+function SlotPicker({
+  current,
+  otherSlots,
+  onPick,
+  onClose,
+}: {
+  current: string;
+  /** Gli href occupati dagli ALTRI due slot in barra (non lo slot che si sta cambiando) —
+   * serve solo per segnalare quali opzioni comportano uno scambio, non per escluderle. */
+  otherSlots: string[];
+  onPick: (href: string) => void;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md" onClick={onClose}>
       <motion.div
@@ -72,9 +83,10 @@ function SlotPicker({ current, taken, onPick, onClose }: { current: string; take
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {options.map((item) => {
+          {ALL_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isCurrent = item.href === current;
+            const isOtherSlot = otherSlots.includes(item.href);
             return (
               <button
                 key={item.href}
@@ -83,10 +95,15 @@ function SlotPicker({ current, taken, onPick, onClose }: { current: string; take
                   onClose();
                 }}
                 className={clsx(
-                  "focus-ring flex flex-col items-center gap-2 rounded-xl2 border py-5 text-center transition",
+                  "focus-ring relative flex flex-col items-center gap-2 rounded-xl2 border py-5 text-center transition",
                   isCurrent ? "border-aura-violet/60 bg-aura-violet/10" : "border-white/10 bg-white/[0.02] hover:border-aura-violet/50"
                 )}
               >
+                {isOtherSlot && (
+                  <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[9px] text-ink-400">
+                    <ArrowLeftRight size={9} /> scambia
+                  </span>
+                )}
                 <Icon size={20} className={isCurrent ? "text-aura-violet" : "text-aura-cyan"} />
                 <span className="text-xs text-ink-100">{item.label}</span>
                 {isCurrent && <Check size={12} className="text-aura-violet" />}
@@ -105,11 +122,20 @@ export function BottomNav() {
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
   const { hasUnreadNotification } = useVitaecomSocial();
-  const { slots, hydrated, setSlot } = useNavSlots();
+  const { slots, hydrated, setSlot, swapSlots } = useNavSlots();
   if (HIDDEN_ON.includes(pathname)) return null;
 
   const slotItems = slots.map((href) => ALL_NAV_ITEMS.find((i) => i.href === href)).filter((i): i is NavItemDef => Boolean(i));
   const moreItems = ALL_NAV_ITEMS.filter((i) => !slots.includes(i.href));
+
+  const pickForSlot = (href: string) => {
+    if (pickingSlot === null) return;
+    // Se l'href scelto occupa già un altro slot in barra, le due posizioni si scambiano —
+    // altrimenti è una scheda libera (oggi in "Altro") e prende semplicemente il posto.
+    const otherIndex = slots.findIndex((s, i) => s === href && i !== pickingSlot);
+    if (otherIndex !== -1) swapSlots(pickingSlot, otherIndex);
+    else setSlot(pickingSlot, href);
+  };
 
   const moreActive = moreItems.some((m) => pathname.startsWith(m.href));
   const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
@@ -203,8 +229,8 @@ export function BottomNav() {
         {pickingSlot !== null && (
           <SlotPicker
             current={slots[pickingSlot]}
-            taken={slots.filter((_, i) => i !== pickingSlot)}
-            onPick={(href) => setSlot(pickingSlot, href)}
+            otherSlots={slots.filter((_, i) => i !== pickingSlot)}
+            onPick={pickForSlot}
             onClose={() => setPickingSlot(null)}
           />
         )}

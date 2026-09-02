@@ -111,12 +111,14 @@ body::before {
   /* Le barre di navigazione: più traslucide di ogni altro pannello "vetro" dell'app (meno
    * fondo pieno, più di quel che scorre sotto si vede attraverso) e con un effetto di
    * distorsione visibile ma leggero sui colori sottostanti (saturate, non solo blur) — la
-   * stessa idea del "liquid glass", non un semplice sfocato. */
+   * stessa idea del "liquid glass", non un semplice sfocato. Fondo alleggerito ulteriormente
+   * su richiesta esplicita (era 0.52, ora 0.30): resta leggibile perché blur e saturate
+   * fanno comunque il lavoro di separarla dallo sfondo, non serve un fondo pieno per farlo. */
   .glass-nav {
-    background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 100%), rgba(15,18,32,0.52);
+    background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.015) 100%), rgba(15,18,32,0.30);
     backdrop-filter: blur(28px) saturate(190%);
     -webkit-backdrop-filter: blur(28px) saturate(190%);
-    border: 1px solid rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .sheen-top::before {
     content: "";

@@ -70,10 +70,6 @@ export interface PersonalDetails {
   partnerPersonId?: string;
   friendPersonIds: string[];
   bestFriendPersonIds: string[];
-  spouseId?: string;
-  exSpouseIds: string[];
-  fatherId?: string;
-  motherId?: string;
   homeCustomFields: CustomField[];
 
   favoriteMovies: ThumbItem[];
@@ -113,7 +109,6 @@ export function emptyPersonalDetails(): PersonalDetails {
     bodyCustomFields: [],
     friendPersonIds: [],
     bestFriendPersonIds: [],
-    exSpouseIds: [],
     homeCustomFields: [],
     favoriteMovies: [],
     favoriteMusic: [],
@@ -179,13 +174,12 @@ export const ANIMAL_KINDS: PersonKind[] = ["cane", "gatto"];
  * Bug reale, trovato con un audit mirato: "kind" (Uomo/Donna/Bambino/Bambina — deciso una
  * volta sola alla creazione, in AddPersonModal) e "gender" (il campo "Sesso" della scheda
  * Scoperte, modificabile in qualunque momento) sono due dati diversi che raccontano la
- * stessa cosa. Le etichette di parentela dell'Albero leggono sempre "gender" (si aggiornano
- * da sole), ma "Sconosciuto/a" (unknown-relative.ts) e "Defunto/a" (PersonWindow) leggono
+ * stessa cosa. "Sconosciuto/a" (unknown-relative.ts) e "Defunto/a" (PersonWindow) leggono
  * "kind" — se "gender" cambia dopo la creazione senza toccare anche "kind", quelle due
- * etichette restano quelle vecchie mentre l'Albero mostra già quelle giuste: esattamente il
- * sintomo di "le modifiche non si aggiornano ovunque". Va richiamata ogni volta che il
- * "Sesso" cambia, per tenere i due dati sempre coerenti — mai per gli animali, dove "kind"
- * resta Cane/Gatto a prescindere dal sesso.
+ * etichette restano quelle vecchie: esattamente il sintomo di "le modifiche non si
+ * aggiornano ovunque". Va richiamata ogni volta che il "Sesso" cambia, per tenere i due dati
+ * sempre coerenti — mai per gli animali, dove "kind" resta Cane/Gatto a prescindere dal
+ * sesso.
  */
 export function kindForGenderChange(currentKind: PersonKind, gender: string | undefined): PersonKind {
   if (ANIMAL_KINDS.includes(currentKind)) return currentKind;
@@ -265,12 +259,11 @@ export interface Person extends PersonalDetails {
   isDemo?: boolean;
   /** Impostato solo alla creazione, dal wizard — vedi AddPersonModal. Cambia il trattamento
    * dell'avatar ovunque compaia (desaturato, respiro che si assesta una volta sola) e fa
-   * comparire "Defunto"/"Defunta" come terza riga nell'Albero Genealogico. */
+   * comparire "Defunto"/"Defunta" nella scheda della persona. */
   deceased?: boolean;
   /** Data di morte, sempre parziale per scelta — ognuno dei tre pezzi è facoltativo e
    * indipendente dagli altri (puoi sapere l'anno ma non il mese, o viceversa, o nessuno dei
-   * tre): vedi components/persone/DeceasedDateFields.tsx. Solo l'anno compare nell'Albero
-   * ("[nascita]-[morte]"), ma tutti e tre restano nella scheda della persona. */
+   * tre): vedi components/persone/DeceasedDateFields.tsx. */
   deceasedDay?: number;
   deceasedMonth?: number;
   deceasedYear?: number;
@@ -290,6 +283,13 @@ export interface Person extends PersonalDetails {
   animalHabits: string[];
   feedingTimes: FeedingTime[];
   feedingLog: FeedingLogEntry[];
+  /** Anagrafica, solo per gli animali — tutta facoltativa, tutta modificabile in ogni
+   * momento dalla scheda "Animali". */
+  breed?: string;
+  birthOrAdoptionDate?: string;
+  microchipNumber?: string;
+  markings?: string;
+  neutered?: boolean;
 
   engagements: Engagement[];
 }

@@ -275,7 +275,7 @@ export default function HomePage() {
         </Reveal>
       )}
 
-      <Reveal delay={0.15} className="mt-9 space-y-4">
+      <Reveal delay={0.15} className="mt-9 space-y-6">
         <TodaySummaryCard />
         <TaskCountdownLog />
         <RapportNudgeCard />

@@ -121,9 +121,9 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     // `updatePerson` nello stesso click faceva sì che la seconda chiamata ricalcolasse il
     // nuovo array da una copia di `people` ancora SENZA la persona appena creata da
     // `addPerson` — il secondo `setPeople` sovrascriveva il primo, perdendo silenziosamente
-    // il genitore appena creato (il campo fatherId/motherId restava impostato su un id che
-    // non esisteva più). La forma funzionale di `setState` risolve sempre contro lo stato
-    // pendente più recente, indipendentemente dall'ordine di battitura nello stesso evento.
+    // la persona appena creata. La forma funzionale di `setState` risolve sempre contro lo
+    // stato pendente più recente, indipendentemente dall'ordine di battitura nello stesso
+    // evento.
     setPeople((prev) => {
       const next = typeof updater === "function" ? (updater as (p: Person[]) => Person[])(prev) : updater;
       try {

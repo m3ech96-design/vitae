@@ -62,7 +62,7 @@ export function SingleExpensesSection() {
       <div className="mt-2">
         <InlineAddPanel label="Aggiungi spesa singola" canConfirm={Boolean(label.trim() && amount)} onConfirm={submit}>
           <div className="grid grid-cols-2 gap-3">
-            <TextField label="Nome" placeholder="Es. Regalo Compleanno" value={label} onChange={(e) => setLabel(e.target.value)} />
+            <TextField label="Nome" placeholder="Es. Regalo compleanno" value={label} onChange={(e) => setLabel(e.target.value)} />
             <TextField label="Importo (€)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">

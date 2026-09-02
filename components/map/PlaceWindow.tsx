@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
-import { X, MapPin, LogIn, LogOut, Trash2, Star } from "lucide-react";
+import { X, MapPin, LogIn, LogOut, Trash2, Star, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { Place } from "@/lib/types";
 import { PLACE_TYPE_META, SPENDING_PLACE_TYPES } from "@/lib/places-meta";
@@ -16,6 +16,10 @@ import { Button } from "../ui/Button";
 import { SpentPrompt } from "../ui/SpentPrompt";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { RatingControl } from "./RatingControl";
+import { MapView } from "./MapView";
+import { AddressAutocomplete } from "../ui/AddressAutocomplete";
+import { AddressSuggestion } from "@/lib/geocode";
+import { useMapAddressPick } from "@/lib/use-map-address-pick";
 import { useMood } from "@/lib/mood-context";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 
@@ -33,7 +37,7 @@ function isSameYear(d: Date, ref: Date) {
 }
 
 export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => void }) {
-  const { checkIn, checkOut, setRating, removePlace, setLastVisitSpentBreakdown, places } = usePlaces();
+  const { checkIn, checkOut, setRating, removePlace, setLastVisitSpentBreakdown, updatePlace, places } = usePlaces();
   const { fireTrigger } = useMood();
   const { people } = useHousehold();
   const { tasks } = useTasks();
@@ -48,6 +52,27 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
 
   const isCheckedIn = Boolean(place.currentVisitStartedAt);
   const isHome = Boolean(place.isPrimaryHome);
+
+  // Modifica della posizione — solo per la Casa (le altre voci si spostano semplicemente
+  // eliminandole e aggiungendone una nuova nel punto giusto, ma la Casa è quella da cui
+  // dipende tutto il rilevamento "sei a casa/fuori casa": spostarla deve restare la stessa
+  // voce, non doverla ricreare da capo perdendo la cronologia delle visite.
+  const [editingPosition, setEditingPosition] = useState(false);
+  const [draftAddress, setDraftAddress] = useState(place.address);
+  const [draftCoords, setDraftCoords] = useState<{ lat: number; lng: number } | null>({ lat: place.lat, lng: place.lng });
+  const { onPick: onMapPick, resolving: resolvingAddress } = useMapAddressPick(draftAddress, setDraftAddress, setDraftCoords);
+
+  const startEditingPosition = () => {
+    setDraftAddress(place.address);
+    setDraftCoords({ lat: place.lat, lng: place.lng });
+    setEditingPosition(true);
+  };
+
+  const savePosition = () => {
+    if (!draftCoords || !draftAddress.trim()) return;
+    updatePlace(place.id, { address: draftAddress.trim(), lat: draftCoords.lat, lng: draftCoords.lng });
+    setEditingPosition(false);
+  };
 
   const counts = useMemo(() => {
     const now = new Date();
@@ -119,7 +144,48 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
             <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
               <MapPin size={13} /> {place.address}
             </p>
+            {isHome && !editingPosition && (
+              <button
+                onClick={startEditingPosition}
+                className="focus-ring mt-1.5 flex items-center gap-1.5 text-xs text-aura-violet hover:text-ink-100"
+              >
+                <Pencil size={12} /> Modifica posizione
+              </button>
+            )}
           </div>
+
+          {isHome && editingPosition && (
+            <div className="space-y-3 rounded-xl2 border border-aura-violet/25 bg-aura-violet/[0.05] p-3.5">
+              <p className="text-xs text-ink-600">Tocca il nuovo punto sulla mappa, o cerca l'indirizzo.</p>
+              <div className="relative h-52 overflow-hidden rounded-xl2 border border-white/10">
+                <MapView
+                  places={[]}
+                  center={draftCoords ?? { lat: place.lat, lng: place.lng }}
+                  pickMode
+                  onPick={onMapPick}
+                  draftMarker={draftCoords}
+                />
+              </div>
+              <AddressAutocomplete
+                label={resolvingAddress ? "Indirizzo (sto cercando…)" : "Indirizzo"}
+                placeholder="Es. Via Roma 12, Milano"
+                value={draftAddress}
+                onChange={setDraftAddress}
+                onSelect={(s: AddressSuggestion) => {
+                  setDraftCoords({ lat: s.lat, lng: s.lng });
+                  setDraftAddress(s.label);
+                }}
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 justify-center" onClick={() => setEditingPosition(false)}>
+                  Annulla
+                </Button>
+                <Button className="flex-1 justify-center" onClick={savePosition} disabled={!draftCoords || !draftAddress.trim()}>
+                  Salva posizione
+                </Button>
+              </div>
+            </div>
+          )}
 
           {!isHome && (
             <div className="grid grid-cols-4 gap-2 text-center">

@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { AuraAvatar } from "../ui/AuraAvatar";
 
-const AVATAR_SIZE = 36;
-const ICON_SLOT = 18;
-const GAP = 12;
+const AVATAR_SIZE = 46;
+const ICON_SLOT = 22;
+const GAP = 13;
 // Centro e raggio dell'avatar dentro l'overlay che copre freccia + avatar (le coordinate
 // sono quelle esatte del layout qui sotto: freccia larga ICON_SLOT, poi GAP, poi l'avatar).
 const CX = ICON_SLOT + GAP + AVATAR_SIZE / 2;
@@ -95,7 +95,7 @@ export function ReactionAvatarBurst({
             style={{ width: ICON_SLOT, height: ICON_SLOT }}
             aria-label="Indietro"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={20} />
           </motion.button>
         )}
       </AnimatePresence>
