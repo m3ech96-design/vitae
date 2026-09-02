@@ -19,32 +19,70 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-/** Stessa logica di lib/image-store.ts, database IndexedDB a parte — un video in
- * localStorage come stringa base64 diretta saturerebbe la quota in un istante. */
-export async function putVideo(dataUrl: string): Promise<string> {
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/data:(.*);base64/)?.[1] || "video/mp4";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Salva un video come Blob nativo in IndexedDB — non più come stringa base64 (bug corretto:
+ * un `<video src>` con una data URI molto pesante non viene riprodotto in modo affidabile su
+ * diversi browser mobili, in particolare quando il file è più che qualche megabyte; un Blob
+ * riprodotto tramite `URL.createObjectURL` funziona sempre, indipendentemente dal peso). Le
+ * chiamate a questa funzione ora ricevono direttamente il `File` scelto dall'utente, senza
+ * passare da `FileReader.readAsDataURL` prima — un passaggio in meno, non solo più veloce ma
+ * anche la causa della riproduzione mancata.
+ */
+export async function putVideo(file: Blob): Promise<string> {
   const key = `vid_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(dataUrl, key);
+    tx.objectStore(STORE_NAME).put(file, key);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
   return key;
 }
 
-export async function getVideo(key: string): Promise<string | undefined> {
+/** Legge il Blob salvato per la riproduzione live (video player, anteprima che scorre). Se
+ * trova ancora una vecchia stringa base64 (dati salvati prima di questa correzione), la
+ * converte al volo in Blob — nessun video esistente va perso. */
+export async function getVideoBlob(key: string): Promise<Blob | undefined> {
   try {
     const db = await openDb();
-    return await new Promise((resolve, reject) => {
+    const stored = await new Promise<Blob | string | undefined>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const req = tx.objectStore(STORE_NAME).get(key);
-      req.onsuccess = () => resolve(req.result as string | undefined);
+      req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+    if (stored === undefined) return undefined;
+    return typeof stored === "string" ? dataUrlToBlob(stored) : stored;
   } catch {
     return undefined;
   }
+}
+
+/** Compatibilità per chi ha ancora bisogno di una stringa (solo backup/export, che viaggia
+ * come JSON e quindi non può contenere un Blob). Per la riproduzione a schermo usare sempre
+ * `getVideoBlob`. */
+export async function getVideo(key: string): Promise<string | undefined> {
+  const blob = await getVideoBlob(key);
+  return blob ? blobToDataUrl(blob) : undefined;
 }
 
 export async function deleteVideo(key: string): Promise<void> {
@@ -61,19 +99,20 @@ export async function deleteVideo(key: string): Promise<void> {
   }
 }
 
-/** Tutte le coppie chiave/video — usato solo per l'esportazione di backup. */
+/** Tutte le coppie chiave/video in base64 — usato solo per l'esportazione di backup, che
+ * viaggia come JSON e quindi ha bisogno di stringhe, non di Blob. */
 export async function getAllVideos(): Promise<Record<string, string>> {
   try {
     const db = await openDb();
-    return await new Promise((resolve, reject) => {
+    const raw = await new Promise<Record<string, Blob | string>>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
-      const result: Record<string, string> = {};
+      const result: Record<string, Blob | string> = {};
       const cursorReq = store.openCursor();
       cursorReq.onsuccess = () => {
         const cursor = cursorReq.result;
         if (cursor) {
-          result[String(cursor.key)] = cursor.value as string;
+          result[String(cursor.key)] = cursor.value as Blob | string;
           cursor.continue();
         } else {
           resolve(result);
@@ -81,18 +120,24 @@ export async function getAllVideos(): Promise<Record<string, string>> {
       };
       cursorReq.onerror = () => reject(cursorReq.error);
     });
+    const entries = await Promise.all(
+      Object.entries(raw).map(async ([key, value]) => [key, typeof value === "string" ? value : await blobToDataUrl(value)] as const)
+    );
+    return Object.fromEntries(entries);
   } catch {
     return {};
   }
 }
 
-/** Ripristina una mappa chiave/video — usato solo dall'importazione di backup. */
+/** Ripristina una mappa chiave/video in base64 (dal file di backup) — riconvertita in Blob
+ * prima di salvarla, così anche i video ripristinati usano da subito il percorso di
+ * riproduzione affidabile. */
 export async function restoreAllVideos(videos: Record<string, string>): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    Object.entries(videos).forEach(([key, value]) => store.put(value, key));
+    Object.entries(videos).forEach(([key, value]) => store.put(dataUrlToBlob(value), key));
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });

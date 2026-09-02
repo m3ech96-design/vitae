@@ -65,7 +65,7 @@ export function ShareComposer({ post, onClose }: { post: VitaecomPost; onClose: 
         exit={{ opacity: 0, y: 40 }}
         transition={{ type: "spring", stiffness: 220, damping: 26 }}
         onClick={(e) => e.stopPropagation()}
-        className="glass-strong flex max-h-[88vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
+        className="glass-strong flex max-h-[88dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 flex items-center justify-between px-6 pt-6">
           <p className="font-display text-lg text-ink-100">Condividi</p>

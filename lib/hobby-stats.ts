@@ -80,6 +80,28 @@ export function currentStreak(dates: string[]): number {
   return streak;
 }
 
+/** La striscia consecutiva più lunga MAI avuta, non solo quella corrente — scorre tutte le
+ * date ordinate cercando la sequenza di giorni di fila più lunga in assoluto nella storia,
+ * non solo quella che arriva fino a oggi. */
+export function longestStreakEver(dates: string[]): number {
+  const unique = Array.from(new Set(dates)).sort();
+  if (unique.length === 0) return 0;
+  let longest = 1;
+  let running = 1;
+  for (let i = 1; i < unique.length; i++) {
+    const prev = new Date(unique[i - 1]);
+    const curr = new Date(unique[i]);
+    const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
+    if (diffDays === 1) {
+      running++;
+      longest = Math.max(longest, running);
+    } else {
+      running = 1;
+    }
+  }
+  return longest;
+}
+
 // ---------------------------------------------------------------------------
 // Inventario
 // ---------------------------------------------------------------------------

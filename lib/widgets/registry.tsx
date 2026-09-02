@@ -10,15 +10,7 @@ import {
   RecurringTodayWidget,
   QuickAddTaskWidget,
 } from "@/components/widgets/defs/task-widgets";
-import {
-  CaloriesTodayWidget,
-  WaterTodayWidget,
-  WeeklyCaloriesGoalWidget,
-  LongestFastWidget,
-  MostEatenFoodWidget,
-  LeastEatenFoodWidget,
-  RecentMealsWidget,
-} from "@/components/widgets/defs/food-widgets";
+import { CaloriesTodayWidget, WaterTodayWidget, WeeklyCaloriesGoalWidget, LongestFastWidget, MostEatenFoodWidget, LeastEatenFoodWidget, RecentMealsWidget, MealSuggestionWidget } from "@/components/widgets/defs/food-widgets";
 import {
   BudgetCycleWidget,
   LastExpenseWidget,
@@ -28,6 +20,7 @@ import {
   TopCategoryWidget,
   CycleComparisonWidget,
   CycleCountdownWidget,
+  SavingsGoalVesselWidget,
 } from "@/components/widgets/defs/finance-widgets";
 import {
   CurrentWeightWidget,
@@ -37,6 +30,7 @@ import {
   WeightVsGoalWidget,
   NextMedicationWidget,
   NextMedicalAppointmentWidget,
+  TodayActiveMinutesWidget,
 } from "@/components/widgets/defs/health-widgets";
 import {
   TodayNoteWidget,
@@ -52,6 +46,9 @@ import {
   WinRateWidget,
   LastLibraryItemWidget,
   MostActiveHobbyWidget,
+  LastInventoryItemWidget,
+  MetricStreakWidget,
+  LongestStreakEverWidget,
 } from "@/components/widgets/defs/hobby-widgets";
 import {
   LastWishlistItemWidget,
@@ -84,6 +81,7 @@ import {
   StrongestBondWidget,
   PeopleInWorldNowWidget,
   NotContactedWidget,
+  NextBirthdayCountdownWidget,
 } from "@/components/widgets/defs/rapporti-widgets";
 import { LatestNewsWidget, TodayDigestWidget } from "@/components/widgets/defs/news-widgets";
 import {
@@ -94,6 +92,9 @@ import {
   NextRecurringDueWidget,
   HouseholdPresenceWidget,
   TodayAtGlanceWidget,
+  RecentPhotoWidget,
+  BudgetLast3CyclesWidget,
+  WeeklyTimelineWidget,
 } from "@/components/widgets/defs/cross-widgets";
 import { QuickHouseholdMessageWidget } from "@/components/widgets/defs/action-widgets";
 
@@ -128,6 +129,7 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "food-most-eaten", title: "Cibo che mangi di più", category: "Alimentazione", defaultSize: "square", allowedSizes: ["square"], Component: MostEatenFoodWidget },
   { id: "food-least-eaten", title: "Cibo che mangi di meno", category: "Alimentazione", defaultSize: "square", allowedSizes: ["square"], Component: LeastEatenFoodWidget },
   { id: "food-recent-meals", title: "Ultimi pasti di oggi", category: "Alimentazione", defaultSize: "half", allowedSizes: ["half", "full"], Component: RecentMealsWidget },
+  { id: "food-meal-suggestion", title: "Suggerimento pasto", category: "Alimentazione", defaultSize: "half", allowedSizes: ["half", "square"], Component: MealSuggestionWidget },
 
   // --- Finanze ---
   { id: "finance-budget-cycle", title: "Budget del ciclo", category: "Finanze", defaultSize: "square", allowedSizes: ["square", "half"], Component: BudgetCycleWidget },
@@ -138,6 +140,7 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "finance-top-category", title: "Categoria di spesa principale", category: "Finanze", defaultSize: "square", allowedSizes: ["square"], Component: TopCategoryWidget },
   { id: "finance-cycle-comparison", title: "Ciclo vs ciclo precedente", category: "Finanze", defaultSize: "half", allowedSizes: ["half"], Component: CycleComparisonWidget },
   { id: "finance-cycle-countdown", title: "Countdown nuovo ciclo", category: "Finanze", defaultSize: "square", allowedSizes: ["square"], Component: CycleCountdownWidget },
+  { id: "finance-savings-vessel", title: "Vaso di risparmio", category: "Finanze", defaultSize: "half", allowedSizes: ["half", "square"], Component: SavingsGoalVesselWidget },
 
   // --- Salute / Attività e peso ---
   { id: "health-current-weight", title: "Peso attuale", category: "Salute", defaultSize: "square", allowedSizes: ["square"], Component: CurrentWeightWidget },
@@ -147,6 +150,7 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "health-weight-vs-goal", title: "Peso vs obiettivo", category: "Salute", defaultSize: "square", allowedSizes: ["square"], Component: WeightVsGoalWidget },
   { id: "health-next-medication", title: "Prossimo farmaco", category: "Salute", defaultSize: "half", allowedSizes: ["half", "square"], Component: NextMedicationWidget },
   { id: "health-next-appointment", title: "Prossimo appuntamento medico", category: "Salute", defaultSize: "half", allowedSizes: ["half", "square"], Component: NextMedicalAppointmentWidget },
+  { id: "health-today-minutes", title: "Minuti attivi oggi", category: "Salute", defaultSize: "square", allowedSizes: ["square"], Component: TodayActiveMinutesWidget },
 
   // --- Diario ---
   { id: "diary-today-note", title: "Nota di oggi", category: "Diario", defaultSize: "half", allowedSizes: ["half", "full"], Component: TodayNoteWidget },
@@ -162,6 +166,9 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "hobby-win-rate", title: "Percentuale vittorie", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: WinRateWidget },
   { id: "hobby-last-library", title: "Ultimo libro/film aggiunto", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: LastLibraryItemWidget },
   { id: "hobby-most-active", title: "Hobby più attivo del mese", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: MostActiveHobbyWidget },
+  { id: "hobby-last-inventory-item", title: "Ultimo pezzo aggiunto", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: LastInventoryItemWidget },
+  { id: "hobby-metric-streak", title: "Streak di costanza (metrica)", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: MetricStreakWidget },
+  { id: "hobby-longest-streak-ever", title: "Record striscia di sempre", category: "Hobby", defaultSize: "square", allowedSizes: ["square"], Component: LongestStreakEverWidget },
 
   // --- Wishlist ---
   { id: "wishlist-last-item", title: "Ultimo articolo aggiunto", category: "Wishlist", defaultSize: "square", allowedSizes: ["square", "half"], Component: LastWishlistItemWidget },
@@ -194,6 +201,7 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "rapporti-strongest-bond", title: "Rapporto più forte", category: "Rapporti", defaultSize: "square", allowedSizes: ["square"], Component: StrongestBondWidget },
   { id: "rapporti-in-world", title: "Persone nel mondo ora", category: "Rapporti", defaultSize: "square", allowedSizes: ["square"], Component: PeopleInWorldNowWidget },
   { id: "rapporti-not-contacted", title: "Non senti da un po'", category: "Rapporti", defaultSize: "square", allowedSizes: ["square", "half"], Component: NotContactedWidget },
+  { id: "rapporti-next-birthday-countdown", title: "Countdown prossimo compleanno", category: "Rapporti", defaultSize: "square", allowedSizes: ["square"], Component: NextBirthdayCountdownWidget },
 
   // --- News ---
   { id: "news-latest", title: "Ultime notizie", category: "News", defaultSize: "half", allowedSizes: ["half", "full"], Component: LatestNewsWidget },
@@ -207,6 +215,9 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "cross-next-recurring", title: "Prossima scadenza ricorrente", category: "Trasversali", defaultSize: "square", allowedSizes: ["square"], Component: NextRecurringDueWidget },
   { id: "cross-household-presence", title: "Stato della casa", category: "Trasversali", defaultSize: "square", allowedSizes: ["square"], Component: HouseholdPresenceWidget },
   { id: "cross-today-glance", title: "Cosa ti aspetta oggi", category: "Trasversali", defaultSize: "full", allowedSizes: ["half", "full"], Component: TodayAtGlanceWidget },
+  { id: "cross-recent-photo", title: "Ultima foto aggiunta", category: "Trasversali", defaultSize: "square", allowedSizes: ["square", "half"], Component: RecentPhotoWidget },
+  { id: "cross-budget-3-cycles", title: "Spesa — ultimi 3 cicli", category: "Trasversali", defaultSize: "half", allowedSizes: ["half", "square"], Component: BudgetLast3CyclesWidget },
+  { id: "cross-weekly-timeline", title: "Timeline della settimana", category: "Trasversali", defaultSize: "full", allowedSizes: ["half", "full"], Component: WeeklyTimelineWidget },
 
   // --- Azioni rapide ---
   { id: "action-household-message", title: "Messaggio rapido alla casa", category: "Azioni rapide", defaultSize: "half", allowedSizes: ["half", "full"], Component: QuickHouseholdMessageWidget },

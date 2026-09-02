@@ -59,7 +59,7 @@ export function SpentPrompt({
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-strong flex max-h-[85vh] w-full max-w-xs flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
+        className="glass-strong flex max-h-[85dvh] w-full max-w-xs flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 p-6 pb-0">
           <Wallet size={18} className="mb-3 text-aura-emerald" />

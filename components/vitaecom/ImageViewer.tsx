@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, Gem, MessageCircle, Share2 } from "lucide-react";
@@ -7,102 +7,7 @@ import { VitaecomPost } from "@/lib/vitaecom-social-types";
 import { resolveAccount } from "@/lib/vitaecom-resolve";
 import { useMood } from "@/lib/mood-context";
 import { AuraAvatar } from "../ui/AuraAvatar";
-
-/** Palette "tipo inverno" per gli aloni ai margini — ghiaccio, non i violetti/ciano
- * dell'Aura usuale dell'app: qui è lo sfondo di un'immagine, deve restare dietro, non
- * competere con la foto al centro. */
-const WINTER_HALOS = ["#8ECAE6", "#A8DADC", "#DDE6F7", "#ADB9E3", "#C9E4F6", "#B8D8D8"];
-
-type Edge = "top" | "bottom" | "left" | "right";
-const EDGES: Edge[] = ["top", "bottom", "left", "right"];
-const PER_EDGE = 7;
-
-interface Halo {
-  id: string;
-  edge: Edge;
-  offsetPct: number;
-  inset: number;
-  size: number;
-  color: string;
-  duration: number;
-  delay: number;
-  driftA: number;
-  driftB: number;
-}
-
-/**
- * "Decine di aloni... che si mischiano tra loro in modo animato... come vapori di colore",
- * lungo ogni lato — non i 4 cerchi fissi sul solo lato destro che c'erano prima (uno stub
- * mai completato). Generati proceduralmente (28 in tutto, 7 per lato) invece di scritti a
- * mano uno per uno: posizione, fase e velocità leggermente irregolari per ognuno, così il
- * movimento non sembra un pattern che si ripete a specchio. Ogni figura resta dentro una
- * fascia stretta vicino al proprio bordo (mai oltre un ~16% di margine verso il centro) e a
- * opacità bassa: molte macchie sfocate e trasparenti che si sovrappongono leggono come
- * fumo/vapore che si mescola, non come cerchi distinti — e restando confinate ai margini,
- * mai sopra la foto al centro, non diventano mai invadenti.
- */
-function buildHalos(): Halo[] {
-  const halos: Halo[] = [];
-  let seed = 0;
-  for (const edge of EDGES) {
-    for (let i = 0; i < PER_EDGE; i++) {
-      seed++;
-      halos.push({
-        id: `${edge}-${i}`,
-        edge,
-        offsetPct: (i / PER_EDGE) * 100 + ((seed * 13) % 11),
-        inset: -8 + ((seed * 7) % 10),
-        size: 22 + ((seed * 5) % 16),
-        color: WINTER_HALOS[seed % WINTER_HALOS.length],
-        duration: 15 + ((seed * 3) % 12),
-        delay: (seed % 9) * 0.9,
-        driftA: seed % 2 === 0 ? 16 + (seed % 5) : -(16 + (seed % 5)),
-        driftB: seed % 3 === 0 ? 12 + (seed % 4) : -(12 + (seed % 4)),
-      });
-    }
-  }
-  return halos;
-}
-
-function HaloLayer() {
-  const halos = useMemo(buildHalos, []);
-  return (
-    <>
-      {halos.map((h) => {
-        const base: React.CSSProperties = {
-          position: "absolute",
-          width: `${h.size}vh`,
-          height: `${h.size}vh`,
-          background: h.color,
-          borderRadius: "9999px",
-        };
-        if (h.edge === "top" || h.edge === "bottom") {
-          base.left = `${h.offsetPct}%`;
-          base.transform = "translateX(-50%)";
-          base[h.edge] = `${h.inset}vh`;
-        } else {
-          base.top = `${h.offsetPct}%`;
-          base.transform = "translateY(-50%)";
-          base[h.edge] = `${h.inset}vw`;
-        }
-        const isHorizontalEdge = h.edge === "top" || h.edge === "bottom";
-        return (
-          <motion.div
-            key={h.id}
-            className="pointer-events-none absolute rounded-full blur-[75px]"
-            style={base}
-            animate={
-              isHorizontalEdge
-                ? { x: [0, h.driftA, 0, -h.driftA, 0], opacity: [0.1, 0.2, 0.13, 0.19, 0.1] }
-                : { y: [0, h.driftB, 0, -h.driftB, 0], opacity: [0.1, 0.2, 0.13, 0.19, 0.1] }
-            }
-            transition={{ duration: h.duration, repeat: Infinity, ease: "easeInOut", delay: h.delay }}
-          />
-        );
-      })}
-    </>
-  );
-}
+import { ColorVaporHalos } from "../ui/ColorVaporHalos";
 
 /**
  * Il visualizzatore a schermo intero di un'immagine di Vitaecom — buio, con aloni di colore
@@ -177,7 +82,7 @@ export function ImageViewer({
 
   return createPortal(
     <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
-      <HaloLayer />
+      <ColorVaporHalos />
 
       <div className="relative h-full w-full">
         <button

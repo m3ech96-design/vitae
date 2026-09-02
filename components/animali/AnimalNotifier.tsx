@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { useHousehold } from "@/lib/household-context";
 import { useAnimalHealth } from "@/lib/animal-health-context";
+import { useAnimalFood, isLowStock } from "@/lib/animal-food-context";
 import { ANIMAL_KINDS } from "@/lib/types";
 
 /**
@@ -20,6 +21,7 @@ import { ANIMAL_KINDS } from "@/lib/types";
 export function AnimalNotifier() {
   const { people } = useHousehold();
   const { vaccinations, medications, appointments } = useAnimalHealth();
+  const { products, updateProduct } = useAnimalFood();
   const remindedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -90,12 +92,29 @@ export function AnimalNotifier() {
             new Notification(`Appuntamento oggi per ${name}`, { body: a.title });
           });
       });
+
+      // --- Scorta di cibo in esaurimento — una volta sola per prodotto (lowStockAlerted si
+      // azzera solo al riacquisto, vedi lib/animal-food-context.tsx), non per ogni animale a
+      // cui è assegnato: qui il messaggio nomina l'animale solo se il prodotto è per uno solo.
+      products
+        .filter((p) => isLowStock(p) && !p.lowStockAlerted)
+        .forEach((p) => {
+          const key = `scorta-cibo-${p.id}`;
+          if (remindedRef.current.has(key)) return;
+          remindedRef.current.add(key);
+          const scope = p.scope;
+          const forWhom = scope.type === "animal" ? animals.find((a) => a.id === scope.animalId)?.firstName : undefined;
+          new Notification(`Il cibo "${p.name}" sta per finire`, {
+            body: forWhom ? `Scorta in esaurimento per ${forWhom}` : "Scorta in esaurimento",
+          });
+          updateProduct(p.id, { lowStockAlerted: true });
+        });
     };
 
     check();
     const id = setInterval(check, 60000);
     return () => clearInterval(id);
-  }, [people, vaccinations, medications, appointments]);
+  }, [people, vaccinations, medications, appointments, products, updateProduct]);
 
   return null;
 }

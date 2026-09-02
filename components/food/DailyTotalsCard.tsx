@@ -12,9 +12,11 @@ function barColor(kcal: number, min: number | null, max: number | null): string 
 
 function MacroRow({ label, value, unit = "g" }: { label: string; value: number; unit?: string }) {
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-ink-600">{label}</span>
-      <span className="text-ink-200">{Math.round(value * 10) / 10} {unit}</span>
+    <div className="min-w-0">
+      <p className="truncate text-[11px] text-ink-600">{label}</p>
+      <p className="font-display text-sm text-ink-100">
+        {Math.round(value * 10) / 10} <span className="text-[10px] font-sans text-ink-600">{unit}</span>
+      </p>
     </div>
   );
 }
@@ -63,7 +65,12 @@ export function DailyTotalsCard({
         <p className="mt-2 text-xs text-ink-800">Nessun obiettivo impostato.</p>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/[0.06] pt-3">
+      {/* Bug corretto: "Grassi"/"Di cui saturi" ecc. affiancati al numero sulla stessa riga,
+         dentro una colonna stretta (grid a 2 colonne), si sovrapponevano su schermi piccoli
+         — soprattutto le etichette più lunghe ("Di cui zuccheri"). Etichetta sopra e valore
+         sotto, impilati: ogni colonna ha tutta la sua larghezza a disposizione, non deve più
+         starci affiancata a un numero sulla stessa riga. */}
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/[0.06] pt-3">
         <MacroRow label="Grassi" value={totals.fat} />
         <MacroRow label="Di cui saturi" value={totals.saturatedFat} />
         <MacroRow label="Carboidrati" value={totals.carbs} />

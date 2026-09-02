@@ -15,6 +15,7 @@ import { AnimalMedicationsSection } from "@/components/animali/AnimalMedications
 import { AnimalAppointmentsSection } from "@/components/animali/AnimalAppointmentsSection";
 import { AnimalReportsSection } from "@/components/animali/AnimalReportsSection";
 import { AnimalAllergiesSection } from "@/components/animali/AnimalAllergiesSection";
+import { AnimalFoodSection } from "@/components/animali/AnimalFoodSection";
 import { AnimalEmergencyCard } from "@/components/animali/AnimalEmergencyCard";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -99,6 +100,10 @@ export default function AnimalDetailPage({ params }: { params: { id: string } })
 
         <Section title="Cura quotidiana">
           <AnimalCareSection person={animal} onUpdate={onUpdate} />
+        </Section>
+
+        <Section title="Cibo">
+          <AnimalFoodSection animal={animal} />
         </Section>
       </div>
 

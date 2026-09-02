@@ -1,10 +1,12 @@
 import { Person, RelationshipAxis, RelationshipEvent } from "./types";
 import { newId } from "./id";
 
-/** Incremento per interazione: min 1%, max 3%, come da meccanica richiesta. */
-function randomDelta(): number {
-  return Math.round((1 + Math.random() * 2) * 10) / 10;
-}
+/** Ogni interazione scritta vale sempre 3% — eliminato il concetto che potesse valere 1, 2 o
+ * 3 a seconda della frase scelta (non esistono più frasi predefinite: vedi
+ * InteractionComposer.tsx). `fixedDelta` resta per i pochi punti che applicano un incremento
+ * diverso in automatico e non da un'interazione scritta dall'utente (es. dare da mangiare a
+ * un animale, in HungryBadge.tsx). */
+const WRITTEN_INTERACTION_DELTA = 3;
 
 export interface InteractionResult {
   patch: Partial<Person>;
@@ -18,7 +20,7 @@ export function applyInteraction(
   isPartner: boolean,
   fixedDelta?: number
 ): InteractionResult {
-  const delta = fixedDelta ?? randomDelta();
+  const delta = fixedDelta ?? WRITTEN_INTERACTION_DELTA;
   let relationshipScore = person.relationshipScore;
   let trueFriendshipScore = person.trueFriendshipScore;
   let deepEnmityScore = person.deepEnmityScore;
@@ -65,6 +67,16 @@ export function applyInteraction(
     patch: { relationshipScore, trueFriendshipScore, deepEnmityScore, loveScore },
     event,
   };
+}
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Un'interazione scritta resta nella lista "recenti" per un giorno esatto dal momento in cui
+ * è stata registrata, poi si deposita nella cronologia — come richiesto. Pura funzione di
+ * data, nessun campo nuovo da salvare: lo stesso evento cambia elenco da solo, con il passare
+ * del tempo. */
+export function isRecentInteraction(event: RelationshipEvent, now: number = Date.now()): boolean {
+  return now - new Date(event.date).getTime() < ONE_DAY_MS;
 }
 
 export function relationshipLabel(p: Person): string {

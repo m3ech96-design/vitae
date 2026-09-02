@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, X, Clock } from "lucide-react";
 import { FeedingTime, FeedingLogEntry } from "@/lib/types";
 import { newId } from "@/lib/id";
-import { formatDateShort } from "@/lib/date-format";
+import { formatExactMoment } from "@/lib/date-format";
 
 export function FeedingScheduleEditor({
   times,
@@ -58,11 +58,14 @@ export function FeedingScheduleEditor({
       {recentLog.length > 0 && (
         <div>
           <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Cronologia pappa</p>
+          {/* Corretto secondo le istruzioni: prima mostrava solo il giorno, non l'orario
+             esatto in cui il cibo è stato dato — formatExactMoment legge l'ora dal datetime
+             ISO completo già salvato in ogni voce (nessun dato nuovo da aggiungere). */}
           <div className="space-y-1.5">
             {recentLog.map((f) => (
               <div key={f.id} className="flex items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs">
                 <span className="text-ink-300">{f.foodType}</span>
-                <span className="text-ink-800">{formatDateShort(f.date.slice(0, 10))}</span>
+                <span className="text-ink-800">{formatExactMoment(f.date)}</span>
               </div>
             ))}
           </div>

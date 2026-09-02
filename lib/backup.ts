@@ -38,6 +38,7 @@ const DATA_KEYS = [
   "vitae:animal-reports",
   "vitae:animal-allergies",
   "vitae:animal-weight",
+  "vitae:animal-food-products",
   "vitae:household-messages",
   "vitae:home-widgets",
 ];

@@ -1,9 +1,9 @@
 "use client";
 import { useFood } from "@/lib/food-context";
-import { entriesForDate, macroTotals, weeklyTotals, longestFast, mostAndLeastEaten } from "@/lib/food-stats";
+import { entriesForDate, macroTotals, weeklyTotals, longestFast, mostAndLeastEaten, sameSlotLastWeek } from "@/lib/food-stats";
 import { todayIso } from "@/lib/date-format";
-import { Flame, Timer, Sparkles, Feather } from "lucide-react";
-import { MEAL_SLOT_LABELS } from "@/lib/food-types";
+import { Flame, Timer, Sparkles, Feather, History } from "lucide-react";
+import { BASE_SLOTS, MEAL_SLOT_LABELS } from "@/lib/food-types";
 import { WidgetRing, WidgetStat, WidgetEmpty, WidgetList } from "../primitives";
 import { WidgetSize } from "@/lib/widgets/types";
 
@@ -68,4 +68,15 @@ export function RecentMealsWidget({ size }: { size: WidgetSize }) {
       return { id: e.id, label: ing?.name ?? "?", meta: MEAL_SLOT_LABELS[e.slot].split(" · ")[0] };
     });
   return <WidgetList title="Ultimi pasti di oggi" icon={Flame} items={items} emptyLabel="Ancora nulla registrato oggi" />;
+}
+
+export function MealSuggestionWidget({ size }: { size: WidgetSize }) {
+  const { entries, ingredients } = useFood();
+  const today = todayIso();
+  const dayEntries = entriesForDate(entries, today);
+  const emptySlot = BASE_SLOTS.find((slot) => !dayEntries.some((e) => e.slot === slot));
+  if (!emptySlot) return <WidgetEmpty icon={History} label="Hai già registrato tutti i pasti base" />;
+  const suggestion = sameSlotLastWeek(entries, today, emptySlot, ingredients);
+  if (suggestion.length === 0) return <WidgetEmpty icon={History} label={`Ancora niente per ${MEAL_SLOT_LABELS[emptySlot].split(" · ")[0]}`} />;
+  return <WidgetStat icon={History} value={suggestion.map((i) => i.name).join(", ")} label={`Una settimana fa a ${MEAL_SLOT_LABELS[emptySlot].split(" · ")[0]}`} color="#7C5CFF" />;
 }

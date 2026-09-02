@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { DiaryMedia } from "@/lib/diary-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { useResolvedVideo } from "@/lib/use-resolved-video";
+import { ColorVaporHalos } from "../ui/ColorVaporHalos";
 
 export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: () => void }) {
   const imageUrl = useResolvedImage(media.type === "image" ? media.key : undefined);
@@ -14,7 +15,8 @@ export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: 
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-hidden bg-black" onClick={onClose}>
+      <ColorVaporHalos />
       <button
         onClick={onClose}
         className="focus-ring glass-strong absolute right-4 top-[max(env(safe-area-inset-top),0.9rem)] z-20 flex h-9 w-9 items-center justify-center rounded-full text-ink-200"

@@ -4,30 +4,22 @@ export interface Point {
 }
 
 /**
- * Un punto lungo il perimetro di un rettangolo arrotondato, percorso in senso antiorario a
- * partire da un punto qualunque del lato inferiore — esattamente il percorso richiesto per
- * la sfera di reazione: "deve seguire la linea del contorno in senso antiorario, camminando
- * per tutto il post" fino a fermarsi vicino all'interruzione in alto a sinistra (dove inizia
- * il Lato Stato), non fino a un giro completo.
+ * Un punto lungo il perimetro di un rettangolo arrotondato, percorso in senso orario a
+ * partire da un punto qualunque del lato inferiore, fino al primo angolo incontrato in quella
+ * direzione — non più un giro quasi completo del contorno. Corretto secondo le istruzioni:
+ * eliminato il concetto di giro antiorario, la sfera ora percorre solo il tratto dal punto di
+ * reazione al primo angolo (in basso a sinistra) e lì si dissolve.
  *
  * Convenzione degli angoli: 0° punta a destra, 90° in basso, 180° a sinistra, 270° in alto
  * (coordinate schermo, y crescente verso il basso) — con questa convenzione un angolo che
- * DECRESCE corrisponde al movimento antiorario percepito da chi guarda lo schermo (verificato
- * lato per lato: a destra, salire è antiorario; in alto, andare verso sinistra è antiorario;
- * a sinistra, scendere è antiorario — esattamente l'ordine che genera questa funzione).
+ * CRESCE corrisponde al movimento orario percepito da chi guarda lo schermo (sul lato
+ * inferiore, andare verso sinistra è orario; nell'angolo in basso a sinistra, da 90° a 180° è
+ * orario — l'opposto esatto della vecchia funzione antioraria).
  *
  * `startX` è la posizione orizzontale di partenza sul lato inferiore (tipicamente dove si
- * trova il pulsante di reazione). `stopY` è dove il percorso si interrompe sul lato sinistro,
- * in prossimità dell'interruzione più vicina del Lato Stato.
+ * trova il pulsante di reazione).
  */
-export function counterclockwisePerimeterPath(
-  width: number,
-  height: number,
-  radius: number,
-  startX: number,
-  stopY: number,
-  pointsPerCorner = 10
-): Point[] {
+export function clockwisePerimeterPath(width: number, height: number, radius: number, startX: number, pointsPerCorner = 10): Point[] {
   const r = Math.max(4, Math.min(radius, width / 2 - 1, height / 2 - 1));
   const pts: Point[] = [];
 
@@ -41,21 +33,30 @@ export function counterclockwisePerimeterPath(
 
   const clampedStartX = Math.min(Math.max(startX, r), width - r);
 
-  // 1. Lato inferiore, verso destra, dal punto di partenza fino all'angolo.
+  // 1. Lato inferiore, verso sinistra, dal punto di partenza fino al primo angolo.
   pts.push({ x: clampedStartX, y: height });
-  pts.push({ x: width - r, y: height });
-  // 2. Angolo in basso a destra: da 90° a 0°.
-  arc(width - r, height - r, 90, 0);
-  // 3. Lato destro, verso l'alto.
-  pts.push({ x: width, y: r });
-  // 4. Angolo in alto a destra: da 0° a -90°.
-  arc(width - r, r, 0, -90);
-  // 5. Lato superiore, verso sinistra.
-  pts.push({ x: r, y: 0 });
-  // 6. Angolo in alto a sinistra: da -90° a -180°.
-  arc(r, r, -90, -180);
-  // 7. Lato sinistro, verso il basso, fino al punto di interruzione.
-  pts.push({ x: 0, y: Math.max(r, stopY) });
+  pts.push({ x: r, y: height });
+  // 2. Angolo in basso a sinistra: da 90° a 180° — appena completato, la sfera si dissolve.
+  arc(r, height - r, 90, 180);
 
   return pts;
+}
+
+/** Lunghezza cumulativa lungo un percorso a partire dal primo punto, normalizzata da 0 a 1 —
+ * un punto ogni 0 (partenza) a 1 (arrivo). Usata per assegnare a ogni punto del percorso una
+ * quota di tempo proporzionale alla distanza reale da percorrere, non al suo indice nella
+ * lista: i tratti dritti hanno pochi punti molto distanti tra loro, gli angoli molti punti
+ * ravvicinati, quindi un tempo assegnato per indice farebbe accelerare e rallentare la sfera
+ * in modo innaturale. Con la distanza reale la velocità resta lineare e stabile lungo tutto
+ * il tragitto, come richiesto. */
+export function cumulativeDistanceFractions(points: Point[]): number[] {
+  if (points.length === 0) return [];
+  const distances: number[] = [0];
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    distances.push(total);
+  }
+  if (total === 0) return points.map((_, i) => i / Math.max(1, points.length - 1));
+  return distances.map((d) => d / total);
 }

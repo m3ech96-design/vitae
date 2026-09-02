@@ -3,7 +3,9 @@ import { useRef } from "react";
 import { putVideo } from "@/lib/video-store";
 
 /** Selettore video semplice — a differenza di ImageCropInput non c'è ritaglio/centratura
- * (non ha senso per un video), solo selezione e salvataggio in lib/video-store.ts. */
+ * (non ha senso per un video), solo selezione e salvataggio in lib/video-store.ts. Il file
+ * scelto va a `putVideo` così com'è, come Blob: non passa più da `FileReader.readAsDataURL`,
+ * il passaggio che causava la mancata riproduzione dei video più pesanti. */
 export function VideoPickerInput({
   onChange,
   trigger,
@@ -15,12 +17,8 @@ export function VideoPickerInput({
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const key = await putVideo(reader.result as string);
-      onChange(key);
-    };
-    reader.readAsDataURL(file);
+    const key = await putVideo(file);
+    onChange(key);
   };
 
   return (

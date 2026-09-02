@@ -1,6 +1,9 @@
 "use client";
 import { RelationshipEvent } from "@/lib/types";
 
+/** La Cronologia mostra solo le interazioni già depositate (oltre le 24 ore) — quelle più
+ * recenti sono in RecentInteractions.tsx, non qui: RelationshipDetailPage passa a questo
+ * componente solo gli eventi già "vecchi", filtrati con lib/relationship.ts. */
 export function RelationshipHistory({ events }: { events: RelationshipEvent[] }) {
   if (events.length === 0) return null;
   const recent = [...events].reverse().slice(0, 12);

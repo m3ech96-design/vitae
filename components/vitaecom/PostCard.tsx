@@ -114,11 +114,11 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
     const btnRect = reactionButtonRef.current?.getBoundingClientRect();
     setReactionStartX(cardRect && btnRect ? btnRect.left + btnRect.width / 2 - cardRect.left : cardSize.width * 0.4);
     setOrbitMoodId(moodId);
-    // La sfera cammina per ~1.6s lungo tutto il contorno (vedi ReactionOrbit): il Lato
-    // Stato si accende esattamente quando lei arriva, non prima né dopo.
-    setTimeout(() => setOrbitMoodId(null), 1600);
-    setTimeout(() => setJustReactedMoodId(moodId), 1500);
-    setTimeout(() => setJustReactedMoodId(null), 2900);
+    // La sfera cammina per ~0.7s in senso orario fino al primo angolo (vedi ReactionOrbit):
+    // il Lato Stato si accende esattamente quando lei arriva, non prima né dopo.
+    setTimeout(() => setOrbitMoodId(null), 700);
+    setTimeout(() => setJustReactedMoodId(moodId), 600);
+    setTimeout(() => setJustReactedMoodId(null), 2000);
   };
 
   return (
@@ -211,17 +211,14 @@ export function PostCard({ post, onOpenComments, onShare }: { post: VitaecomPost
         <TaggedAvatars accounts={taggedAccounts} />
       </div>
 
-      {/* La sfera di reazione: appare sul contorno del post e lo percorre in senso
-         antiorario fino a diventare la striscia del Lato Stato — vedi ReactionOrbit.tsx
-         per la correzione rispetto alla vecchia animazione (un salto diagonale verso
-         l'angolo, non fedele alle istruzioni originali). */}
+      {/* La sfera di reazione: appare sul contorno del post e lo percorre in senso orario
+         fino al primo angolo, dove si dissolve — vedi ReactionOrbit.tsx. */}
       {orbitMoodId && cardSize.width > 0 && (
         <ReactionOrbit
           color={allMoods.find((m) => m.id === orbitMoodId)?.color ?? "#8B90A8"}
           width={cardSize.width}
           height={cardSize.height}
           startX={reactionStartX}
-          stopY={22}
         />
       )}
 

@@ -47,6 +47,24 @@ export function TodayBirthdayWidget({ size }: { size: WidgetSize }) {
   return <WidgetStat icon={Cake} value={`${person.firstName} ${person.lastName}`.trim()} label="Compleanno oggi!" color="#FF6B9D" />;
 }
 
+export function NextBirthdayCountdownWidget({ size }: { size: WidgetSize }) {
+  const { people } = useHousehold();
+  const today = new Date();
+  const withDays = people
+    .filter((p) => p.birthday && !ANIMAL_KINDS.includes(p.kind))
+    .map((p) => ({ person: p, days: daysUntilNextBirthday(p.birthday as string, today) }));
+  const next = withDays.sort((a, b) => a.days - b.days)[0];
+  if (!next) return <WidgetEmpty icon={Cake} label="Nessun compleanno impostato" />;
+  return (
+    <WidgetStat
+      icon={Cake}
+      value={next.days === 0 ? "Oggi!" : `${next.days}g`}
+      label={`${next.person.firstName} ${next.person.lastName}`.trim()}
+      color={next.days === 0 ? "#FF6B9D" : "#8B90A8"}
+    />
+  );
+}
+
 export function StrongestBondWidget({ size }: { size: WidgetSize }) {
   const { people } = useHousehold();
   const humans = people.filter((p) => !ANIMAL_KINDS.includes(p.kind));

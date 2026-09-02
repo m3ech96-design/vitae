@@ -101,3 +101,11 @@ export function CycleCountdownWidget({ size }: { size: WidgetSize }) {
   const daysLeft = Math.max(0, Math.round((range.end.getTime() - Date.now()) / 86_400_000));
   return <WidgetStat icon={CalendarClock} value={daysLeft} label={daysLeft === 1 ? "Giorno al nuovo ciclo" : "Giorni al nuovo ciclo"} color="#8B90A8" />;
 }
+
+export function SavingsGoalVesselWidget({ size }: { size: WidgetSize }) {
+  const { savingsGoals } = useFinance();
+  const active = savingsGoals.find((g) => g.currentAmount < g.targetAmount) ?? savingsGoals[0];
+  if (!active) return <WidgetEmpty icon={PiggyBank} label="Nessun obiettivo di risparmio" />;
+  const pct = active.targetAmount > 0 ? active.currentAmount / active.targetAmount : 0;
+  return <WidgetRing pct={pct} color="#34D399" label={active.label} centerValue={`${Math.round(active.currentAmount)}€`} />;
+}

@@ -2528,6 +2528,51 @@ Build e type-check puliti su tutte le 27 rotte, nessun residuo Title Case.
 **Ancora da fare**: selettore di 500 testate per le news (l'unico grande pezzo rimasto dei tre
 progetti originali).
 
+## Checkpoint 61 — catalogo widget chiuso: 84 su 104, resto dichiarato onestamente
+
+Terzo e ultimo giro sul catalogo widget, su richiesta esplicita di lasciare fuori solo le due
+idee già segnalate (mini-mappa statica, miniatura della Costellazione) e continuare con tutto
+il resto.
+
+**10 widget aggiunti**: suggerimento pasto da una settimana fa (Alimentazione), vaso di
+risparmio per un obiettivo singolo (Finanze), minuti attivi di oggi (Salute), tre nuovi in
+Hobby (ultimo pezzo aggiunto a una collezione, streak di costanza di una metrica, record di
+striscia più lunga di sempre — non solo quella corrente), countdown al singolo prossimo
+compleanno (Rapporti, distinto dalla lista dei tre già esistente), e tre nuovi Trasversali:
+ultima foto aggiunta ovunque nell'app (Diario, progetti Hobby, Wishlist — Salute e Animali
+lasciati fuori per un beneficio marginale rispetto al lavoro di risolvere immagini da due
+contesti in più), confronto spesa fra gli ultimi 3 cicli di Finanze (barre, non un
+`MiniLineChart`: quel componente presume un asse temporale continuo, qui servivano tre blocchi
+distinti), e una timeline della settimana semplificata (tre righe di puntini — task, pasti,
+diario — per ognuno degli ultimi 7 giorni, non un grafico con orari precisi, irrealizzabile
+nello spazio di un widget).
+
+**Nuova funzione pura** `longestStreakEver` in `lib/hobby-stats.ts`, distinta da
+`currentStreak` già esistente: la striscia più lunga mai avuta in tutta la storia, non solo
+quella che arriva fino a oggi — un record, non uno stato attuale. Verificata con un test
+dedicato che distingue esplicitamente i due casi (una vecchia striscia di 5 giorni resta il
+record anche se oggi lo streak corrente è 0).
+
+**Dichiarato onestamente, non costruito**: oltre alle due idee escluse su richiesta,
+altre non sono state costruite perché mancava un dato reale da mostrare, non per pigrizia:
+- *Notizie non lette*: non esiste da nessuna parte un modo di segnare una notizia come letta
+  — costruire il contatore senza quella base sarebbe stato un numero finto, cresce e basta,
+  mai influenzabile dall'utente.
+- *Stato d'animo prevalente della settimana* (due idee diverse, stessa causa): non esiste uno
+  storico degli stati d'animo nel tempo, solo quello attivo in questo momento — servirebbe un
+  registro nuovo da costruire, non un widget in più su un dato che già esiste.
+- *Amici online ora*: l'app non modella un concetto di "online" per gli account Vitaecom, solo
+  una simulazione di presenza casa/fuori casa per i membri della propria famiglia.
+- *Obiettivo di lettura* (Libreria): il blocco Libreria di Hobby non ha un campo obiettivo —
+  andrebbe esteso il modello dati, non solo aggiunto un widget.
+- Un pugno di idee erano sostanzialmente ripetizioni di widget già costruiti sotto altro nome
+  (media vittorie aggregata ≈ percentuale vittorie già fatta, confronto settimanale generico
+  ≈ i confronti specifici già costruiti, "cosa non fai da più tempo" ≈ "non senti da un po'"
+  già fatto per le persone) — costruirle avrebbe solo duplicato la stessa informazione con
+  un'etichetta diversa.
+
+Build e type-check puliti su tutte le 27 rotte, nessun residuo Title Case.
+
 ## Sviluppo in locale
 
 ```bash

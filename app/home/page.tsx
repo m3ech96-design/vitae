@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { HeartPulse, Wallet, Sparkles, Pencil, Home as HomeIcon, DoorOpen, LocateFixed, Dumbbell } from "lucide-react";
+import { HeartPulse, Wallet, Sparkles, Pencil, Users, Dumbbell } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -23,7 +23,6 @@ import { VitaecomHouseholdAvatarCell } from "@/components/household/VitaecomHous
 import { vitaecomMemberIsHome } from "@/lib/vitaecom-household-presence";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { PersonWindow } from "@/components/persone/PersonWindow";
-import { UserOverviewModal } from "@/components/home/UserOverviewModal";
 import { HouseholdAvatarCell } from "@/components/household/HouseholdAvatarCell";
 import { HouseholdMessagesFeed } from "@/components/home/HouseholdMessagesFeed";
 import { HouseholdMessageBar } from "@/components/home/HouseholdMessageBar";
@@ -74,7 +73,6 @@ export default function HomePage() {
   } = useHousehold();
   const [greeting, setGreeting] = useState("Ciao");
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
-  const [overviewOpen, setOverviewOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const longPressAddWidget = useLongPress(() => setAddWidgetOpen(true));
   const { events: feedEvents, clearEvents } = useFeed();
@@ -97,8 +95,9 @@ export default function HomePage() {
     const engPlaceId = eng?.linkedPlaceId ? places.find((pl) => pl.id === eng.linkedPlaceId)?.id ?? null : null;
     return personWorldStatus(p, tasks, home?.placeId, engPlaceId);
   };
-  const atHome = people.filter((p) => statusOf(p) === "casa");
-  const awayPeople = people.filter((p) => statusOf(p) === "fuori-casa");
+  // Chi vive con te (livesAtHome) risulta sempre "casa" o "fuori-casa", mai "mondo" (vedi
+  // lib/task-presence.ts) — la Famiglia mostra solo loro, non l'intero elenco Persone.
+  const familyStatusOf = (p: Person) => statusOf(p) as "casa" | "fuori-casa";
   const userTaskLocation = userTaskDrivenLocation(tasks, home?.placeId);
   // La geolocalizzazione, quando è attiva e ha una lettura vera, ha sempre l'ultima parola
   // sul "sei a casa": un Impegno/Evento che ti vorrebbe fuori casa non può più contraddire
@@ -108,11 +107,12 @@ export default function HomePage() {
   // GPS stesso conferma che sei altrove.
   const gpsConfirmsHome = trackingEnabled && !userIsAway;
   const userIsHome = gpsConfirmsHome ? true : userTaskLocation ? userTaskLocation === "casa" : !userIsAway;
-  // La posizione di un account Vitaecom nel riquadro Casa è simulata (vedi
+  // La posizione di un account Vitaecom nel riquadro Famiglia è simulata (vedi
   // lib/vitaecom-household-presence.ts) — ricalcolata a ogni minuto insieme al resto della
-  // Home (lo stesso `tick` già usato per far scorrere le altre presenze).
-  const vitaecomHomeAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id) && vitaecomMemberIsHome(a.id));
-  const vitaecomAwayAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id) && !vitaecomMemberIsHome(a.id));
+  // Home (lo stesso `tick` già usato per far scorrere le altre presenze). Non più divisa in
+  // due elenchi Casa/Fuori Casa: il riquadro Famiglia mostra tutti i componenti insieme,
+  // ognuno con la propria icona di stato (meccanica già esistente, invariata).
+  const vitaecomFamilyAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id));
 
   return (
     <div
@@ -146,17 +146,11 @@ export default function HomePage() {
               aria-hidden
             />
           )}
-          {/* Prima era un <button>: un <button> dentro l'altro (PersonalCardMenu ne rende
-             uno suo) non è HTML valido — il browser confondeva i due click, e il pulsante
-             del menù apriva la scheda utente invece del proprio menù. Un <div> col ruolo
-             giusto risolve senza perdere accessibilità. */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setOverviewOpen(true)}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOverviewOpen(true)}
-            className="focus-ring relative flex min-w-0 flex-1 items-center gap-4 text-left"
-          >
+          {/* Il click sull'intera card non apre più nulla: apriva un "Resoconto" doppione
+             di ciò che i widget già mostrano (vedi HomeWidgetsGrid) — rimosso su richiesta.
+             Un semplice <div> basta: senza un click proprio, non c'è più bisogno del ruolo
+             da bottone né del vincolo "niente bottone dentro bottone" che imponeva. */}
+          <div className="relative flex min-w-0 flex-1 items-center gap-4 text-left">
             <span className="relative inline-flex shrink-0">
               <AuraAvatar
                 imageUrl={profile.avatarUrl}
@@ -198,48 +192,38 @@ export default function HomePage() {
           <LinkHomeCard />
         </Reveal>
       ) : (
-        <Reveal delay={0.1} className="mt-6 grid grid-cols-3 gap-3">
-          <GlassCard glow={userIsHome ? "violet" : "none"} className="col-span-2 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HomeIcon size={16} className="text-aura-violet" />
-                <p className="font-display text-sm text-ink-100">Casa</p>
-              </div>
-              <button
-                onClick={() => setTrackingEnabled(!trackingEnabled)}
-                className={`focus-ring flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] transition ${
-                  trackingEnabled
-                    ? "border-aura-cyan/50 text-aura-cyan"
-                    : "border-white/10 text-ink-800"
-                }`}
-                title="Attiva il rilevamento della tua posizione"
-              >
-                <LocateFixed size={11} />
-                {trackingEnabled ? "Rilevamento attivo" : "Rilevamento spento"}
-              </button>
+        <Reveal delay={0.1} className="mt-6">
+          <GlassCard glow="violet" className="p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Users size={16} className="text-aura-violet" />
+              <p className="font-display text-sm text-ink-100">Famiglia</p>
             </div>
 
             <div className="flex flex-wrap gap-4">
-              {userIsHome && (
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="relative inline-flex">
-                    <AuraAvatar
-                      imageUrl={profile.avatarUrl}
-                      firstName={profile.firstName}
-                      lastName={profile.lastName}
-                      size={60}
-                      ring="home"
-                    />
-                    <PlaceIconBadge place={currentPlaceIcon} size={60} />
-                  </span>
-                  <span className="max-w-[64px] truncate text-[11px] text-ink-600">Tu</span>
-                </div>
-              )}
-              {atHome.map((p) => (
-                <HouseholdAvatarCell key={p.id} person={p} location="casa" onOpen={setOpenPerson} />
-              ))}
-              {vitaecomHomeAccounts.map((a) => (
-                <VitaecomHouseholdAvatarCell key={a.id} account={a} location="casa" />
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="relative inline-flex">
+                  <AuraAvatar
+                    imageUrl={profile.avatarUrl}
+                    firstName={profile.firstName}
+                    lastName={profile.lastName}
+                    size={60}
+                    ring={userIsHome ? "home" : "away"}
+                  />
+                  <PlaceIconBadge place={currentPlaceIcon} size={60} />
+                </span>
+                <span className="max-w-[64px] truncate text-[11px] text-ink-600">Tu</span>
+              </div>
+              {people
+                .filter((p) => p.livesAtHome)
+                .map((p) => (
+                  <HouseholdAvatarCell key={p.id} person={p} location={familyStatusOf(p)} onOpen={setOpenPerson} />
+                ))}
+              {vitaecomFamilyAccounts.map((a) => (
+                <VitaecomHouseholdAvatarCell
+                  key={a.id}
+                  account={a}
+                  location={vitaecomMemberIsHome(a.id) ? "casa" : "fuori-casa"}
+                />
               ))}
               <AddToHouseholdMenu />
             </div>
@@ -248,41 +232,6 @@ export default function HomePage() {
                 {trackingError}
               </p>
             )}
-          </GlassCard>
-
-          <GlassCard glow={!userIsHome ? "pink" : "none"} className="p-4">
-            <div className="mb-4 flex items-center gap-1.5">
-              <DoorOpen size={14} className="text-aura-pink" />
-              <p className="font-display text-xs text-ink-100">Fuori casa</p>
-            </div>
-            <div className="flex flex-col items-center gap-4">
-              {!userIsHome && (
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="relative inline-flex">
-                    <AuraAvatar
-                      imageUrl={profile.avatarUrl}
-                      firstName={profile.firstName}
-                      lastName={profile.lastName}
-                      size={52}
-                      ring="away"
-                    />
-                    <PlaceIconBadge place={currentPlaceIcon} size={52} />
-                  </span>
-                  <span className="text-[11px] text-ink-600">Tu</span>
-                </div>
-              )}
-              {awayPeople.map((p) => (
-                <HouseholdAvatarCell key={p.id} person={p} location="fuori-casa" onOpen={setOpenPerson} />
-              ))}
-              {vitaecomAwayAccounts.map((a) => (
-                <VitaecomHouseholdAvatarCell key={a.id} account={a} location="fuori-casa" />
-              ))}
-              {userIsHome && awayPeople.length === 0 && vitaecomAwayAccounts.length === 0 && (
-                <p className="py-3 text-center text-[11px] text-ink-800">
-                  Nessuno è fuori casa
-                </p>
-              )}
-            </div>
           </GlassCard>
         </Reveal>
       )}
@@ -357,7 +306,6 @@ export default function HomePage() {
       )}
 
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
-      {overviewOpen && <UserOverviewModal onClose={() => setOverviewOpen(false)} />}
       {addWidgetOpen && <AddWidgetSheet onClose={() => setAddWidgetOpen(false)} />}
     </div>
   );

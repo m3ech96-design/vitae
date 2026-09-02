@@ -21,7 +21,7 @@ function ShortCard({ item, onOpen }: { item: WishlistItem; onOpen: () => void })
   return (
     <button
       onClick={onOpen}
-      className="focus-ring relative block h-[70vh] w-full shrink-0 snap-start overflow-hidden rounded-xl3 text-left"
+      className="focus-ring relative block h-[70dvh] w-full shrink-0 snap-start overflow-hidden rounded-xl3 text-left"
     >
       <ShortPhoto photoKey={item.photoKey} />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-void-950 via-void-950/70 to-transparent p-5 pt-16">
@@ -41,10 +41,17 @@ function ShortCard({ item, onOpen }: { item: WishlistItem; onOpen: () => void })
 
 /** Scroll verticale con "effetto magnetico" tra una scheda e l'altra: CSS scroll-snap
  * nativo (snap-y mandatory + snap-start su ogni scheda), non una libreria — ogni scheda si
- * riposiziona da sola a schermo appena lo scroll si ferma, come richiesto. */
+ * riposiziona da sola a schermo appena lo scroll si ferma, come richiesto.
+ *
+ * Bug corretto: l'altezza era in `vh`, calcolata sul viewport "di layout" e non su quello
+ * davvero visibile — su telefono può essere più alta dello spazio realmente disponibile
+ * (barra degli indirizzi, area sicura), tanto che l'ultima scheda arrivava a coprire la barra
+ * di navigazione in basso invece di fermarsi sopra di lei. Passata a `dvh` (altezza dinamica
+ * del viewport), che segue sempre lo spazio davvero visibile — stesso pattern corretto in
+ * ogni altra finestra dell'app con lo stesso problema, vedi PersonalCardSheet.tsx. */
 export function WishlistShortView({ items, onOpen }: { items: WishlistItem[]; onOpen: (item: WishlistItem) => void }) {
   return (
-    <div className="flex max-h-[70vh] snap-y snap-mandatory flex-col gap-4 overflow-y-auto pb-2">
+    <div className="flex max-h-[70dvh] snap-y snap-mandatory flex-col gap-4 overflow-y-auto pb-2">
       {items.map((item) => (
         <ShortCard key={item.id} item={item} onOpen={() => onOpen(item)} />
       ))}

@@ -74,7 +74,7 @@ export function MultiPersonPicker({
             onClick={close}
           >
           <div
-            className="glass-strong flex max-h-[80vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
+            className="glass-strong flex max-h-[80dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="shrink-0 flex items-center justify-between px-5 pt-5">

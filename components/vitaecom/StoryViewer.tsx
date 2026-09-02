@@ -11,6 +11,7 @@ import { useResolvedVideo } from "@/lib/use-resolved-video";
 import { chainRootOf } from "@/lib/vitaecom-lato-stato";
 import { StoryGroup } from "@/lib/vitaecom-stories";
 import { AuraAvatar } from "../ui/AuraAvatar";
+import { ColorVaporHalos } from "../ui/ColorVaporHalos";
 import { LatoStato } from "./LatoStato";
 import { MoodPicker } from "./MoodPicker";
 import { PostMenu } from "./PostMenu";
@@ -153,7 +154,8 @@ export function StoryViewer({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] bg-black">
+    <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
+      <ColorVaporHalos />
       {/* Il livello di tocco sta sotto intestazione e barra delle azioni (z-index più
          basso): un tocco su un pulsante vero viene sempre intercettato da lui, mai da
          questo, per come sono impilati — nessuno stopPropagation necessario. */}

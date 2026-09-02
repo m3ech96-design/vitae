@@ -100,3 +100,10 @@ export function NextMedicalAppointmentWidget({ size }: { size: WidgetSize }) {
   if (!next) return <WidgetEmpty icon={Stethoscope} label="Nessun appuntamento in programma" />;
   return <WidgetStat icon={Stethoscope} value={next.title} label={new Date(next.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })} color="#5EC8FF" />;
 }
+
+export function TodayActiveMinutesWidget({ size }: { size: WidgetSize }) {
+  const { workouts } = useHealth();
+  const today = todayIso();
+  const minutes = workouts.filter((w) => w.date === today).reduce((s, w) => s + w.minutes, 0);
+  return <WidgetStat icon={Flame} value={minutes} label="Minuti attivi oggi" color={minutes > 0 ? "#00E5C7" : "#8B90A8"} />;
+}

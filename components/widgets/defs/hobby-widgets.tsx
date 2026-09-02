@@ -1,8 +1,8 @@
 "use client";
-import { ListChecks, LineChart, Package, Swords, Library, Layers } from "lucide-react";
+import { ListChecks, LineChart, Package, Swords, Library, Layers, Trophy } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
-import { inventoryTotalValue, matchRecord } from "@/lib/hobby-stats";
-import { MetricBlock, MatchesBlock, LibraryBlock } from "@/lib/hobby-types";
+import { inventoryTotalValue, matchRecord, currentStreak, longestStreakEver } from "@/lib/hobby-stats";
+import { MetricBlock, MatchesBlock, LibraryBlock, InventoryBlock } from "@/lib/hobby-types";
 import { WidgetStat, WidgetEmpty } from "../primitives";
 import { WidgetSize } from "@/lib/widgets/types";
 
@@ -106,4 +106,49 @@ export function MostActiveHobbyWidget({ size }: { size: WidgetSize }) {
   const top = [...counted].sort((a, b) => b.count - a.count)[0];
   if (!top || top.count === 0) return <WidgetEmpty icon={Layers} label="Nessuna attività questo mese" />;
   return <WidgetStat icon={Layers} value={top.name} label={`${top.count} voci questo mese`} color="#7C5CFF" />;
+}
+
+export function LastInventoryItemWidget({ size }: { size: WidgetSize }) {
+  const { hobbies } = useHobby();
+  const allItems = hobbies.flatMap((h) =>
+    (h.blocks.filter((b) => b.kind === "inventario") as InventoryBlock[]).flatMap((b) =>
+      b.items.map((item) => ({ name: item.name, hobby: h.name, createdAt: item.createdAt }))
+    )
+  );
+  const last = [...allItems].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (!last) return <WidgetEmpty icon={Package} label="Nessun pezzo ancora in collezione" />;
+  return <WidgetStat icon={Package} value={last.name} label={last.hobby} color="#FFB454" />;
+}
+
+export function MetricStreakWidget({ size }: { size: WidgetSize }) {
+  const { hobbies } = useHobby();
+  for (const h of hobbies) {
+    const block = h.blocks.find((b) => b.kind === "metrica") as MetricBlock | undefined;
+    if (block && block.entries.length > 0) {
+      const streak = currentStreak(block.entries.map((e) => e.date));
+      return <WidgetStat icon={LineChart} value={streak} label={`${h.name} · ${block.title} di fila`} color="#00E5C7" />;
+    }
+  }
+  return <WidgetEmpty icon={LineChart} label="Nessuna metrica ancora" />;
+}
+
+export function LongestStreakEverWidget({ size }: { size: WidgetSize }) {
+  const { hobbies } = useHobby();
+  let best = 0;
+  let bestLabel = "";
+  hobbies.forEach((h) =>
+    h.blocks.forEach((b) => {
+      let dates: string[] = [];
+      if (b.kind === "checklist") dates = b.items.filter((i) => i.status === "fatta").map((i) => i.completedDate ?? i.createdAt.slice(0, 10));
+      if (b.kind === "metrica") dates = b.entries.map((e) => e.date);
+      if (dates.length === 0) return;
+      const streak = longestStreakEver(dates);
+      if (streak > best) {
+        best = streak;
+        bestLabel = `${h.name} · ${b.title}`;
+      }
+    })
+  );
+  if (best === 0) return <WidgetEmpty icon={Trophy} label="Ancora nessuna striscia registrata" />;
+  return <WidgetStat icon={Trophy} value={best} label={`Record di fila · ${bestLabel}`} color="#FFD86B" />;
 }

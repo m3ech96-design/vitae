@@ -2,7 +2,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Wand2, Smile, Heart } from "lucide-react";
+import { Wand2, Smile, Heart, LocateFixed } from "lucide-react";
+import { useHousehold } from "@/lib/household-context";
 import { MoodWizardPanel } from "../mood/MoodWizardPanel";
 import { WeeklyNeedsSection } from "../wizard/sections/WeeklyNeedsSection";
 import { PersonalCardSheet } from "./PersonalCardSheet";
@@ -18,11 +19,17 @@ const MENU_ITEMS: { key: WizardKey; label: string; icon: typeof Smile }[] = [
 const MENU_WIDTH = 192;
 
 /**
- * Unico punto d'accesso ai due wizard di scelta (Stati D'Animo, Bisogni): un pulsante in
- * alto a sinistra, leggermente sovrapposto all'avatar della card personale. Prima erano
- * sparsi (una pagina intera, una sezione del Profilo, un bottone testuale in Home) — ora
- * vivono tutti qui, e solo qui. (Malattia è stata rimossa dall'app per intero — vedi la
- * voce dedicata nel README: non è più uno dei wizard qui dentro.)
+ * Unico punto d'accesso ai due wizard di scelta (Stati D'Animo, Bisogni) e all'interruttore
+ * del rilevamento posizione: un pulsante in alto a sinistra, leggermente sovrapposto
+ * all'avatar della card personale. Prima erano sparsi (una pagina intera, una sezione del
+ * Profilo, un bottone testuale in Home) — ora vivono tutti qui, e solo qui. (Malattia è stata
+ * rimossa dall'app per intero — vedi la voce dedicata nel README: non è più uno dei wizard
+ * qui dentro.)
+ *
+ * Il rilevamento posizione viveva nell'intestazione del riquadro Casa, rimosso a favore del
+ * riquadro Famiglia (solo vedere/aggiungere/rimuovere componenti, nient'altro, come da
+ * istruzioni) — spostato qui invece di sparire: resta un interruttore diretto (non apre un
+ * foglio come gli altri due, la card non ha altro da mostrare oltre allo stato attivo/spento).
  *
  * Bug corretto — il menù veniva tagliato dalla card personale: la card è una GlassCard
  * con `overflow-hidden`, e le serve davvero (senza, il bagliore dello stato d'animo e la
@@ -45,6 +52,7 @@ export function PersonalCardMenu() {
   const triggerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { trackingEnabled, setTrackingEnabled } = useHousehold();
 
   useEffect(() => setMounted(true), []);
 
@@ -131,6 +139,18 @@ export function PersonalCardMenu() {
                     {label}
                   </button>
                 ))}
+                <button
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTrackingEnabled(!trackingEnabled);
+                    setOpen(false);
+                  }}
+                  className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-ink-200 transition hover:bg-white/[0.06]"
+                >
+                  <LocateFixed size={14} className={trackingEnabled ? "text-aura-cyan" : "text-ink-800"} />
+                  Rilevamento posizione: {trackingEnabled ? "Attivo" : "Spento"}
+                </button>
               </motion.div>
             )}
           </AnimatePresence>,

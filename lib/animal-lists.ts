@@ -45,8 +45,3 @@ export const ANIMAL_HABITS: string[] = [
   "Correre Improvvisamente Senza Motivo", "Nascondersi Dagli Estranei",
   "Dormire Rannicchiato In Un Angolo", "Portare Regali Inaspettati",
 ];
-
-export const FOOD_TYPES: string[] = [
-  "Crocchette", "Umido", "Bocconcini", "Cibo Secco Light", "Cibo Fatto In Casa",
-  "Snack", "Ossi Da Masticare", "Cibo Per Cuccioli", "Cibo Dietetico", "Croccantini Dentali",
-];

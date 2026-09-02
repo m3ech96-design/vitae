@@ -9,16 +9,11 @@ import { usePlaces } from "@/lib/places-context";
 import { ANIMAL_KINDS, Person } from "@/lib/types";
 import { capArray } from "@/lib/cap-array";
 import { outingsPerMonth } from "@/lib/frequency";
-import { applyInteraction, relationshipLabel } from "@/lib/relationship";
-import {
-  POSITIVE_INTERACTIONS,
-  NEGATIVE_INTERACTIONS,
-  ANIMAL_POSITIVE_INTERACTIONS,
-  ANIMAL_NEGATIVE_INTERACTIONS,
-} from "@/lib/interactions";
+import { applyInteraction, isRecentInteraction, relationshipLabel } from "@/lib/relationship";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { RelationshipGauge, LoveGauge } from "@/components/rapporti/RelationshipGauge";
-import { InteractionPicker } from "@/components/rapporti/InteractionPicker";
+import { InteractionComposer } from "@/components/rapporti/InteractionComposer";
+import { RecentInteractions } from "@/components/rapporti/RecentInteractions";
 import { RelationshipHistory } from "@/components/rapporti/RelationshipHistory";
 import { RelationshipChart } from "@/components/rapporti/RelationshipChart";
 import { FrequencyChart } from "@/components/rapporti/FrequencyChart";
@@ -62,8 +57,6 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
 
   const isAnimal = ANIMAL_KINDS.includes(person.kind);
   const isPartner = profile.partnerPersonId === person.id;
-  const positiveOptions = isAnimal ? ANIMAL_POSITIVE_INTERACTIONS : POSITIVE_INTERACTIONS;
-  const negativeOptions = isAnimal ? ANIMAL_NEGATIVE_INTERACTIONS : NEGATIVE_INTERACTIONS;
   const [pulses, setPulses] = useState<DeltaPulse[]>([]);
   const { fireTrigger } = useMood();
 
@@ -89,6 +82,12 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
       fireTrigger("rapporti:amore");
     }
   };
+
+  // Le interazioni scritte nell'ultimo giorno restano nella lista "recenti"; dopo un giorno
+  // esatto si depositano da sole in cronologia (stesso array, solo filtrato per data — vedi
+  // lib/relationship.ts).
+  const recentEvents = person.relationshipHistory.filter((e) => isRecentInteraction(e));
+  const historyEvents = person.relationshipHistory.filter((e) => !isRecentInteraction(e));
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2rem)] sm:px-6">
@@ -126,13 +125,19 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
 
       <div className="mt-8">
         <p className="mb-3 font-display text-sm text-ink-100">Nuova interazione</p>
-        <InteractionPicker positiveOptions={positiveOptions} negativeOptions={negativeOptions} onPick={handlePick} />
+        <InteractionComposer onSubmit={handlePick} />
       </div>
+
+      {recentEvents.length > 0 && (
+        <div className="mt-8">
+          <RecentInteractions events={recentEvents} />
+        </div>
+      )}
 
       <div className="mt-8 space-y-6">
         <FrequencyChart points={outingsPerMonth(person.id, tasks, places)} />
         <RelationshipChart events={person.relationshipHistory} />
-        <RelationshipHistory events={person.relationshipHistory} />
+        <RelationshipHistory events={historyEvents} />
       </div>
     </div>
   );

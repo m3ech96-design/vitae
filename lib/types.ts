@@ -214,7 +214,12 @@ export interface FeedingTime {
 export interface FeedingLogEntry {
   id: string;
   date: string;
+  /** Il nome del prodotto al momento del pasto (fotografia: resta leggibile anche se quel
+   * prodotto viene poi eliminato da lib/animal-food-context.tsx). */
   foodType: string;
+  /** Riferimento al prodotto vero, se esiste ancora — solo per usi futuri, non necessario
+   * per la sola visualizzazione della cronologia (che usa già foodType). */
+  productId?: string;
 }
 
 /** Identico nei campi a una Task di tipo Evento: inizio, fine, avviso anticipato — non si
