@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Gem, MessageCircle, Share2, X } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useMood } from "@/lib/mood-context";
@@ -53,6 +54,8 @@ export function StoryViewer({
   const [progress, setProgress] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const elapsedRef = useRef(0);
   const lastTickRef = useRef<number | null>(null);
@@ -128,6 +131,7 @@ export function StoryViewer({
   }, [paused, commentsOpen, sharingOpen, videoUrl]);
 
   if (!post) return null;
+  if (!mounted) return null;
 
   const onPointerDown = () => {
     heldRef.current = false;
@@ -148,7 +152,7 @@ export function StoryViewer({
     else advance(1);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] bg-black">
       {/* Il livello di tocco sta sotto intestazione e barra delle azioni (z-index più
          basso): un tocco su un pulsante vero viene sempre intercettato da lui, mai da
@@ -238,6 +242,7 @@ export function StoryViewer({
 
       {commentsOpen && <PostComments post={post} onClose={() => setCommentsOpen(false)} />}
       {sharingOpen && <ShareComposer post={post} onClose={() => setSharingOpen(false)} />}
-    </div>
+    </div>,
+    document.body
   );
 }

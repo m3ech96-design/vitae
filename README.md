@@ -2362,6 +2362,172 @@ chiavi di deduplica restano distinte tra animali diversi con lo stesso orario.
 le 100 idee da brainstormare), selettore di 500 testate per le news, messaggistica/notifiche
 di casa.
 
+## Checkpoint 57 — messaggistica di casa
+
+Un pezzo del sistema notifiche/widget più grande, costruito ora perché aveva già una
+specifica completa e non necessitava di discuterne insieme prima.
+
+**Limite dichiarato onestamente fin da subito**: "tutti i membri della casa notificati
+all'istante" richiederebbe più dispositivi collegati a un server vero, che questa app non ha
+(è solo-locale, un utente reale più account dimostrativi — la stessa nota già scritta altrove
+sul futuro passaggio multi-persona). Il messaggio appare comunque subito, ma solo su questo
+dispositivo; il modello dati (`readBy` per persona, indipendente da chi lo consulta,
+`lib/household-messages-context.tsx`) è già corretto per quando quel giorno arriverà, non da
+riscrivere allora.
+
+**Barra sotto il riquadro Casa** (`HouseholdMessageBar.tsx`): stile compatto "delle dimensioni
+delle notifiche" come richiesto, non un editor grande — pallino colorato che cicla tra le tre
+urgenze (normale/importante/urgente) toccandolo, testo, invio.
+
+**Notifiche sotto la card del profilo** (`HouseholdMessagesFeed.tsx`,
+`HouseholdMessageCard.tsx`): colorate per urgenza, un tocco le espande mostrando un pulsante
+"Segna come letto da [nome]" per ciascun membro umano della casa non ancora segnato — mai gli
+animali, che ovviamente non possono confermare una lettura. Il nome scelto appare subito dopo
+nella riga "letto da...", esattamente come richiesto.
+
+Verificato con un test dedicato: segnare due volte la stessa persona come lettrice non
+duplica nulla, persone diverse si aggiungono correttamente, un id messaggio inesistente non
+tocca niente, e il filtro dei lettori include sempre l'utente ma esclude sempre gli animali.
+
+**Ancora da fare**: sistema widget per la home (con le 100 idee da brainstormare, il pezzo più
+grande rimasto — qui costruita solo la messaggistica, non l'intero sistema di notifiche con
+categorie disattivabili/posizione ricordata/swipe, che resta parte di quel progetto più
+ampio), selettore di 500 testate per le news.
+
+## Checkpoint 58 — audit "finestre intrappolate nella card": 24 file corretti
+
+Nessuna scheda nuova: una correzione sistemica, innescata da una segnalazione precisa
+("lo stesso errore in tutte le schede recenti: animali, alimentazione, hobby") che si è
+allargata a un controllo dell'intero codice, non solo delle schede segnalate.
+
+**Causa reale**: `GlassCard` applica sempre `overflow-hidden` per i propri angoli arrotondati
+— un discendente `position: fixed` dentro un antenato con `overflow-hidden` (o `transform`,
+la stessa causa già trovata una volta per `PersonalCardSheet.tsx` al Checkpoint 46) su iOS
+Safari resta visivamente schiacciato dentro i bordi di quell'antenato invece di coprire lo
+schermo. Il sintomo: un modale/foglio aperto da dentro una card appare "intrappolato" in
+quella card invece che a schermo intero.
+
+**Corretto alla radice, non nei punti di chiamata**: ogni modale reso autosufficiente con
+`createPortal` verso `document.body` — corretto per costruzione ovunque venga usato d'ora in
+poi, non solo dove segnalato. In tutto **24 file**:
+
+- `ConfirmDialog.tsx` — condiviso da tutta l'app, la correzione a più alta leva: protegge
+  retroattivamente ogni punto che lo usa.
+- Componenti UI condivisi: `ImageCropInput.tsx` (solo l'overlay di ritaglio — il pulsante
+  trigger resta al suo posto), `SpentPrompt.tsx`, `PersonPicker.tsx`, `MultiPersonPicker.tsx`.
+- Finestre/modali riusati in più punti: `TaskWindow.tsx`, `NewTaskModal.tsx`,
+  `AddPersonModal.tsx`, `PersonWindow.tsx`, `VitaecomHouseholdPicker.tsx`,
+  `UserOverviewModal.tsx`.
+- Sette file di Vitaecom: `ImageViewer`, `ShareComposer`, `StoryComposer`,
+  `ExploreProfileSheet`, `StoryViewer`, `TaggedAvatars` (qui solo il livello invisibile
+  "tocca fuori per chiudere", non l'intero popover, che resta ancorato in linea dove deve
+  stare), `ReportPostSheet`.
+- `ShareNewsComposer.tsx`.
+- Quattro modali di Salute: `AddWorkoutModal`, `ScheduleWorkoutModal`, `WeightModal`,
+  `WorkoutDetail`.
+- `AddPlaceModal.tsx`, `PlaceWindow.tsx`.
+- (Più i 13 già corretti nel giro precedente: tutti i modali di Hobby, `EntryModal` e
+  `AddIngredientModal` di Alimentazione, `AddWishlistItemModal`, `MediaLightbox` del Diario.)
+
+**Verificati sicuri per costruzione, non toccati**: `BottomNav.tsx`, `MoodSuggestionPrompt.tsx`,
+`OnboardingWizard.tsx`, `NeedFulfillmentCelebration.tsx` (montati alla radice o fratelli di
+`GlassCard`, mai discendenti) e lo sfondo decorativo di `app/vitaecom/layout.tsx` — verificati
+uno per uno con una lettura del punto di rendering reale, non esclusi per comodità.
+
+**Trovati e corretti per strada**: due Title Case in `WeeklyNeedsCard.tsx` ("I Tuoi Bisogni Di
+Questa Settimana", "Ancora N Giorni") e uno in `MultiPersonPicker.tsx` ("Selezionate").
+
+Build e type-check puliti su tutte le 27 rotte dopo le 24 modifiche.
+
+## Checkpoint 59 — sistema widget per la home: infrastruttura + primo lotto di 20
+
+Non l'intero catalogo di 104 idee brainstormate insieme — quello resta dichiarato come lavoro
+in corso, ripreso a lotti nei prossimi giri — ma l'infrastruttura completa che deve reggerli
+tutti allo stesso modo, più un primo lotto reale e funzionante di 20, uno per ogni modulo
+principale e tutte e tre le taglie.
+
+**Architettura**: un catalogo (`lib/widgets/registry.tsx`) sempre completo a prescindere da
+quanti widget sono davvero piazzati — è l'utente a scegliere (`AddWidgetSheet.tsx`, cercabile
+e raggruppato per categoria), il sistema (`widgets-context.tsx`) si occupa solo di quali sono
+piazzati, con che taglia, e in che ordine. Mai due copie dello stesso widget (`canAdd`).
+
+**`WidgetShell.tsx`**: il guscio comune — dimensione secondo la taglia (griglia a 6 colonne,
+minimo comune multiplo di 2 e 3, così quadrato/mezza/intera convivono senza resti scomodi),
+pressione lunga per aprire ridimensiona/sposta/rimuovi (`WidgetActionsSheet.tsx`, che usa
+`PersonalCardSheet` — già al sicuro dal bug degli "overlay intrappolati" del Checkpoint 58 per
+costruzione), e uno scroll magnetico interno con più "pagine" per i widget che vogliono offrire
+informazioni ulteriori con lo swipe, come richiesto esplicitamente — `scroll-snap` nativo con
+`touch-action: pan-x`, cosicché lo scroll/swipe di un widget non muove mai il resto della
+schermata.
+
+**`useLongPress` migliorato**: ora annulla il timer se il dito si sposta oltre 12px, non solo
+al rilascio — necessario perché questo hook ora si usa anche su un intero contenitore di
+pagina (la Home, per "premi a lungo per aggiungere un widget"): senza questo controllo, un
+normale scroll lento avrebbe aperto il foglio widget a metà gesto. Aggiunto anche uno
+`stopPropagation` al primo tocco: un widget ha la propria pressione lunga (ridimensiona/sposta)
+annidata dentro la Home che ora ne ha un'altra tutta sua (aggiungi widget) — senza fermare la
+propagazione, premere a lungo su un widget avrebbe aperto entrambi i fogli insieme. Beneficio
+per tutti gli usi già esistenti dell'hook (schede di navigazione, blocchi Hobby), non solo per
+quello nuovo.
+
+**Primo lotto di 20 widget** (`components/widgets/defs/*.tsx`, un file per modulo, con
+presentazioni generiche condivise in `primitives.tsx` — `WidgetStat`, `WidgetList`,
+`WidgetRing`, `WidgetEmpty`, `WidgetComparison`): Task (5), Alimentazione (2), Finanze (3),
+Salute (3), Diario (2), Wishlist (2), Animali (2), Vitaecom (2), Rapporti (1), News (1), più un
+widget-azione che riusa direttamente la barra messaggi di casa già costruita al Checkpoint 57
+— non duplicata, lo stesso identico componente.
+
+Verificato con un test dedicato: il riordino sposta correttamente su e giù (compresi gli
+indici fuori range, che non toccano nulla), l'anti-doppione blocca solo i widget già piazzati,
+e il calcolo dei giorni al prossimo compleanno gestisce sia lo stesso mese sia l'attraversamento
+di fine anno sia il caso "è oggi" (zero giorni, non un anno intero).
+
+Build e type-check puliti su tutte le 27 rotte.
+
+**Ancora da fare**: il resto degli 84 widget brainstormati (lo stesso schema, altri lotti),
+selettore di 500 testate per le news.
+
+## Checkpoint 60 — catalogo widget completato: 74 su 104
+
+Secondo e ultimo grande lotto: da 20 a 74 widget reali e funzionanti, coprendo ogni modulo
+dell'app e quasi tutte le idee del brainstorm originale.
+
+**Aggiunti in questo giro** (54 nuovi, un file per modulo come già stabilito): 4 Task, 5
+Alimentazione, 6 Finanze, 4 Salute, 2 Diario, 7 Hobby (nuovo file, scansiona i blocchi di
+tutti gli hobby per trovare il più recente/rilevante — ultima metrica, ultima partita, valore
+di una collezione...), 2 Wishlist, 3 Animali, 3 Mappa (nuovo file), 3 Vitaecom, 4 Rapporti, 1
+News, e un nuovo file **Trasversali** con 7 widget che combinano più moduli insieme (streak
+generale su Diario+Alimentazione+Task, percentuale profilo completato, obiettivi attivi
+sommando Finanze e Hobby, prossimo appuntamento qualsiasi tra Salute e Animali, stato della
+casa in percentuale, "cosa ti aspetta oggi" che unisce task/appuntamenti/pappe in un solo
+widget a larghezza intera).
+
+**Bug di TypeScript trovato e corretto mentre scrivevo i widget Hobby e Mappa**: mutare una
+variabile esterna (`let best = null`) da dentro una `forEach` annidata confonde l'inferenza
+dei tipi di TypeScript quando il valore assegnato ha una forma complessa — il compilatore
+perde la certezza del tipo dopo il controllo `if (!best) return`, segnalando "la proprietà non
+esiste sul tipo never" anche se il codice è corretto a runtime. Riscritto senza mutazione
+(comporre con `flatMap`+`sort` invece di accumulare in un ciclo) in entrambi i file — non
+solo una soppressione dell'errore, un modo di scrivere la stessa logica che il compilatore
+capisce senza ambiguità.
+
+**Dichiarato onestamente cosa manca ancora, non perso per dimenticanza**: una mini-mappa
+statica dentro un widget e una miniatura della Costellazione dei Rapporti richiedono di
+adattare componenti pensati per lo schermo intero a un riquadro piccolo — un lavoro a sé, non
+un'aggiunta rapida come le altre 90. Un grafico "spesa vs budget ultimi 3 cicli" e un "cosa non
+fai da più tempo" generico restano più vaghi delle altre idee messe a fuoco nel brainstorm — su
+richiesta si possono ancora precisare e costruire.
+
+Verificato con un test dedicato: tra più hobby vince sempre la voce con la data più recente in
+assoluto (non la prima trovata scorrendo l'elenco), l'hobby "più attivo" è quello col conteggio
+più alto anche quando altri hanno zero voci, e il calcolo di completamento del profilo dà la
+percentuale esatta sia nei casi intermedi sia agli estremi (tutto vuoto, tutto pieno).
+
+Build e type-check puliti su tutte le 27 rotte, nessun residuo Title Case.
+
+**Ancora da fare**: selettore di 500 testate per le news (l'unico grande pezzo rimasto dei tre
+progetti originali).
+
 ## Sviluppo in locale
 
 ```bash

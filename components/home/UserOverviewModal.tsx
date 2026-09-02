@@ -1,4 +1,6 @@
 "use client";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Film, Music, Book, Gamepad2, MapPinned, Users, Flame, HeartPulse } from "lucide-react";
 import { motion } from "framer-motion";
 import { useProfile } from "@/lib/profile-context";
@@ -25,8 +27,11 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
   const avgRating =
     ratedPlaces.length > 0 ? Math.round(ratedPlaces.reduce((s, p) => s + (p.rating ?? 0), 0) / ratedPlaces.length) : null;
   const currentWeight = weightEntries.length > 0 ? [...weightEntries].sort((a, b) => b.date.localeCompare(a.date))[0].value : null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -143,6 +148,7 @@ export function UserOverviewModal({ onClose }: { onClose: () => void }) {
           <BackupSection />
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

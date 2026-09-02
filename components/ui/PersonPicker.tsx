@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Search, X, Check, HelpCircle } from "lucide-react";
 import { AuraAvatar } from "./AuraAvatar";
 import { personColor } from "@/lib/person-color";
@@ -45,6 +46,8 @@ export function PersonPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const selected = options.find((o) => o.id === value);
   const filtered = useMemo(() => {
@@ -72,11 +75,13 @@ export function PersonPicker({
         <Search size={15} className="shrink-0 text-ink-800" />
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center"
-          onClick={close}
-        >
+      {open &&
+        mounted &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center"
+            onClick={close}
+          >
           <div
             className="glass-strong flex max-h-[80vh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
             onClick={(e) => e.stopPropagation()}
@@ -160,8 +165,9 @@ export function PersonPicker({
               ))}
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </div>
   );
 }

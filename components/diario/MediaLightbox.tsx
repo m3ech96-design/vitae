@@ -1,4 +1,6 @@
 "use client";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { DiaryMedia } from "@/lib/diary-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
@@ -7,8 +9,11 @@ import { useResolvedVideo } from "@/lib/use-resolved-video";
 export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: () => void }) {
   const imageUrl = useResolvedImage(media.type === "image" ? media.key : undefined);
   const videoUrl = useResolvedVideo(media.type === "video" ? media.key : undefined);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black" onClick={onClose}>
       <button
         onClick={onClose}
@@ -31,6 +36,7 @@ export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: 
           onClick={(e) => e.stopPropagation()}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Wallet, Plus, X } from "lucide-react";
 import { Button } from "./Button";
@@ -38,6 +39,8 @@ export function SpentPrompt({
   const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
 
   const total = rows.reduce((sum, r) => sum + r.amount, 0);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const confirm = () => {
     if (splitCategories) {
@@ -49,7 +52,9 @@ export function SpentPrompt({
     onClose();
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -144,6 +149,7 @@ export function SpentPrompt({
           </Button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

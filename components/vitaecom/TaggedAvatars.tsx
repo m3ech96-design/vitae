@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuraAvatar } from "../ui/AuraAvatar";
@@ -7,11 +8,16 @@ import { VitaecomAccount } from "@/lib/vitaecom-social-types";
 
 export function TaggedAvatars({ accounts }: { accounts: VitaecomAccount[] }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   if (accounts.length === 0) return null;
 
   return (
     <div className="relative">
-      {open && <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden />}
+      {/* Solo l'acchiappa-click invisibile va oltre lo schermo intero — se questo componente
+       * finisce dentro un GlassCard (overflow-hidden), resterebbe altrimenti grande solo
+       * quanto la card, e toccare fuori dal popover ma dentro lo schermo non lo chiuderebbe. */}
+      {open && mounted && createPortal(<div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden />, document.body)}
       <AnimatePresence mode="wait">
         {open ? (
           <motion.div

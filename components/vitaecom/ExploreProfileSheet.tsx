@@ -1,4 +1,6 @@
 "use client";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, Compass } from "lucide-react";
 
@@ -16,7 +18,11 @@ import { X, Compass } from "lucide-react";
  * invece di mostrare due schede vuote o dati presi in prestito da un'altra persona.
  */
 export function ExploreProfileSheet({ nickname, onClose }: { accountId?: string; nickname: string; onClose: () => void }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -45,6 +51,7 @@ export function ExploreProfileSheet({ nickname, onClose }: { accountId?: string;
           </p>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X, Phone, MessageCircle, CalendarClock, Trash2, Sparkles, Check, PawPrint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -123,7 +124,11 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
     onClose();
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -458,5 +463,7 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
         />
       )}
     </div>
+,
+    document.body
   );
 }

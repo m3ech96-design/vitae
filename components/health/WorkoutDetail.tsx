@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Clock, Flame, Trash2, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { Workout } from "@/lib/types";
@@ -27,7 +28,11 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
     setEditing(false);
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -106,6 +111,7 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
           }}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, MapPin, Trash2, Tag as TagIcon, Pencil, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -32,12 +33,15 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
   const [editing, setEditing] = useState(false);
   const group = taskGroup(task.type);
   const category = taskCategory(task);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   if (editing) {
     return <NewTaskModal task={task} onClose={() => setEditing(false)} />;
   }
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -208,6 +212,7 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
           }}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

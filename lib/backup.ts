@@ -38,6 +38,8 @@ const DATA_KEYS = [
   "vitae:animal-reports",
   "vitae:animal-allergies",
   "vitae:animal-weight",
+  "vitae:household-messages",
+  "vitae:home-widgets",
 ];
 
 export interface BackupFile {

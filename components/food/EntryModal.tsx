@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Search, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
@@ -78,7 +79,11 @@ export function EntryModal({
     onClose();
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -198,6 +203,7 @@ export function EntryModal({
           onSaved={(created) => setSelected(created)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

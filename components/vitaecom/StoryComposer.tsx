@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, Send, Camera, Video } from "lucide-react";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -37,7 +38,11 @@ export function StoryComposer({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -111,6 +116,7 @@ export function StoryComposer({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

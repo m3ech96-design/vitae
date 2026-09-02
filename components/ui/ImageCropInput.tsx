@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper, { Area } from "react-easy-crop";
 import { Check, X } from "lucide-react";
 import { Button } from "./Button";
@@ -26,6 +27,8 @@ export function ImageCropInput({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
@@ -67,8 +70,10 @@ export function ImageCropInput({
       {trigger(() => inputRef.current?.click())}
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
 
-      {rawImage && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-void-950/90 p-6 backdrop-blur-md">
+      {rawImage &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-void-950/90 p-6 backdrop-blur-md">
           <div className="glass-strong w-full max-w-sm rounded-xl3 p-5">
             <div className="relative h-72 w-full overflow-hidden rounded-xl2 bg-black">
               <Cropper
@@ -102,8 +107,9 @@ export function ImageCropInput({
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </>
   );
 }

@@ -1,8 +1,21 @@
 "use client";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "./Button";
 
+/**
+ * Bug reale, ripetuto più volte in giro per l'app (Animali, Alimentazione, Hobby...): un
+ * `GlassCard` applica sempre `overflow-hidden` per i propri angoli arrotondati, e un
+ * discendente `position: fixed` dentro un antenato con `overflow-hidden` (o `transform`,
+ * stessa causa già trovata una volta per PersonalCardSheet.tsx) smette di essere relativo al
+ * viewport su iOS Safari — resta invece schiacciato dentro il bordo di quell'antenato.
+ * `ConfirmDialog` è condiviso da moltissimi punti diversi dell'app, non tutti dentro un
+ * `GlassCard`: piuttosto che verificare ogni punto uno per uno (fragile, è esattamente come
+ * questo bug si è ripetuto), esce sempre dal DOM con un portal su `document.body` — corretto
+ * ovunque per costruzione, non solo dove segnalato.
+ */
 export function ConfirmDialog({
   title,
   description,
@@ -16,7 +29,11 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-void-950/90 p-6 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.94 }}
@@ -43,6 +60,7 @@ export function ConfirmDialog({
           </Button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

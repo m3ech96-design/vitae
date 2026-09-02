@@ -11,6 +11,8 @@ import { WishlistProvider } from "@/lib/wishlist-context";
 import { DiaryProvider } from "@/lib/diary-context";
 import { HobbyProvider } from "@/lib/hobby-context";
 import { AnimalHealthProvider } from "@/lib/animal-health-context";
+import { HouseholdMessagesProvider } from "@/lib/household-messages-context";
+import { WidgetsProvider } from "@/lib/widgets/widgets-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
@@ -68,6 +70,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <DiaryProvider>
                     <HobbyProvider>
                     <AnimalHealthProvider>
+                    <HouseholdMessagesProvider>
+                    <WidgetsProvider>
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
@@ -88,6 +92,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
+                    </WidgetsProvider>
+                    </HouseholdMessagesProvider>
                     </AnimalHealthProvider>
                     </HobbyProvider>
                     </DiaryProvider>

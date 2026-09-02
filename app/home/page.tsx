@@ -25,6 +25,11 @@ import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { PersonWindow } from "@/components/persone/PersonWindow";
 import { UserOverviewModal } from "@/components/home/UserOverviewModal";
 import { HouseholdAvatarCell } from "@/components/household/HouseholdAvatarCell";
+import { HouseholdMessagesFeed } from "@/components/home/HouseholdMessagesFeed";
+import { HouseholdMessageBar } from "@/components/home/HouseholdMessageBar";
+import { HomeWidgetsGrid } from "@/components/widgets/HomeWidgetsGrid";
+import { AddWidgetSheet } from "@/components/widgets/AddWidgetSheet";
+import { useLongPress } from "@/lib/use-long-press";
 import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
 import { RapportNudgeCard } from "@/components/home/RapportNudgeCard";
@@ -70,6 +75,8 @@ export default function HomePage() {
   const [greeting, setGreeting] = useState("Ciao");
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [addWidgetOpen, setAddWidgetOpen] = useState(false);
+  const longPressAddWidget = useLongPress(() => setAddWidgetOpen(true));
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
@@ -108,7 +115,10 @@ export default function HomePage() {
   const vitaecomAwayAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id) && !vitaecomMemberIsHome(a.id));
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
+    <div
+      {...longPressAddWidget.handlers}
+      className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6"
+    >
       <Reveal>
         <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Home</p>
         <h1 className="mt-1 font-display text-2xl text-ink-100">
@@ -180,6 +190,8 @@ export default function HomePage() {
           </div>
         </GlassCard>
       </Reveal>
+
+      <HouseholdMessagesFeed />
 
       {!home ? (
         <Reveal delay={0.1} className="mt-6">
@@ -275,12 +287,22 @@ export default function HomePage() {
         </Reveal>
       )}
 
+      {home && (
+        <Reveal delay={0.12} className="mt-3">
+          <HouseholdMessageBar />
+        </Reveal>
+      )}
+
       <Reveal delay={0.15} className="mt-9 space-y-6">
         <TodaySummaryCard />
         <TaskCountdownLog />
         <RapportNudgeCard />
         <WeeklyNeedsCard />
         <VitaecomNotificationsCard />
+      </Reveal>
+
+      <Reveal delay={0.18} className="mt-9">
+        <HomeWidgetsGrid />
       </Reveal>
 
       <Reveal delay={0.2}>
@@ -336,6 +358,7 @@ export default function HomePage() {
 
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
       {overviewOpen && <UserOverviewModal onClose={() => setOverviewOpen(false)} />}
+      {addWidgetOpen && <AddWidgetSheet onClose={() => setAddWidgetOpen(false)} />}
     </div>
   );
 }

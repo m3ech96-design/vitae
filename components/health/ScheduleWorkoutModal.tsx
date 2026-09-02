@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useTasks } from "@/lib/tasks-context";
 import { TASK_COLORS } from "@/lib/task-colors";
@@ -41,7 +42,11 @@ export function ScheduleWorkoutModal({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void-950/85 backdrop-blur-md sm:items-center">
       <div className="glass-strong w-full max-w-xs rounded-t-xl3 p-6 sm:rounded-xl3">
         <div className="mb-4 flex items-center justify-between">
@@ -65,6 +70,7 @@ export function ScheduleWorkoutModal({ onClose }: { onClose: () => void }) {
           Pianifica
         </Button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

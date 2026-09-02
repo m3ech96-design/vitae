@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, Gem, MessageCircle, Share2 } from "lucide-react";
 import { VitaecomPost } from "@/lib/vitaecom-social-types";
@@ -170,8 +171,11 @@ export function ImageViewer({
     e.preventDefault();
     setScale((s) => Math.min(6, Math.max(1, s - e.deltaY * 0.0015)));
   };
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
       <HaloLayer />
 
@@ -243,7 +247,8 @@ export function ImageViewer({
           </motion.div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
