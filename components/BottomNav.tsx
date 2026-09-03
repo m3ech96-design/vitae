@@ -12,6 +12,14 @@ import { ALL_NAV_ITEMS, useNavSlots, NavItemDef } from "@/lib/nav-slots";
 
 const HOME_ITEM: NavItemDef = { href: "/home", label: "Home", icon: HomeIcon };
 const HIDDEN_ON = ["/", "/wizard"];
+// L'albero genealogico espanso (vedi app/albero-genealogico/persona/[personId]/page.tsx) è
+// un riquadro `fixed inset-0` a tutto schermo con una propria testata di navigazione (Indietro,
+// Famiglie, Impostazioni) e un proprio pulsante flottante "Aggiungi persona" in basso — non un
+// contenuto scrollabile qualunque. Bug reale corretto: la barra qui sotto (anche lei `fixed`,
+// con `z-40`) restava comunque montata sopra quel riquadro, e finiva per coprire fisicamente
+// quel pulsante in basso a sinistra — visivamente sotto la barra, e per lo stesso motivo mai
+// cliccabile, esattamente come già evitato per "/" e "/wizard" qui sopra.
+const HIDDEN_PREFIX_ON = ["/albero-genealogico/persona/"];
 
 /** L'alone viola dietro la scheda attiva — un solo elemento condiviso (stesso `layoutId` in
  * ogni pulsante che lo monta), non una ricolorazione istantanea: Framer Motion lo fa
@@ -123,7 +131,7 @@ export function BottomNav() {
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
   const { hasUnreadNotification } = useVitaecomSocial();
   const { slots, hydrated, setSlot, swapSlots } = useNavSlots();
-  if (HIDDEN_ON.includes(pathname)) return null;
+  if (HIDDEN_ON.includes(pathname) || HIDDEN_PREFIX_ON.some((prefix) => pathname.startsWith(prefix))) return null;
 
   const slotItems = slots.map((href) => ALL_NAV_ITEMS.find((i) => i.href === href)).filter((i): i is NavItemDef => Boolean(i));
   const moreItems = ALL_NAV_ITEMS.filter((i) => !slots.includes(i.href));

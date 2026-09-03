@@ -58,6 +58,7 @@ export function ChronologicalExpensesTable({ items }: { items: MonthlyExpenseIte
                       <SourceIcon size={9} /> {SOURCE_LABEL[item.source as keyof typeof SOURCE_LABEL]}
                     </>
                   )}
+                  {!item.chargedToBudget && <span className="text-aura-amber">· solo informativa</span>}
                 </p>
               </div>
               <span className="shrink-0 text-sm text-ink-200">{item.amount.toLocaleString("it-IT", { maximumFractionDigits: 2 })}€</span>

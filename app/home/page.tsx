@@ -29,7 +29,6 @@ import { HouseholdMessagesFeed } from "@/components/home/HouseholdMessagesFeed";
 import { HouseholdMessageBar } from "@/components/home/HouseholdMessageBar";
 import { HomeWidgetsGrid } from "@/components/widgets/HomeWidgetsGrid";
 import { AddWidgetSheet } from "@/components/widgets/AddWidgetSheet";
-import { useLongPress } from "@/lib/use-long-press";
 import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
 import { RapportNudgeCard } from "@/components/home/RapportNudgeCard";
@@ -75,7 +74,6 @@ export default function HomePage() {
   const [greeting, setGreeting] = useState("Ciao");
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
-  const longPressAddWidget = useLongPress(() => setAddWidgetOpen(true));
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
@@ -109,6 +107,9 @@ export default function HomePage() {
   const gpsConfirmsHome = trackingEnabled && !userIsAway;
   const userIsHome = gpsConfirmsHome ? true : userTaskLocation ? userTaskLocation === "casa" : !userIsAway;
   const userAsleep = isAsleep(profile.wakeUntil);
+  // Il Place "Casa" vero dell'utente, per l'icona badge quando si è dentro casa (vedi anche
+  // HouseholdAvatarCell, stessa logica per ogni componente della famiglia).
+  const homePlace = home ? places.find((p) => p.id === home.placeId) ?? null : null;
   // La posizione di un account Vitaecom nel riquadro Famiglia è simulata (vedi
   // lib/vitaecom-household-presence.ts) — ricalcolata a ogni minuto insieme al resto della
   // Home (lo stesso `tick` già usato per far scorrere le altre presenze). Non più divisa in
@@ -117,10 +118,7 @@ export default function HomePage() {
   const vitaecomFamilyAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id));
 
   return (
-    <div
-      {...longPressAddWidget.handlers}
-      className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6"
-    >
+    <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <Reveal>
         <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Home</p>
         <h1 className="mt-1 font-display text-2xl text-ink-100">
@@ -167,9 +165,14 @@ export default function HomePage() {
                 firstName={profile.firstName}
                 lastName={profile.lastName}
                 size={72}
-                ring={userAsleep ? "sleep" : userIsHome ? "home" : "away"}
+                ring={userAsleep ? "sleep" : "home"}
               />
-              {!userAsleep && <PlaceIconBadge place={currentPlaceIcon} size={72} />}
+              {!userAsleep &&
+                (userIsHome ? (
+                  <PlaceIconBadge place={homePlace} size={72} />
+                ) : (
+                  <PlaceIconBadge place={currentPlaceIcon} size={72} showWorldFallback />
+                ))}
               <PersonalCardMenu />
             </span>
             <div className="min-w-0 flex-1">
@@ -242,9 +245,14 @@ export default function HomePage() {
                     firstName={profile.firstName}
                     lastName={profile.lastName}
                     size={60}
-                    ring={userAsleep ? "sleep" : userIsHome ? "home" : "away"}
+                    ring={userAsleep ? "sleep" : "home"}
                   />
-                  {!userAsleep && <PlaceIconBadge place={currentPlaceIcon} size={60} />}
+                  {!userAsleep &&
+                    (userIsHome ? (
+                      <PlaceIconBadge place={homePlace} size={60} />
+                    ) : (
+                      <PlaceIconBadge place={currentPlaceIcon} size={60} showWorldFallback />
+                    ))}
                 </span>
                 <span className="max-w-[64px] truncate text-[11px] text-ink-600">Tu</span>
               </div>
@@ -286,7 +294,7 @@ export default function HomePage() {
       </Reveal>
 
       <Reveal delay={0.18} className="mt-9">
-        <HomeWidgetsGrid />
+        <HomeWidgetsGrid onAddWidget={() => setAddWidgetOpen(true)} />
       </Reveal>
 
       <Reveal delay={0.2}>

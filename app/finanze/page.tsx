@@ -13,6 +13,7 @@ import { RecurringExpensesSection } from "@/components/finance/RecurringExpenses
 import { PlannedExpensesSection } from "@/components/finance/PlannedExpensesSection";
 import { SingleExpensesSection } from "@/components/finance/SingleExpensesSection";
 import { SavingsSection } from "@/components/finance/SavingsSection";
+import { SalarySplitCalculator } from "@/components/finance/SalarySplitCalculator";
 import { ChronologicalExpensesTable } from "@/components/finance/ChronologicalExpensesTable";
 
 export default function FinanzePage() {
@@ -129,6 +130,7 @@ export default function FinanzePage() {
       )}
 
       <div className="mt-9 space-y-9">
+        <SalarySplitCalculator />
         <RecurringExpensesSection />
         <PlannedExpensesSection />
         <SingleExpensesSection />

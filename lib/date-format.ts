@@ -1,5 +1,14 @@
+/**
+ * Corretto secondo le istruzioni: alcuni chiamanti passano una data semplice ("2026-09-03",
+ * da un campo `type="date"`), altri un timestamp ISO completo con l'ora
+ * ("2026-09-03T14:23:45.123Z", da `new Date().toISOString()` — es. VisitLogEntry.date,
+ * SavingsEntry.date). Appendere "T00:00:00" al secondo caso produceva una stringa non valida
+ * ("...123ZT00:00:00") e quindi "NaN/NaN/NaN" in ogni punto dell'app che la mostra — bug reale,
+ * non solo teorico (la Cronologia di Finanze lo mostrava già per ogni spesa da un Luogo). I
+ * primi 10 caratteri di una data ISO sono sempre "AAAA-MM-GG", identici in entrambi i casi.
+ */
 export function formatDateShort(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
+  const d = new Date(iso.slice(0, 10) + "T00:00:00");
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yy = String(d.getFullYear()).slice(-2);

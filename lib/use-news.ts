@@ -1,54 +1,60 @@
 import { useEffect, useState } from "react";
 import type { NewsCategory } from "@/app/api/news/route";
+import { useNewsSources } from "./news-sources-context";
 
 export type { NewsItem, NewsCategory } from "@/app/api/news/route";
 
 /**
- * Corretto secondo le istruzioni: prima ogni consumer di /api/news (la pagina News e due
- * widget della Home) faceva il proprio fetch indipendente con il proprio useEffect — se un
- * utente aveva entrambi i widget in Home e visitava anche /news, lo stesso endpoint veniva
- * richiamato fino a 3 volte per lo stesso caricamento. I widget, inoltre, ridefinivano
- * localmente NewsItem/NewsCategory come un sottoinsieme incompleto dei tipi reali della
- * route (mancavano description e imageUrl) — se la route fosse cambiata forma, i widget non
- * se ne sarebbero accorti nemmeno a compile time.
- *
- * Una singola cache module-level (non React state) è condivisa da ogni chiamata di questo
- * hook nella sessione corrente: il primo consumer che monta fa il fetch, tutti gli altri
- * (stesso render o render successivi, finché la pagina resta aperta) ricevono lo stesso
- * risultato senza richiamare la rete. La cache dell'HTTP lato server (`revalidate: 600` nella
- * route) resta comunque il livello che tiene i dati aggiornati nel tempo — questa è solo per
- * evitare richieste duplicate nella stessa sessione del browser.
+ * Corretto secondo le istruzioni: le news ora dipendono da QUALI fonti l'utente ha scelto
+ * (vedi lib/news-sources-context.tsx) — non più un fetch unico e fisso. La cache module-level
+ * (stesso principio di prima: un solo fetch condiviso da ogni consumer nella sessione, mai uno
+ * per widget) è quindi tenuta per chiave, la lista ordinata degli id scelti unita in una
+ * stringa: cambiare la selezione delle fonti è una chiave diversa, e rifà il fetch; la stessa
+ * selezione, richiesta da più punti (la pagina News, i widget della Home), resta condivisa.
  */
-let cache: NewsCategory[] | null = null;
-let inFlight: Promise<NewsCategory[]> | null = null;
+const cache = new Map<string, NewsCategory[]>();
+const inFlight = new Map<string, Promise<NewsCategory[]>>();
 
-function fetchNews(): Promise<NewsCategory[]> {
-  if (cache) return Promise.resolve(cache);
-  if (inFlight) return inFlight;
-  inFlight = fetch("/api/news")
+function fetchNews(key: string, ids: string[]): Promise<NewsCategory[]> {
+  const cached = cache.get(key);
+  if (cached) return Promise.resolve(cached);
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+  const promise = fetch(`/api/news?sources=${encodeURIComponent(ids.join(","))}`)
     .then((r) => r.json())
     .then((data) => {
       const categories: NewsCategory[] = data.categories ?? [];
-      cache = categories;
+      cache.set(key, categories);
       return categories;
     })
     .finally(() => {
-      inFlight = null;
+      inFlight.delete(key);
     });
-  return inFlight;
+  inFlight.set(key, promise);
+  return promise;
 }
 
-export function useNews(): { categories: NewsCategory[] | null; error: boolean } {
-  const [categories, setCategories] = useState<NewsCategory[] | null>(cache);
+export function useNews(): { categories: NewsCategory[] | null; error: boolean; hasSelection: boolean } {
+  const { hydrated, selectedIds } = useNewsSources();
+  const key = [...selectedIds].sort().join(",");
+  const [categories, setCategories] = useState<NewsCategory[] | null>(cache.get(key) ?? null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (cache) {
-      setCategories(cache);
+    if (!hydrated) return;
+    if (selectedIds.length === 0) {
+      setCategories([]);
       return;
     }
+    const cached = cache.get(key);
+    if (cached) {
+      setCategories(cached);
+      return;
+    }
+    setCategories(null);
+    setError(false);
     let cancelled = false;
-    fetchNews()
+    fetchNews(key, selectedIds)
       .then((c) => {
         if (!cancelled) setCategories(c);
       })
@@ -58,7 +64,8 @@ export function useNews(): { categories: NewsCategory[] | null; error: boolean }
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, key]);
 
-  return { categories, error };
+  return { categories, error, hasSelection: selectedIds.length > 0 };
 }

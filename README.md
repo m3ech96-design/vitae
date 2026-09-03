@@ -2652,6 +2652,67 @@ prop) che non spetta a un audit decidere da solo. Lasciato così, segnalato.
 Build e type-check puliti dopo ogni singola correzione, non solo alla fine. Nessuna
 dipendenza circolare (verificato su 394 file).
 
+## Checkpoint 66 — fonti news scelte dall'utente, budget con voci "solo informative", tre crash e diversi bug UX reali corretti
+
+Audit mirato su parti specifiche dell'app (News, Finanze, Albero Genealogico, Home, Casa/Fuori
+Casa, Mappa), poi riparazione di quanto trovato. Build di produzione e `tsc --noEmit` verificati
+dopo le correzioni.
+
+**News: ora è l'utente a scegliere le fonti, non il codice**
+- Prima `/api/news` aveva quattro fonti fisse, tutte ANSA, decise nel codice — esattamente
+  l'automatismo che le istruzioni vietano ("non voglio che sia l'app a scegliere per l'utente le
+  news che deve guardare"). Aggiunto un catalogo di fonti reali per categoria
+  (`lib/news-sources-catalog.ts`), una nuova pagina "Gestisci fonti" (`/news/fonti`) e un context
+  dedicato (`lib/news-sources-context.tsx`) che ricorda la scelta fatta. La route ora fa il fetch
+  solo delle fonti scelte, con un try/catch per singola fonte: una fonte che non risponde più
+  mostra zero notizie sue, mai un errore che blocca le altre nella stessa categoria. Nessuna fonte
+  selezionata vuol dire nessuna notizia, di proposito. Il nome della vera testata compare ora
+  accanto a ogni notizia, non più "ANSA" fisso.
+
+**Finanze: calcolatore stipendio, e le spese possono essere "solo informative"**
+- Nuovo Calcolatore Stipendio (50/30/20 di default, percentuali modificabili e ricordate) in cima
+  alla scheda Finanze.
+- Prima ogni spesa singola o spesa di un task finiva sempre addebitata dal budget del ciclo, senza
+  modo di segnare "questa l'ho solo annotata" (un rimborso in arrivo, una spesa anticipata per
+  qualcun altro). Aggiunto uno switch "solo informativa": la voce resta comunque in cronologia ma
+  non entra nella somma del ciclo né nella ripartizione per categoria (`lib/finance.ts`,
+  `lib/finance-context.tsx`, `lib/tasks-context.tsx`, con l'etichetta corrispondente in tabella).
+- Cronologia Risparmi: ora mostra uno storico dei versamenti/prelievi con data, non solo il saldo
+  attuale.
+
+**Tre crash reali corretti**
+- `PersonalCardSheet` (usato da Albero Genealogico e Wishlist) incapsulava il titolo — un `<div>`
+  con dentro un `<button>` — in un `<p>`: HTML non valido, che il browser risolve chiudendo il
+  `<p>` prima del tempo. L'albero DOM reale finiva diverso da quello che React credeva di aver
+  disegnato, e la discrepanza in fase di hydration poteva degenerare in un'eccezione vera
+  ("Application error: a client-side exception has occurred"), non solo un avviso in console.
+  Cambiato in `<div>`, che accetta legittimamente qualunque figlio.
+- Lo zoom a rotellina nell'Albero Genealogico non funzionava: da React 17 in poi gli eventi
+  `wheel` sono agganciati in modo passivo di default (per non rallentare lo scroll della pagina),
+  quindi la chiamata a `preventDefault()` veniva ignorata in silenzio e la rotellina scorreva la
+  pagina invece di ingrandire l'albero. Corretto agganciando l'ascoltatore a mano con
+  `{ passive: false }`, fuori dal sistema di eventi sintetici di React.
+- La barra di navigazione inferiore restava montata sopra la vista a schermo intero dell'Albero
+  Genealogico e ne copriva fisicamente il pulsante flottante "Aggiungi persona", rendendolo anche
+  non cliccabile — stesso trattamento già riservato a "/" e "/wizard", esteso a questa rotta.
+
+**Altri bug corretti**
+- "Premi a lungo per aggiungere un widget" viveva sulla radice dell'intera pagina Home: bastava
+  tenere il dito un attimo più a lungo del normale in un punto qualsiasi della pagina (es. mirando
+  un punto sulla mappa di Casa) per far comparire il foglio widget per sbaglio. Spostato al solo
+  riquadro dei widget; aggiunto anche un indizio visibile quando non ce n'è ancora nessuno (prima
+  l'area restava vuota e muta, scopribile solo per caso).
+- Un membro della famiglia a casa senza un Impegno in corso non mostrava alcuna icona in alto a
+  destra sul proprio avatar — un buco rispetto a quando invece si era fuori casa. Ora mostra
+  sempre l'icona del proprio Luogo Casa quando è dentro.
+- Gli account Vitaecom "fuori casa" mostravano l'intero anello dell'avatar ricolorato; ora, come
+  già per le persone vere, resta un badge dedicato, senza ricolorare l'intero anello.
+- Il campo indirizzo di "Collega Casa" e delle schede Luogo sulla mappa impostava il punto finale
+  direttamente scegliendo un suggerimento, scavalcando la mappa — il contrario della regola
+  dichiarata ("il punto si sceglie sulla mappa"). Sostituito con un nuovo componente ("Vai a:")
+  che sposta solo la vista sulla zona suggerita; il marker si mette sempre e solo toccando la
+  mappa.
+
 ## Sviluppo in locale
 
 ```bash

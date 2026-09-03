@@ -9,6 +9,10 @@ export interface MonthlyExpenseItem {
   category: ExpenseCategory;
   date: string;
   source: "task" | "luogo" | "manuale" | "ricorrente" | "pianificata";
+  /** Se false, questa voce resta solo un dato in cronologia — non entra nel totale del ciclo
+   * né nella ripartizione per categoria (vedi computeMonthlySpending). Le ricorrenti e le
+   * pianificate sono sempre addebitate: sono impegni veri, non hanno questa scelta. */
+  chargedToBudget: boolean;
 }
 
 export interface CycleRange {
@@ -78,41 +82,43 @@ function buildDiscreteItems(
 
   tasks.forEach((t) => {
     if (t.spentAmount === undefined || !t.completedAt || !inScope(t.completedAt)) return;
+    const chargedToBudget = t.chargedToBudget ?? true;
     if (t.spentBreakdown && t.spentBreakdown.length > 0) {
       t.spentBreakdown.forEach((b, i) => {
         const category: ExpenseCategory = SPEND_ITEM_TO_EXPENSE_CATEGORY[b.category] || "altro";
-        items.push({ id: `${t.id}-${i}`, label: `${t.title} — ${b.category}`, amount: b.amount, category, date: t.completedAt!, source: "task" });
+        items.push({ id: `${t.id}-${i}`, label: `${t.title} — ${b.category}`, amount: b.amount, category, date: t.completedAt!, source: "task", chargedToBudget });
       });
       return;
     }
     const place = t.linkedPlaceId ? places.find((p) => p.id === t.linkedPlaceId) : undefined;
     const category: ExpenseCategory = (place && PLACE_TYPE_TO_CATEGORY[place.type]) || "altro";
-    items.push({ id: t.id, label: t.title, amount: t.spentAmount, category, date: t.completedAt, source: "task" });
+    items.push({ id: t.id, label: t.title, amount: t.spentAmount, category, date: t.completedAt, source: "task", chargedToBudget });
   });
 
   places.forEach((p) => {
     p.visitsHistory.forEach((v) => {
       if (v.spentAmount === undefined || !inScope(v.date)) return;
+      const chargedToBudget = v.chargedToBudget ?? true;
       if (v.spentBreakdown && v.spentBreakdown.length > 0) {
         v.spentBreakdown.forEach((b, i) => {
           const category: ExpenseCategory = SPEND_ITEM_TO_EXPENSE_CATEGORY[b.category] || "altro";
-          items.push({ id: `${v.id}-${i}`, label: `${p.name} — ${b.category}`, amount: b.amount, category, date: v.date, source: "luogo" });
+          items.push({ id: `${v.id}-${i}`, label: `${p.name} — ${b.category}`, amount: b.amount, category, date: v.date, source: "luogo", chargedToBudget });
         });
         return;
       }
       const category: ExpenseCategory = PLACE_TYPE_TO_CATEGORY[p.type] || "altro";
-      items.push({ id: v.id, label: p.name, amount: v.spentAmount, category, date: v.date, source: "luogo" });
+      items.push({ id: v.id, label: p.name, amount: v.spentAmount, category, date: v.date, source: "luogo", chargedToBudget });
     });
   });
 
   singleExpenses.forEach((e) => {
     if (!inScope(e.date)) return;
-    items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.date, source: "manuale" });
+    items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.date, source: "manuale", chargedToBudget: e.chargedToBudget ?? true });
   });
 
   plannedExpenses.forEach((e) => {
     if (!e.paid || !inScope(e.dueDate)) return;
-    items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.dueDate, source: "pianificata" });
+    items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.dueDate, source: "pianificata", chargedToBudget: true });
   });
 
   return items;
@@ -143,11 +149,16 @@ export function computeMonthlySpending(
         category: e.category,
         date: ref.toISOString(),
         source: "ricorrente",
+        chargedToBudget: true,
       });
     });
 
-  const total = items.reduce((s, i) => s + i.amount, 0);
-  const byCategory = items.reduce((acc, i) => {
+  // Punto esplicito delle istruzioni: una spesa segnata "solo informativa" resta comunque in
+  // `items` (la cronologia la mostra sempre, vedi allExpenseItems) ma non entra nel totale del
+  // ciclo né nella ripartizione per categoria che alimentano l'anello del budget.
+  const chargeable = items.filter((i) => i.chargedToBudget);
+  const total = chargeable.reduce((s, i) => s + i.amount, 0);
+  const byCategory = chargeable.reduce((acc, i) => {
     acc[i.category] = (acc[i.category] || 0) + i.amount;
     return acc;
   }, {} as Record<ExpenseCategory, number>);

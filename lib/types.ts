@@ -330,6 +330,11 @@ export interface VisitLogEntry {
   durationMinutes: number;
   spentAmount?: number;
   spentBreakdown?: { category: string; amount: number }[];
+  /** Se false, questa spesa (supermercato o altro luogo) resta solo un dato in cronologia e
+   * non viene mai sommata al budget del ciclo — scelta esplicita di chi la registra (vedi
+   * SpentPrompt), non dedotta dal tipo di luogo. Assente o true = addebitata dal budget, il
+   * comportamento di sempre per chi non tocca questa scelta. */
+  chargedToBudget?: boolean;
 }
 
 export interface Place {
@@ -481,6 +486,9 @@ export interface Task {
   completedAt?: string;
   spentAmount?: number;
   spentBreakdown?: { category: string; amount: number }[];
+  /** Stesso significato di VisitLogEntry.chargedToBudget — una Task di tipo Spesa può
+   * registrare quanto è costata solo per tenerne nota, senza che tocchi il budget del ciclo. */
+  chargedToBudget?: boolean;
   completionLog: string[];
   createdAt: string;
 }
@@ -541,6 +549,9 @@ export interface SingleExpense {
   date: string;
   category: ExpenseCategory;
   createdAt: string;
+  /** Stesso significato di VisitLogEntry.chargedToBudget — una spesa manuale può restare
+   * solo un dato in cronologia, scelto al momento di aggiungerla. */
+  chargedToBudget?: boolean;
 }
 
 export interface SavingsGoal {

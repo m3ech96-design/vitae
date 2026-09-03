@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Newspaper, Share2, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Newspaper, Share2, ExternalLink, Settings2 } from "lucide-react";
 import { NewsItem } from "@/app/api/news/route";
 import { useNews } from "@/lib/use-news";
 import { ShareNewsComposer } from "@/components/news/ShareNewsComposer";
+import { Button } from "@/components/ui/Button";
 
 function timeAgo(iso?: string): string {
   if (!iso) return "";
@@ -40,7 +42,9 @@ function NewsCard({ item, onShare }: { item: NewsItem; onShare: () => void }) {
           </>
         )}
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-[10px] text-ink-800">ANSA · {timeAgo(item.pubDate)}</p>
+          <p className="text-[10px] text-ink-800">
+            {item.sourceName} · {timeAgo(item.pubDate)}
+          </p>
           <div className="flex items-center gap-3">
             <button onClick={onShare} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Condividi su Vitaecom">
               <Share2 size={15} />
@@ -56,7 +60,8 @@ function NewsCard({ item, onShare }: { item: NewsItem; onShare: () => void }) {
 }
 
 export default function NewsPage() {
-  const { categories, error } = useNews();
+  const router = useRouter();
+  const { categories, error, hasSelection } = useNews();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [sharingItem, setSharingItem] = useState<NewsItem | null>(null);
 
@@ -72,18 +77,44 @@ export default function NewsPage() {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
-      <div className="flex items-center gap-2">
-        <Newspaper size={16} className="text-[#B79A6B]" />
-        <p className="font-display text-xs uppercase tracking-[0.28em] text-[#B79A6B]">News</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Newspaper size={16} className="text-[#B79A6B]" />
+          <p className="font-display text-xs uppercase tracking-[0.28em] text-[#B79A6B]">News</p>
+        </div>
+        <button
+          onClick={() => router.push("/news/fonti")}
+          className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-300 hover:border-[#B79A6B]/50"
+        >
+          <Settings2 size={13} /> Gestisci fonti
+        </button>
       </div>
       <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa succede nel mondo</h1>
-      <p className="mt-1 text-xs text-ink-800">Fonte: ANSA — tocca un articolo per leggerlo per intero sul sito originale.</p>
+      <p className="mt-1 text-xs text-ink-800">
+        Solo le testate che hai scelto tu — tocca un articolo per leggerlo per intero sul sito originale.
+      </p>
 
-      {error && <p className="mt-10 text-center text-sm text-ink-800">Le news non sono raggiungibili al momento. Riprova più tardi.</p>}
-      {!error && categories === null && <p className="mt-10 text-center text-sm text-ink-800">Carico le ultime notizie…</p>}
-      {!error && categories?.length === 0 && <p className="mt-10 text-center text-sm text-ink-800">Nessuna notizia disponibile al momento.</p>}
+      {!hasSelection && (
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <Newspaper size={28} className="text-ink-800" />
+          <p className="text-sm text-ink-300">Non hai ancora scelto nessuna testata.</p>
+          <p className="max-w-xs text-xs text-ink-800">
+            Scegli tu, tra centinaia di giornali, magazine e siti divisi per categoria, quali seguire — qui non
+            comparirà nient'altro.
+          </p>
+          <Button className="mt-2" onClick={() => router.push("/news/fonti")}>
+            Scegli le tue fonti
+          </Button>
+        </div>
+      )}
 
-      {categories && categories.length > 0 && (
+      {hasSelection && error && <p className="mt-10 text-center text-sm text-ink-800">Le news non sono raggiungibili al momento. Riprova più tardi.</p>}
+      {hasSelection && !error && categories === null && <p className="mt-10 text-center text-sm text-ink-800">Carico le ultime notizie…</p>}
+      {hasSelection && !error && categories?.length === 0 && (
+        <p className="mt-10 text-center text-sm text-ink-800">Nessuna notizia disponibile al momento dalle fonti scelte.</p>
+      )}
+
+      {hasSelection && categories && categories.length > 0 && (
         <>
           <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
             {categories.map((c) => (

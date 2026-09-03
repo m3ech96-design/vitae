@@ -10,6 +10,15 @@ const SINGLE_KEY = "vitae:finance-single";
 const GOALS_KEY = "vitae:finance-goals";
 const SAVINGS_KEY = "vitae:finance-savings";
 const CYCLE_START_DAY_KEY = "vitae:finance-cycle-start-day";
+const SALARY_SPLIT_KEY = "vitae:finance-salary-split";
+
+export interface SalarySplit {
+  speseFisse: number;
+  tempoLibero: number;
+  risparmi: number;
+}
+
+const DEFAULT_SALARY_SPLIT: SalarySplit = { speseFisse: 50, tempoLibero: 30, risparmi: 20 };
 
 interface FinanceContextValue {
   hydrated: boolean;
@@ -22,6 +31,11 @@ interface FinanceContextValue {
    * come richiesto, senza bisogno di cancellare o archiviare nulla a parte. */
   cycleStartDay: number;
   setCycleStartDay: (day: number) => void;
+  /** Le tre percentuali del calcolatore stipendio — 50/30/20 di default, ma un'impostazione
+   * vera e propria una volta cambiata: resta finché non la si tocca di nuovo, non riparte da
+   * zero ogni volta che si apre la scheda Finanze. */
+  salarySplit: SalarySplit;
+  setSalarySplit: (split: SalarySplit) => void;
   recurringExpenses: RecurringExpense[];
   addRecurringExpense: (label: string, amount: number, category: ExpenseCategory, recurrence: ExpenseRecurrence) => void;
   toggleRecurringExpense: (id: string) => void;
@@ -31,7 +45,7 @@ interface FinanceContextValue {
   markPlannedPaid: (id: string) => void;
   removePlannedExpense: (id: string) => void;
   singleExpenses: SingleExpense[];
-  addSingleExpense: (label: string, amount: number, date: string, category: ExpenseCategory) => void;
+  addSingleExpense: (label: string, amount: number, date: string, category: ExpenseCategory, chargedToBudget?: boolean) => void;
   removeSingleExpense: (id: string) => void;
   savingsGoals: SavingsGoal[];
   addSavingsGoal: (label: string, targetAmount: number) => void;
@@ -82,6 +96,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number | null>(null);
   const [cycleStartDay, setCycleStartDayState] = useState(1);
+  const [salarySplit, setSalarySplitState] = useState<SalarySplit>(DEFAULT_SALARY_SPLIT);
   const [recurringExpenses, persistRecurring] = usePersistedList<RecurringExpense>(RECURRING_KEY);
   const [plannedExpenses, persistPlanned] = usePersistedList<PlannedExpense>(PLANNED_KEY);
   const [singleExpenses, persistSingle] = usePersistedList<SingleExpense>(SINGLE_KEY);
@@ -96,6 +111,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (rawCycle) {
         const n = parseInt(rawCycle, 10);
         if (n >= 1 && n <= 28) setCycleStartDayState(n);
+      }
+      const rawSplit = window.localStorage.getItem(SALARY_SPLIT_KEY);
+      if (rawSplit) {
+        const parsed = JSON.parse(rawSplit);
+        if (
+          typeof parsed?.speseFisse === "number" &&
+          typeof parsed?.tempoLibero === "number" &&
+          typeof parsed?.risparmi === "number"
+        ) {
+          setSalarySplitState(parsed);
+        }
       }
     } catch {
       // ignorato
@@ -119,6 +145,15 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCycleStartDayState(clamped);
     try {
       window.localStorage.setItem(CYCLE_START_DAY_KEY, String(clamped));
+    } catch {
+      // ignorato
+    }
+  }, []);
+
+  const setSalarySplit = useCallback((split: SalarySplit) => {
+    setSalarySplitState(split);
+    try {
+      window.localStorage.setItem(SALARY_SPLIT_KEY, JSON.stringify(split));
     } catch {
       // ignorato
     }
@@ -174,8 +209,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addSingleExpense = useCallback(
-    (label: string, amount: number, date: string, category: ExpenseCategory) =>
-      persistSingle((prev) => [...prev, { id: newId(), label, amount, date, category, createdAt: new Date().toISOString() }]),
+    (label: string, amount: number, date: string, category: ExpenseCategory, chargedToBudget = true) =>
+      persistSingle((prev) => [
+        ...prev,
+        { id: newId(), label, amount, date, category, chargedToBudget, createdAt: new Date().toISOString() },
+      ]),
     [persistSingle]
   );
   const removeSingleExpense = useCallback(
@@ -207,6 +245,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setMonthlyBudget,
       cycleStartDay,
       setCycleStartDay,
+      salarySplit,
+      setSalarySplit,
       recurringExpenses,
       addRecurringExpense,
       toggleRecurringExpense,
@@ -231,6 +271,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setMonthlyBudget,
       cycleStartDay,
       setCycleStartDay,
+      salarySplit,
+      setSalarySplit,
       recurringExpenses,
       addRecurringExpense,
       toggleRecurringExpense,

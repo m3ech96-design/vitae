@@ -10,6 +10,7 @@ import { useMood } from "@/lib/mood-context";
 import { TextField } from "../ui/TextField";
 import { InlineAddPanel } from "../ui/InlineAddPanel";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { Switch } from "../ui/Switch";
 import { CategoryPicker } from "./CategoryPicker";
 
 export function SingleExpensesSection() {
@@ -19,6 +20,7 @@ export function SingleExpensesSection() {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayIso());
   const [category, setCategory] = useState<ExpenseCategory>("altro");
+  const [chargedToBudget, setChargedToBudget] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const recent = [...singleExpenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
@@ -26,10 +28,11 @@ export function SingleExpensesSection() {
   const submit = () => {
     const n = parseFloat(amount.replace(",", "."));
     if (!label.trim() || Number.isNaN(n)) return;
-    addSingleExpense(capitalizeSentence(label.trim()), n, date, category);
+    addSingleExpense(capitalizeSentence(label.trim()), n, date, category, chargedToBudget);
     fireTrigger("finanze:spesa-registrata");
     setLabel("");
     setAmount("");
+    setChargedToBudget(true);
   };
 
   return (
@@ -48,7 +51,10 @@ export function SingleExpensesSection() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink-100">{e.label}</p>
-                <p className="text-[11px] text-ink-800">{formatDateShort(e.date)}</p>
+                <p className="flex items-center gap-1 text-[11px] text-ink-800">
+                  {formatDateShort(e.date)}
+                  {e.chargedToBudget === false && <span className="text-aura-amber">· solo informativa</span>}
+                </p>
               </div>
               <span className="shrink-0 text-sm text-ink-200">{e.amount.toLocaleString("it-IT")}€</span>
               <button onClick={() => setPendingDelete(e.id)} className="focus-ring shrink-0 text-ink-800 hover:text-aura-pink" aria-label="Rimuovi">
@@ -69,6 +75,15 @@ export function SingleExpensesSection() {
             <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <CategoryPicker value={category} onChange={setCategory} />
+          <label className="flex items-center justify-between gap-3 rounded-xl2 border border-white/10 bg-white/[0.03] px-3.5 py-3">
+            <span className="min-w-0">
+              <span className="block text-xs text-ink-100">Addebita dal budget</span>
+              <span className="block text-[10px] text-ink-800">
+                {chargedToBudget ? "Conta nel totale speso di questo ciclo" : "Solo un dato in cronologia, non tocca il budget"}
+              </span>
+            </span>
+            <Switch checked={chargedToBudget} onChange={setChargedToBudget} tone="violet" />
+          </label>
         </InlineAddPanel>
       </div>
 

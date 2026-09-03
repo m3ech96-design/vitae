@@ -30,8 +30,8 @@ interface TasksContextValue {
   toggleShoppingItem: (taskId: string, itemId: string) => void;
   completeTask: (id: string) => CompleteResult;
   uncompleteTask: (id: string) => void;
-  setSpentAmount: (id: string, amount: number) => void;
-  setSpentBreakdown: (id: string, breakdown: { category: string; amount: number }[]) => void;
+  setSpentAmount: (id: string, amount: number, chargedToBudget?: boolean) => void;
+  setSpentBreakdown: (id: string, breakdown: { category: string; amount: number }[], chargedToBudget?: boolean) => void;
   streakFor: (task: Task) => number;
 }
 
@@ -239,16 +239,16 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setSpentAmount = useCallback(
-    (id: string, amount: number) => {
-      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: amount } : t)));
+    (id: string, amount: number, chargedToBudget = true) => {
+      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: amount, chargedToBudget } : t)));
     },
     [tasks, persist]
   );
 
   const setSpentBreakdown = useCallback(
-    (id: string, breakdown: { category: string; amount: number }[]) => {
+    (id: string, breakdown: { category: string; amount: number }[], chargedToBudget = true) => {
       const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
-      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: total, spentBreakdown: breakdown } : t)));
+      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: total, spentBreakdown: breakdown, chargedToBudget } : t)));
     },
     [tasks, persist]
   );

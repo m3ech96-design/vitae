@@ -249,7 +249,7 @@ export default function TaskPage() {
           return (
             <SpentPrompt
               splitCategories={spendCategoriesFor(promptPlace?.type)}
-              onConfirm={(breakdown) => setSpentBreakdown(spentPromptId, breakdown)}
+              onConfirm={(breakdown, chargedToBudget) => setSpentBreakdown(spentPromptId, breakdown, chargedToBudget)}
               onClose={() => setSpentPromptId(null)}
             />
           );

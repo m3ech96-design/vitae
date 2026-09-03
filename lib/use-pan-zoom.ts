@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface PanZoomState {
   scale: number;
@@ -100,19 +100,35 @@ export function usePanZoom(containerRef: React.RefObject<HTMLElement>, options: 
     if (pointers.current.size === 0) dragStart.current = null;
   }, []);
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const point = relativePoint(e.clientX, e.clientY);
-      setState((prev) => {
-        const nextScale = clampScale(prev.scale * (1 - e.deltaY * 0.0015));
-        const worldX = (point.x - prev.x) / prev.scale;
-        const worldY = (point.y - prev.y) / prev.scale;
-        return { scale: nextScale, x: point.x - worldX * nextScale, y: point.y - worldY * nextScale };
-      });
-    },
-    [clampScale, relativePoint]
-  );
+  /**
+   * Corretto secondo le istruzioni: React collega gli eventi `wheel` (come `touchmove`) alla
+   * radice in modo sempre passivo dalla versione 17 in poi, per non rallentare lo scroll della
+   * pagina — una prop `onWheel` che chiama `preventDefault()` viene quindi ignorata in
+   * silenzio (solo un avviso in console, "Unable to preventDefault inside passive event
+   * listener invocation"), e lo zoom a rotellina finiva per scorrere la pagina sotto invece di
+   * ingrandire l'albero. L'unico modo per farlo funzionare davvero è agganciare l'ascoltatore
+   * a mano con `{ passive: false }`, fuori dal sistema di eventi sintetici di React.
+   */
+  const onWheelRef = useRef<(e: WheelEvent) => void>();
+  onWheelRef.current = (e: WheelEvent) => {
+    e.preventDefault();
+    const point = relativePoint(e.clientX, e.clientY);
+    setState((prev) => {
+      const nextScale = clampScale(prev.scale * (1 - e.deltaY * 0.0015));
+      const worldX = (point.x - prev.x) / prev.scale;
+      const worldY = (point.y - prev.y) / prev.scale;
+      return { scale: nextScale, x: point.x - worldX * nextScale, y: point.y - worldY * nextScale };
+    });
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const listener = (e: WheelEvent) => onWheelRef.current?.(e);
+    el.addEventListener("wheel", listener, { passive: false });
+    return () => el.removeEventListener("wheel", listener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containerRef.current]);
 
   /** Centra la vista su un punto del "mondo" (stesse unità del contenuto interno, non
    * pixel schermo) — usata dal pulsante "centra sulla persona di riferimento". */
@@ -149,7 +165,7 @@ export function usePanZoom(containerRef: React.RefObject<HTMLElement>, options: 
 
   return {
     state,
-    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp, onWheel },
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
     centerOn,
     fitBounds,
     /** true se l'ultimo gesto è stato un trascinamento/pizzico vero, non solo un tocco — un

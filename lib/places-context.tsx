@@ -29,8 +29,8 @@ interface PlacesContextValue {
   checkOut: (id: string, withPersonIds: string[]) => { promptRating: boolean; askSpent: boolean };
   setRating: (id: string, rating: number) => void;
   logTaskVisit: (id: string, withPersonIds: string[]) => void;
-  setLastVisitSpentAmount: (id: string, amount: number) => void;
-  setLastVisitSpentBreakdown: (id: string, breakdown: { category: string; amount: number }[]) => void;
+  setLastVisitSpentAmount: (id: string, amount: number, chargedToBudget?: boolean) => void;
+  setLastVisitSpentBreakdown: (id: string, breakdown: { category: string; amount: number }[], chargedToBudget?: boolean) => void;
 }
 
 const PlacesContext = createContext<PlacesContextValue | null>(null);
@@ -167,12 +167,12 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setLastVisitSpentAmount = useCallback(
-    (id: string, amount: number) => {
+    (id: string, amount: number, chargedToBudget = true) => {
       persist(
         places.map((p) => {
           if (p.id !== id || p.visitsHistory.length === 0) return p;
           const history = [...p.visitsHistory];
-          history[history.length - 1] = { ...history[history.length - 1], spentAmount: amount };
+          history[history.length - 1] = { ...history[history.length - 1], spentAmount: amount, chargedToBudget };
           return { ...p, visitsHistory: history };
         })
       );
@@ -181,13 +181,13 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setLastVisitSpentBreakdown = useCallback(
-    (id: string, breakdown: { category: string; amount: number }[]) => {
+    (id: string, breakdown: { category: string; amount: number }[], chargedToBudget = true) => {
       const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
       persist(
         places.map((p) => {
           if (p.id !== id || p.visitsHistory.length === 0) return p;
           const history = [...p.visitsHistory];
-          history[history.length - 1] = { ...history[history.length - 1], spentAmount: total, spentBreakdown: breakdown };
+          history[history.length - 1] = { ...history[history.length - 1], spentAmount: total, spentBreakdown: breakdown, chargedToBudget };
           return { ...p, visitsHistory: history };
         })
       );

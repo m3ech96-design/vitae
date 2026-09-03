@@ -1,11 +1,14 @@
 "use client";
 import { useState } from "react";
-import { PiggyBank, Target } from "lucide-react";
+import { PiggyBank, Target, History } from "lucide-react";
 import { capitalizeWords } from "@/lib/text";
+import { formatDateShort } from "@/lib/date-format";
 import { useFinance } from "@/lib/finance-context";
 import { TextField } from "../ui/TextField";
 import { InlineAddPanel } from "../ui/InlineAddPanel";
 import { SavingsVessel } from "./SavingsVessel";
+
+const HISTORY_PAGE_SIZE = 10;
 
 export function SavingsSection() {
   const { savingsGoals, addSavingsGoal, contributeSavingsGoal, removeSavingsGoal, savingsEntries, addSavingsEntry } = useFinance();
@@ -14,8 +17,10 @@ export function SavingsSection() {
   const [depositAmount, setDepositAmount] = useState("");
   const [depositMode, setDepositMode] = useState<"deposita" | "preleva">("deposita");
   const [depositing, setDepositing] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(HISTORY_PAGE_SIZE);
 
   const balance = savingsEntries.reduce((s, e) => s + e.amount, 0);
+  const recentEntries = [...savingsEntries].sort((a, b) => b.date.localeCompare(a.date));
 
   const submitGoal = () => {
     const n = parseFloat(goalTarget.replace(",", "."));
@@ -98,6 +103,39 @@ export function SavingsSection() {
           </div>
         )}
       </div>
+
+      {recentEntries.length > 0 && (
+        <div className="mb-6">
+          <p className="mb-2 flex items-center gap-1.5 text-xs text-ink-600">
+            <History size={12} /> Cronologia versamenti
+          </p>
+          <div className="space-y-1.5">
+            {recentEntries.slice(0, historyVisible).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-ink-100">{entry.note || (entry.amount >= 0 ? "Versamento" : "Prelievo")}</p>
+                  <p className="text-[11px] text-ink-800">{formatDateShort(entry.date)}</p>
+                </div>
+                <span className={`shrink-0 text-sm ${entry.amount >= 0 ? "text-aura-emerald" : "text-aura-pink"}`}>
+                  {entry.amount >= 0 ? "+" : ""}
+                  {entry.amount.toLocaleString("it-IT")}€
+                </span>
+              </div>
+            ))}
+          </div>
+          {historyVisible < recentEntries.length && (
+            <button
+              onClick={() => setHistoryVisible((v) => v + HISTORY_PAGE_SIZE)}
+              className="focus-ring mt-2 w-full rounded-xl2 border border-white/10 py-2 text-xs text-ink-400 hover:border-white/20 hover:text-ink-100"
+            >
+              Carica altri ({recentEntries.length - historyVisible} rimasti)
+            </button>
+          )}
+        </div>
+      )}
 
       <p className="mb-3 flex items-center gap-1.5 text-xs text-ink-600">
         <Target size={12} /> Obiettivi di risparmio
