@@ -84,7 +84,7 @@ export function ImageViewer({
     <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
       <ColorVaporHalos />
 
-      <div className="relative h-full w-full">
+      <div className="relative z-10 h-full w-full">
         <button
           onClick={onClose}
           className="focus-ring glass-strong absolute right-4 top-[max(env(safe-area-inset-top),0.9rem)] z-20 flex h-9 w-9 items-center justify-center rounded-full text-ink-200"

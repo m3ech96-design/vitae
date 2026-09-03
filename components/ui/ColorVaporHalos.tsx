@@ -95,7 +95,11 @@ export function ColorVaporHalos({ perEdge = 7 }: { perEdge?: number }) {
     .join("\n");
 
   return (
-    <>
+    // z-0 esplicito (non il semplice ordine nel DOM): chi mostra un'immagine sopra questo
+    // componente deve solo impilarsi con uno z-index maggiore di 0, senza contare sul fatto
+    // di venire dopo nel markup — un ancoraggio esplicito, non implicito, a garanzia che
+    // "l'immagine sia sempre sovrapposta ai vapori", come richiesto.
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <style>{keyframes}</style>
       {vapors.map((v) => {
         const horizontal = v.edge === "top" || v.edge === "bottom";
@@ -115,8 +119,8 @@ export function ColorVaporHalos({ perEdge = 7 }: { perEdge?: number }) {
           style.top = `${v.offsetPct}%`;
           style[v.edge] = `${v.inset}vw`;
         }
-        return <div key={v.id} className="pointer-events-none absolute rounded-full blur-[75px]" style={style} />;
+        return <div key={v.id} className="absolute rounded-full blur-[75px]" style={style} />;
       })}
-    </>
+    </div>
   );
 }

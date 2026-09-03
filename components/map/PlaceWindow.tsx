@@ -23,6 +23,7 @@ import { AddressSuggestion } from "@/lib/geocode";
 import { useMapAddressPick } from "@/lib/use-map-address-pick";
 import { useMood } from "@/lib/mood-context";
 import { useResolvedImage } from "@/lib/use-resolved-image";
+import { AddPlaceModal } from "./AddPlaceModal";
 
 function isSameWeek(d: Date, ref: Date) {
   const start = new Date(ref);
@@ -49,6 +50,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
   const [showRatingPrompt, setShowRatingPrompt] = useState(false);
   const [showSpentPrompt, setShowSpentPrompt] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editingPlace, setEditingPlace] = useState(false);
   const pendingRatingRef = useRef(false);
 
   const isCheckedIn = Boolean(place.currentVisitStartedAt);
@@ -148,14 +150,25 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
             <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
               <MapPin size={13} /> {place.address}
             </p>
-            {isHome && !editingPosition && (
+            <div className="mt-1.5 flex items-center gap-3">
+              {/* Corretto secondo le istruzioni: prima un luogo non si poteva più modificare
+                 una volta creato (solo eliminare e ricrearne uno nuovo, perdendo cronologia e
+                 valutazione) — ora apre lo stesso modulo di creazione, precompilato. */}
               <button
-                onClick={startEditingPosition}
-                className="focus-ring mt-1.5 flex items-center gap-1.5 text-xs text-aura-violet hover:text-ink-100"
+                onClick={() => setEditingPlace(true)}
+                className="focus-ring flex items-center gap-1.5 text-xs text-aura-violet hover:text-ink-100"
               >
-                <Pencil size={12} /> Modifica posizione
+                <Pencil size={12} /> Modifica luogo
               </button>
-            )}
+              {isHome && !editingPosition && (
+                <button
+                  onClick={startEditingPosition}
+                  className="focus-ring flex items-center gap-1.5 text-xs text-aura-violet hover:text-ink-100"
+                >
+                  <Pencil size={12} /> Modifica posizione
+                </button>
+              )}
+            </div>
           </div>
 
           {isHome && editingPosition && (
@@ -334,6 +347,8 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
           )}
         </div>
       </motion.div>
+
+      {editingPlace && <AddPlaceModal place={place} onClose={() => setEditingPlace(false)} />}
 
       {showSpentPrompt && (
         <SpentPrompt

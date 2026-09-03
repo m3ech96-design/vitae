@@ -5,8 +5,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Aperture, User, PawPrint } from "lucide-react";
 import { AddPersonModal } from "@/components/persone/AddPersonModal";
 import { VitaecomHouseholdPicker } from "./VitaecomHouseholdPicker";
+import { flippedMenuTop } from "@/lib/dropdown-position";
 
 const MENU_WIDTH = 200;
+// Intestazione più tre voci (Vitaecom/offline/animali): stima per eccesso, vedi
+// lib/dropdown-position.ts.
+const MENU_HEIGHT_ESTIMATE = 190;
 
 /**
  * Il tasto "+" del riquadro Casa, evoluto: non apre più direttamente il wizard di una
@@ -31,7 +35,7 @@ export function AddToHouseholdMenu() {
       if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const left = Math.max(8, Math.min(rect.left - MENU_WIDTH / 2 + rect.width / 2, window.innerWidth - MENU_WIDTH - 8));
-      setMenuPos({ top: rect.bottom + 10, left });
+      setMenuPos({ top: flippedMenuTop(rect, MENU_HEIGHT_ESTIMATE, 10), left });
     };
     position();
     const close = () => setOpen(false);

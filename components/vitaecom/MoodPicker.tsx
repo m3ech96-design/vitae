@@ -3,8 +3,12 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMood } from "@/lib/mood-context";
+import { flippedMenuTop } from "@/lib/dropdown-position";
 
 const MENU_WIDTH = 240;
+// Il pannello ha già un tetto proprio (max-h-64, vedi sotto) — lo stesso valore basta come
+// stima per la decisione se aprire verso l'alto, vedi lib/dropdown-position.ts.
+const MENU_HEIGHT_ESTIMATE = 256;
 
 /**
  * Sfera-pulsante che apre un selettore di stati d'animo ancorato alla sua posizione (stesso
@@ -41,7 +45,7 @@ export function MoodPicker({
       if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const left = Math.max(8, Math.min(rect.left, window.innerWidth - MENU_WIDTH - 8));
-      setPos({ top: rect.bottom + 8, left });
+      setPos({ top: flippedMenuTop(rect, MENU_HEIGHT_ESTIMATE), left });
     };
     position();
     const close = () => setOpen(false);

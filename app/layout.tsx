@@ -12,6 +12,7 @@ import { DiaryProvider } from "@/lib/diary-context";
 import { HobbyProvider } from "@/lib/hobby-context";
 import { AnimalHealthProvider } from "@/lib/animal-health-context";
 import { AnimalFoodProvider } from "@/lib/animal-food-context";
+import { GenealogyProvider } from "@/lib/genealogy-context";
 import { HouseholdMessagesProvider } from "@/lib/household-messages-context";
 import { WidgetsProvider } from "@/lib/widgets/widgets-context";
 import { FinanceProvider } from "@/lib/finance-context";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <HobbyProvider>
                     <AnimalHealthProvider>
                     <AnimalFoodProvider>
+                    <GenealogyProvider>
                     <HouseholdMessagesProvider>
                     <WidgetsProvider>
                     <FinanceProvider>
@@ -96,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </FinanceProvider>
                     </WidgetsProvider>
                     </HouseholdMessagesProvider>
+                    </GenealogyProvider>
                     </AnimalFoodProvider>
                     </AnimalHealthProvider>
                     </HobbyProvider>

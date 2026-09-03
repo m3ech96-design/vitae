@@ -15,6 +15,7 @@ import { AccountActionLine } from "./AccountActionLine";
 import { ShowcaseDrawer } from "./ShowcaseDrawer";
 import { ExploreProfileSheet } from "./ExploreProfileSheet";
 import { KnowPanel } from "./KnowPanel";
+import { flippedMenuTop } from "@/lib/dropdown-position";
 
 const UNKNOWN_TIP_MS = 5000;
 
@@ -89,7 +90,7 @@ export function ProfileHeader({
     // per il pannello "Esplora Altro", per non farsi tagliare dalla card che scorre.
     const rect = avatarRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setUnknownTipPos({ top: rect.bottom + 10, left: Math.max(8, Math.min(rect.left, window.innerWidth - 220 - 8)) });
+    setUnknownTipPos({ top: flippedMenuTop(rect, 70, 10), left: Math.max(8, Math.min(rect.left, window.innerWidth - 220 - 8)) });
     setUnknownTipOpen(true);
     if (unknownTipTimer.current) clearTimeout(unknownTipTimer.current);
     unknownTipTimer.current = setTimeout(() => setUnknownTipOpen(false), UNKNOWN_TIP_MS);

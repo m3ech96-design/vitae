@@ -2,46 +2,35 @@ import { getAllImages, restoreAllImages } from "./image-store";
 import { getAllVideos, restoreAllVideos } from "./video-store";
 import { getAllAudio, restoreAllAudio } from "./audio-store";
 
-const DATA_KEYS = [
-  "vitae:profile",
-  "vitae:people",
-  "vitae:places",
-  "vitae:tasks",
-  "vitae:feed",
-  "vitae:tracking-enabled",
-  "vitae:workouts",
-  "vitae:weight-entries",
-  "vitae:weight-goal",
-  "vitae:finance-budget",
-  "vitae:finance-recurring",
-  "vitae:finance-planned",
-  "vitae:finance-single",
-  "vitae:finance-goals",
-  "vitae:finance-savings",
-  // Aggiunte qui perché introdotte in questa stessa sessione (Alimentazione, Wishlist,
-  // Diario) — l'elenco sopra era già incompleto rispetto a moduli precedenti (mood, medical,
-  // needs, vitaecom-*, nav-slots e altri, mai aggiunti quando furono costruiti): un problema
-  // preesistente, dichiarato ma non risolto qui per non allargare lo scope di questo
-  // checkpoint a un audit completo del backup.
-  "vitae:food-ingredients",
-  "vitae:food-entries",
-  "vitae:food-water",
-  "vitae:food-goals",
-  "vitae:wishlist-items",
-  "vitae:diary-entries",
-  "vitae:diary-scrub-preview",
-  "vitae:hobbies",
-  "vitae:finance-cycle-start-day",
-  "vitae:animal-vaccinations",
-  "vitae:animal-medications",
-  "vitae:animal-appointments",
-  "vitae:animal-reports",
-  "vitae:animal-allergies",
-  "vitae:animal-weight",
-  "vitae:animal-food-products",
-  "vitae:household-messages",
-  "vitae:home-widgets",
-];
+/** Il prefisso che usa ogni chiave localStorage dell'app (vedi il "vitae:qualcosa" in ogni
+ * *-context.tsx) — usato qui sotto per scoprire le chiavi da salvare invece di elencarle a
+ * mano una per una. */
+const KEY_PREFIX = "vitae:";
+
+/**
+ * Corretto secondo le istruzioni: qui c'era prima un elenco fisso (DATA_KEYS) scritto a mano,
+ * e ogni volta che una nuova sezione introduceva una propria chiave localStorage (mood,
+ * medical, needs, i vari vitaecom-*, nav-slots, e più recenti come body-measurements o
+ * weekly-activity-goal) bisognava ricordarsi di aggiungerla qui — 41 chiavi erano rimaste
+ * fuori, mai aggiunte quando quei moduli furono costruiti. Un elenco da mantenere a mano è
+ * per natura destinato a restare indietro rispetto al codice.
+ *
+ * La correzione strutturale: invece di elencare le chiavi, il backup adesso le SCOPRE da
+ * solo, leggendo tutto ciò che in `localStorage` inizia per "vitae:" (il prefisso che usa
+ * ogni context dell'app, senza eccezioni verificate). Una chiave dimenticata in futuro non
+ * può più succedere, perché non c'è più un elenco da tenere aggiornato: qualunque nuova
+ * sezione aggiunga la propria chiave con questo stesso prefisso finisce nel backup
+ * automaticamente, dal primo giorno.
+ *
+ * Include deliberatamente anche i piccoli flag interni "già mostrato/già seminato" (es.
+ * vitae:vitaecom-know-seeded) invece di escluderli come dati "non veri": ripristinando un
+ * backup su un dispositivo nuovo senza quei flag, l'app rigenererebbe da capo le notifiche
+ * dimostrative già viste e gestite, facendole ricomparire come fossero nuove — un backup
+ * fedele deve riportare lo stato esatto di prima, non solo i dati che sembrano "importanti".
+ */
+function allAppKeys(): string[] {
+  return Object.keys(window.localStorage).filter((k) => k.startsWith(KEY_PREFIX));
+}
 
 export interface BackupFile {
   version: 1;
@@ -56,7 +45,7 @@ export interface BackupFile {
  * un solo file. */
 export async function exportBackup(): Promise<BackupFile> {
   const data: Record<string, string> = {};
-  DATA_KEYS.forEach((key) => {
+  allAppKeys().forEach((key) => {
     const v = window.localStorage.getItem(key);
     if (v !== null) data[key] = v;
   });

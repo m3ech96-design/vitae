@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ImagePlus, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { PlaceType, CustomField } from "@/lib/types";
+import { PlaceType, CustomField, Place } from "@/lib/types";
 import { PLACE_TYPE_META, PLACE_TYPES } from "@/lib/places-meta";
 import { capitalizeWords } from "@/lib/text";
 import { newId } from "@/lib/id";
@@ -21,29 +21,39 @@ import { MapView } from "./MapView";
 import { DEFAULT_MAP_CENTER } from "@/lib/geo";
 import { useMapAddressPick } from "@/lib/use-map-address-pick";
 
+/**
+ * Aggiunge un luogo nuovo, oppure — se `place` è presente — modifica un luogo già salvato
+ * (stesso modulo, non una finestra a parte da tenere sincronizzata). Corretto secondo le
+ * istruzioni: prima un luogo, una volta creato, non si poteva più modificare (solo eliminare
+ * e ricrearne uno nuovo, perdendo cronologia visite e valutazione); ora "Modifica luogo" in
+ * PlaceWindow.tsx apre questo stesso modulo con tutti i campi già precompilati.
+ */
 export function AddPlaceModal({
   onClose,
+  place,
   initialName = "",
   initialAddress = "",
   initialType = "ristorante",
 }: {
   onClose: () => void;
+  /** Presente = modifica; assente = crea un luogo nuovo. */
+  place?: Place;
   initialName?: string;
   initialAddress?: string;
   initialType?: PlaceType;
 }) {
-  const { addPlace, places } = usePlaces();
+  const { addPlace, updatePlace, places } = usePlaces();
   const { people, home, updatePerson } = useHousehold();
   const { profile, updateProfile } = useProfile();
   const { pushEvent } = useFeed();
   const { fireTrigger } = useMood();
 
-  const [name, setName] = useState(initialName);
-  const [address, setAddress] = useState(initialAddress);
-  const [type, setType] = useState<PlaceType>(initialType);
-  const [photo, setPhoto] = useState<string | undefined>(undefined);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [linkedPersonId, setLinkedPersonId] = useState<string>("user");
+  const [name, setName] = useState(place?.name ?? initialName);
+  const [address, setAddress] = useState(place?.address ?? initialAddress);
+  const [type, setType] = useState<PlaceType>(place?.type ?? initialType);
+  const [photo, setPhoto] = useState<string | undefined>(place?.photoUrl);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(place ? { lat: place.lat, lng: place.lng } : null);
+  const [linkedPersonId, setLinkedPersonId] = useState<string>(place?.linkedPersonId ?? "user");
 
   const needsOwner = type === "casa" || type === "lavoro";
   const center = coords || (home ? { lat: home.lat, lng: home.lng } : DEFAULT_MAP_CENTER);
@@ -57,6 +67,21 @@ export function AddPlaceModal({
   const submit = () => {
     if (!address.trim() || !coords) return;
     const finalName = name.trim() ? capitalizeWords(name.trim()) : capitalizeWords(address.trim());
+
+    if (place) {
+      updatePlace(place.id, {
+        name: finalName,
+        photoUrl: photo,
+        type,
+        address: address.trim(),
+        lat: coords.lat,
+        lng: coords.lng,
+        linkedPersonId: needsOwner ? linkedPersonId : undefined,
+      });
+      onClose();
+      return;
+    }
+
     const isPrimaryHome =
       type === "casa" && linkedPersonId === "user" && !places.some((p) => p.isPrimaryHome);
 
@@ -79,7 +104,7 @@ export function AddPlaceModal({
     if (needsOwner && linkedPersonId !== "user") {
       const person = people.find((p) => p.id === linkedPersonId);
       if (person) {
-        const label = type === "casa" ? "Abita a" : "Lavora Presso";
+        const label = type === "casa" ? "Abita a" : "Lavora presso";
         const field: CustomField = { id: newId(), label, value: finalName };
         if (type === "casa") {
           updatePerson(person.id, { homeCustomFields: [...person.homeCustomFields, field] });
@@ -107,7 +132,7 @@ export function AddPlaceModal({
         className="glass-strong flex max-h-[92dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="shrink-0 relative z-10 flex items-center justify-between px-6 pt-6">
-          <p className="font-display text-lg text-ink-100">Aggiungi luogo</p>
+          <p className="font-display text-lg text-ink-100">{place ? "Modifica luogo" : "Aggiungi luogo"}</p>
           <button onClick={onClose} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Chiudi">
             <X size={18} />
           </button>
@@ -118,12 +143,16 @@ export function AddPlaceModal({
             {PLACE_TYPES.map((t) => {
               const meta = PLACE_TYPE_META[t];
               const Icon = meta.icon;
+              // La Casa principale non può cambiare tipo qui: da lei dipende tutto il
+              // rilevamento "sei a casa/fuori casa" altrove nell'app.
+              const locked = Boolean(place?.isPrimaryHome) && t !== "casa";
               return (
                 <button
                   key={t}
                   type="button"
+                  disabled={locked}
                   onClick={() => setType(t)}
-                  className="focus-ring flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all"
+                  className="focus-ring flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all disabled:opacity-30"
                   style={{
                     borderColor: type === t ? meta.color : "rgba(255,255,255,0.1)",
                     background: type === t ? `${meta.color}22` : "transparent",
@@ -138,7 +167,7 @@ export function AddPlaceModal({
 
           <TextField
             label="Rinomina luogo (facoltativo)"
-            placeholder="Es. Il Nostro Posto Preferito"
+            placeholder="Es. Il nostro posto preferito"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -162,7 +191,7 @@ export function AddPlaceModal({
           {needsOwner && (
             <label className="block">
               <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-                {type === "casa" ? "A chi appartiene" : "Chi Lavora Qui"}
+                {type === "casa" ? "A chi appartiene" : "Chi lavora qui"}
               </span>
               <select
                 value={linkedPersonId}
@@ -187,7 +216,7 @@ export function AddPlaceModal({
                 Posizione sulla mappa
               </span>
               <span className="text-[11px] text-ink-800">
-                {resolvingAddress ? "Sto cercando l'indirizzo…" : coords ? "Tocca per rifinire" : "Tocca Per Segnare Il Punto Esatto"}
+                {resolvingAddress ? "Sto cercando l'indirizzo…" : coords ? "Tocca per rifinire" : "Tocca per segnare il punto esatto"}
               </span>
             </div>
             <div className="h-40 overflow-hidden rounded-xl2 border border-white/10">
@@ -202,8 +231,8 @@ export function AddPlaceModal({
             </div>
             {!coords && (
               <p className="mt-1.5 text-[10px] text-ink-800">
-                Non Serve Un Indirizzo Suggerito: Puoi Segnare Il Punto Direttamente Sulla Mappa,
-                Anche Per Un Numero Civico Che Non Compare Nei Suggerimenti.
+                Non serve un indirizzo suggerito: puoi segnare il punto direttamente sulla mappa,
+                anche per un numero civico che non compare nei suggerimenti.
               </p>
             )}
           </div>
@@ -215,7 +244,7 @@ export function AddPlaceModal({
             onClick={submit}
             disabled={!address.trim() || !coords}
           >
-            Aggiungi luogo
+            {place ? "Salva modifiche" : "Aggiungi luogo"}
           </Button>
         </div>
       </motion.div>

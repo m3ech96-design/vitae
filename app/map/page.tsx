@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Plus, MapPin } from "lucide-react";
+import { Plus, MapPin, LocateFixed, Locate } from "lucide-react";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
 import { PLACE_TYPE_META } from "@/lib/places-meta";
@@ -46,6 +46,8 @@ export default function MapPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [openPlaceId, setOpenPlaceId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("rating-desc");
+  const [flyToPlace, setFlyToPlace] = useState<{ lat: number; lng: number; at: number } | null>(null);
+  const [recenterOnUserAt, setRecenterOnUserAt] = useState<number | null>(null);
 
   const center = home ? { lat: home.lat, lng: home.lng } : DEFAULT_MAP_CENTER;
 
@@ -68,24 +70,42 @@ export default function MapPage() {
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden">
       <div className="relative h-[44vh] w-full shrink-0">
-        <MapView places={places} center={center} onMarkerClick={(p) => setOpenPlaceId(p.id)} showUserLocation />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-4 pt-[max(env(safe-area-inset-top),16px)]">
+        <MapView
+          places={places}
+          center={center}
+          onMarkerClick={(p) => setOpenPlaceId(p.id)}
+          showUserLocation
+          flyToPlace={flyToPlace}
+          recenterOnUserRequestAt={recenterOnUserAt}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 pt-[max(env(safe-area-inset-top),16px)]">
           <div className="glass pointer-events-auto rounded-full px-4 py-2">
             <p className="font-display text-xs uppercase tracking-[0.2em] text-ink-200">Mappa</p>
           </div>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="focus-ring pointer-events-auto flex items-center gap-1.5 rounded-full bg-aura-gradient px-4 py-2 text-xs font-display text-void-950 shadow-glow"
-          >
-            <Plus size={14} /> Aggiungi luogo
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => setAddOpen(true)}
+              className="focus-ring pointer-events-auto flex items-center gap-1.5 rounded-full bg-aura-gradient px-4 py-2 text-xs font-display text-void-950 shadow-glow"
+            >
+              <Plus size={14} /> Aggiungi luogo
+            </button>
+            {/* Corretto secondo le istruzioni: subito sotto "Aggiungi luogo", a destra —
+               centra la mappa sulla posizione live dell'utente. */}
+            <button
+              onClick={() => setRecenterOnUserAt(Date.now())}
+              className="focus-ring pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-void-950/70 text-ink-100 backdrop-blur-md"
+              aria-label="Centra la mappa su di me"
+            >
+              <LocateFixed size={15} />
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="glass-strong relative -mt-5 flex flex-1 flex-col rounded-t-xl3 border-t border-white/10 px-5 pt-5">
         <div className="shrink-0 relative z-10 mx-auto mb-4 h-1 w-10 rounded-full bg-white/15" />
         <div className="shrink-0 relative z-10 mb-4 flex items-center justify-between gap-3">
-          <p className="shrink-0 font-display text-sm text-ink-100">{places.length} Luoghi</p>
+          <p className="shrink-0 font-display text-sm text-ink-100">{places.length} luoghi</p>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
             {(Object.keys(SORT_LABEL) as SortMode[]).map((s) => (
               <button
@@ -112,9 +132,15 @@ export default function MapPage() {
           )}
           {sorted.map((p) => {
             return (
-              <button
+              // Prima era un <button>: un <button> dentro l'altro (la nuova icona "centra
+              // sul luogo" qui sotto ne rende uno suo) non è HTML valido — stesso bug già
+              // corretto altrove nell'app per lo stesso identico motivo.
+              <div
                 key={p.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setOpenPlaceId(p.id)}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpenPlaceId(p.id)}
                 className="focus-ring flex w-full items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-white/15"
               >
                 <PlaceIcon place={p} />
@@ -122,7 +148,7 @@ export default function MapPage() {
                   <p className="truncate font-display text-sm text-ink-100">
                     {p.name}
                     {p.currentVisitStartedAt && (
-                      <span className="ml-2 text-[10px] text-aura-cyan">&middot; Sei Qui</span>
+                      <span className="ml-2 text-[10px] text-aura-cyan">&middot; sei qui</span>
                     )}
                   </p>
                   <p className="truncate text-xs text-ink-800">{p.address}</p>
@@ -130,10 +156,22 @@ export default function MapPage() {
                     className="text-xs"
                     style={{ color: p.rating !== null ? ratingColor(p.rating) : "#565B77" }}
                   >
-                    {p.rating !== null ? ratingLabel(p.rating) : "Non Valutato"}
+                    {p.rating !== null ? ratingLabel(p.rating) : "Non valutato"}
                   </p>
                 </div>
-              </button>
+                {/* Corretto secondo le istruzioni: a destra nella card, centra la mappa su
+                   questo luogo senza aprire la sua scheda. */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFlyToPlace({ lat: p.lat, lng: p.lng, at: Date.now() });
+                  }}
+                  className="focus-ring shrink-0 rounded-full p-2 text-ink-600 hover:bg-white/[0.06] hover:text-aura-violet"
+                  aria-label={`Centra la mappa su ${p.name}`}
+                >
+                  <Locate size={16} />
+                </button>
+              </div>
             );
           })}
         </div>

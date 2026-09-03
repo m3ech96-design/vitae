@@ -41,11 +41,25 @@ export function HouseholdAvatarCell({
   };
 
   return (
-    <button
-      type="button"
+    // Prima era un <button>: un <button> dentro l'altro (il badge "Fame" interattivo, appena
+    // introdotto qui sotto, ne rende uno suo) non è HTML valido — lo stesso bug già corretto
+    // altrove nell'app (vedi PersonalCardMenu, PersonCard) per lo stesso identico motivo. Un
+    // <div> col ruolo giusto risolve senza perdere accessibilità.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={(e) => {
         if (asleep) {
           wake(e);
+          return;
+        }
+        onOpen(person);
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        if (asleep) {
+          const until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+          updatePerson(person.id, { wakeUntil: until });
           return;
         }
         onOpen(person);
@@ -54,7 +68,10 @@ export function HouseholdAvatarCell({
     >
       <div className={asleep ? "relative opacity-70 transition-opacity" : "relative transition-opacity"}>
         {isAnimal && !asleep && isHungry(person) ? (
-          <HungryBadge person={person} />
+          // Corretto secondo le istruzioni: prima non era mai interattivo qui — toccare
+          // l'avatar apriva sempre e solo la scheda della persona, la lista del cibo restava
+          // scritta ma irraggiungibile da questo riquadro.
+          <HungryBadge person={person} interactive />
         ) : (
           !asleep && <PlaceIconBadge place={engagementPlace} size={60} />
         )}
@@ -70,6 +87,6 @@ export function HouseholdAvatarCell({
         />
       </div>
       <span className="max-w-[64px] truncate text-[11px] text-ink-600">{person.firstName}</span>
-    </button>
+    </div>
   );
 }

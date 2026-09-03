@@ -5,8 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MoreHorizontal, Trash2, EyeOff, UserX, Flag } from "lucide-react";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { ReportPostSheet } from "./ReportPostSheet";
+import { flippedMenuTop } from "@/lib/dropdown-position";
 
 const MENU_WIDTH = 240;
+// Al massimo tre voci per un post altrui: stima per eccesso, vedi lib/dropdown-position.ts.
+const MENU_HEIGHT_ESTIMATE = 170;
 
 /**
  * Il pulsante a tre puntini in alto a destra di ogni post — un proprio post ha solo
@@ -34,7 +37,7 @@ export function PostMenu({ postId, authorId, isOwn }: { postId: string; authorId
       if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const left = Math.max(8, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8));
-      setPos({ top: rect.bottom + 8, left });
+      setPos({ top: flippedMenuTop(rect, MENU_HEIGHT_ESTIMATE), left });
     };
     position();
     const close = () => setOpen(false);

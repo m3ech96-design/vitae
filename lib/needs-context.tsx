@@ -10,12 +10,16 @@ export interface ActiveNeed {
   id: string;
   label: string;
   startedAt: string;
+  /** Lo stato d'animo scelto per QUESTO bisogno al momento della creazione — non più uno
+   * fisso uguale per tutti ("Appagato"): l'utente decide individualmente, bisogno per
+   * bisogno, cosa vuole provare quando lo esaudisce (vedi WeeklyNeedsSection.tsx). */
+  moodId: string;
 }
 
 interface NeedsContextValue {
   hydrated: boolean;
   needs: ActiveNeed[];
-  addNeed: (label: string) => void;
+  addNeed: (label: string, moodId: string) => void;
   cancelNeed: (id: string) => void;
   /** true se esaudito con successo (esiste ancora ed entro i 7 giorni) — il chiamante
    * decide cosa fare con la celebrazione, questo contesto si limita a rimuoverlo. */
@@ -44,8 +48,14 @@ export function NeedsProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(raw) as ActiveNeed[];
         const now = Date.now();
         // Chi è scaduto da quando l'app era chiusa sparisce in silenzio, senza colpa —
-        // non è un fallimento da segnalare, è solo passata la settimana.
-        setNeeds(parsed.filter((n) => now - new Date(n.startedAt).getTime() < DURATION_MS));
+        // non è un fallimento da segnalare, è solo passata la settimana. I bisogni salvati
+        // prima dell'introduzione della scelta individuale (moodId) ricevono qui il vecchio
+        // default condiviso ("Appagato"), non un crash per un campo mancante.
+        setNeeds(
+          parsed
+            .filter((n) => now - new Date(n.startedAt).getTime() < DURATION_MS)
+            .map((n) => ({ ...n, moodId: n.moodId ?? "appagato" }))
+        );
       }
     } catch {
       // storage non disponibile o dati corrotti: riparte da una lista vuota
@@ -73,10 +83,10 @@ export function NeedsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addNeed = useCallback(
-    (label: string) => {
+    (label: string, moodId: string) => {
       const trimmed = label.trim();
       if (!trimmed) return;
-      persist([...needs, { id: newId(), label: trimmed, startedAt: new Date().toISOString() }]);
+      persist([...needs, { id: newId(), label: trimmed, startedAt: new Date().toISOString(), moodId }]);
     },
     [needs, persist]
   );

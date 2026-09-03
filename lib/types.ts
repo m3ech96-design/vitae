@@ -142,6 +142,10 @@ export interface UserProfile extends PersonalDetails {
    * valori, luoghi...), scelti a mano tra quelli esistenti invece di duplicare un campo testo
    * a parte da tenere sincronizzato a mano. */
   vitaecomShowcase: string[];
+  /** Come su Person (lib/types.ts) per gli altri componenti della famiglia: di notte
+   * l'utente principale risulta dormiente come chiunque altro, a meno che non si sia svegliato
+   * per un'ora toccando il proprio avatar — vedi lib/time.ts. */
+  wakeUntil?: string;
 }
 
 export function createEmptyProfile(): UserProfile {

@@ -16,15 +16,19 @@ function daysLeft(startedAt: string): number {
  * momento davvero grosso è quando li esaudisci. */
 export function WeeklyNeedsCard() {
   const { needs, fulfillNeed } = useNeeds();
-  const { fireTrigger } = useMood();
+  const { suggestMood } = useMood();
   const [celebrating, setCelebrating] = useState<string | null>(null);
 
   if (needs.length === 0) return null;
 
-  const fulfill = (id: string, label: string) => {
+  const fulfill = (id: string, label: string, moodId: string) => {
     if (fulfillNeed(id)) {
       setCelebrating(label);
-      fireTrigger("bisogni:esaudito");
+      // Non più un innesco unico e fisso per tutti ("bisogni:esaudito" → sempre "Appagato"):
+      // ogni bisogno porta con sé lo stato d'animo scelto per lui alla creazione (vedi
+      // WeeklyNeedsSection.tsx) — suggestMood lo propone direttamente, senza passare dalla
+      // mappa degli inneschi condivisa.
+      suggestMood(moodId);
       // Resta visibile il tempo di vedersela tutta (gli anelli impiegano circa 2.5s a
       // sfumare del tutto), poi si chiude da sola — nessuna azione richiesta per proseguire.
       setTimeout(() => setCelebrating(null), 3200);
@@ -50,7 +54,7 @@ export function WeeklyNeedsCard() {
                 </p>
               </div>
               <button
-                onClick={() => fulfill(n.id, n.label)}
+                onClick={() => fulfill(n.id, n.label, n.moodId)}
                 className="focus-ring flex shrink-0 items-center gap-1.5 rounded-full bg-aura-gradient px-3.5 py-1.5 text-xs font-display text-void-950"
               >
                 <Heart size={12} /> Fatto

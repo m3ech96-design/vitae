@@ -26,10 +26,20 @@ const TRAIL_MAX = 6;
  * Le posizioni via via campionate — che finora finivano scartate appena arrivava il fix
  * successivo — restano ora in coda per un breve tratto e si vedono sfumare dietro al
  * pallino: non solo "dove sei", anche "come ti sei mosso per arrivarci". */
-function LiveLocationLayer({ recenterOnce = false }: { recenterOnce?: boolean }) {
+function LiveLocationLayer({
+  recenterOnce = false,
+  recenterRequestAt,
+}: {
+  recenterOnce?: boolean;
+  /** Cambia ogni volta che l'utente tocca "centra su di me" — un token, non una posizione:
+   * anche chiedendo di ricentrare due volte di fila sullo stesso punto, il cambio di valore
+   * (un timestamp) fa scattare comunque l'effetto. */
+  recenterRequestAt?: number | null;
+}) {
   const map = useMap();
   const { position } = useLiveLocation(true);
   const hasRecenteredRef = useRef(false);
+  const lastManualRecenterRef = useRef<number | null>(null);
   const icon = useMemo(() => createUserLocationDivIcon(), []);
   const [trail, setTrail] = useState<LiveLocation[]>([]);
 
@@ -39,6 +49,12 @@ function LiveLocationLayer({ recenterOnce = false }: { recenterOnce?: boolean })
       map.setView([position.lat, position.lng], map.getZoom());
     }
   }, [position, recenterOnce, map]);
+
+  useEffect(() => {
+    if (!position || !recenterRequestAt || recenterRequestAt === lastManualRecenterRef.current) return;
+    lastManualRecenterRef.current = recenterRequestAt;
+    map.setView([position.lat, position.lng], Math.max(map.getZoom(), 15));
+  }, [position, recenterRequestAt, map]);
 
   useEffect(() => {
     if (!position) return;
@@ -78,6 +94,20 @@ function LiveLocationLayer({ recenterOnce = false }: { recenterOnce?: boolean })
   );
 }
 
+/** Sposta la mappa su un punto qualunque su richiesta — usata da "centra la mappa sul
+ * luogo" nelle card dei luoghi. Stesso principio del token in LiveLocationLayer: `at`
+ * cambia sempre, anche richiedendo due volte di fila lo stesso punto. */
+function FlyToController({ target }: { target: { lat: number; lng: number; at: number } | null }) {
+  const map = useMap();
+  const lastAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!target || target.at === lastAtRef.current) return;
+    lastAtRef.current = target.at;
+    map.setView([target.lat, target.lng], Math.max(map.getZoom(), 15));
+  }, [target, map]);
+  return null;
+}
+
 export function LeafletMap({
   places,
   center,
@@ -87,6 +117,8 @@ export function LeafletMap({
   draftMarker,
   showUserLocation = false,
   recenterOnUserLocation = false,
+  flyToPlace,
+  recenterOnUserRequestAt,
 }: {
   places: Place[];
   center: { lat: number; lng: number };
@@ -99,6 +131,12 @@ export function LeafletMap({
   /** Al primo fix GPS, sposta la mappa lì una sola volta (utile quando si parte senza un
    * centro sensato, es. collegare Casa la prima volta). Richiede `showUserLocation`. */
   recenterOnUserLocation?: boolean;
+  /** Cambia (un punto + un token) per spostare la mappa lì su richiesta — "centra la mappa
+   * sul luogo" da una card. */
+  flyToPlace?: { lat: number; lng: number; at: number } | null;
+  /** Cambia (un token) per ricentrare sulla posizione live dell'utente su richiesta —
+   * richiede `showUserLocation`. */
+  recenterOnUserRequestAt?: number | null;
 }) {
   const draftIcon = useMemo(() => createAuraDivIcon("#00E5C7", { shape: "circle", size: 30 }), []);
 
@@ -119,6 +157,7 @@ export function LeafletMap({
         const icon = createAuraDivIcon(meta.color, {
           shape: meta.shape,
           active: Boolean(p.currentVisitStartedAt),
+          icon: meta.icon,
         });
         return (
           <Marker
@@ -134,7 +173,8 @@ export function LeafletMap({
         <Marker position={[draftMarker.lat, draftMarker.lng]} icon={draftIcon} title="Punto selezionato sulla mappa" />
       )}
       {pickMode && onPick && <ClickCatcher onPick={onPick} />}
-      {showUserLocation && <LiveLocationLayer recenterOnce={recenterOnUserLocation} />}
+      {showUserLocation && <LiveLocationLayer recenterOnce={recenterOnUserLocation} recenterRequestAt={recenterOnUserRequestAt} />}
+      <FlyToController target={flyToPlace ?? null} />
     </MapContainer>
   );
 }

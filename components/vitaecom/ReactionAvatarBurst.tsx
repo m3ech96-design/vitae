@@ -82,7 +82,14 @@ export function ReactionAvatarBurst({
         <AuraAvatar imageUrl={avatarUrl} firstName={nickname} size={AVATAR_SIZE} ring="none" />
       </button>
 
-      {/* Il tasto indietro vero, a riposo — sparisce durante il viaggio della sfera. */}
+      {/* Il tasto indietro vero, a riposo — sparisce durante il viaggio della sfera.
+         Corretto secondo le istruzioni: prima era ancorato in alto (`top: 0`) dentro un
+         contenitore alto quanto l'avatar, quindi restava più in alto sia del centro
+         dell'avatar sia del nickname affiancato (che invece si allinea al centro grazie
+         all'`items-center` del genitore) — e anche più in alto del punto esatto (START,
+         a metà altezza) dove la sfera in viaggio nasce e torna, creando un piccolo scatto
+         visibile nel passaggio freccia-sfera-freccia. Centrato sulla stessa altezza di
+         START qui sotto, risolve entrambi insieme. */}
       <AnimatePresence>
         {phase === "idle" && (
           <motion.button
@@ -91,8 +98,8 @@ export function ReactionAvatarBurst({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onBack}
-            className="focus-ring absolute left-0 top-0 flex items-center justify-center text-ink-600 hover:text-ink-200"
-            style={{ width: ICON_SLOT, height: ICON_SLOT }}
+            className="focus-ring absolute left-0 flex items-center justify-center text-ink-600 hover:text-ink-200"
+            style={{ width: ICON_SLOT, height: ICON_SLOT, top: START.y - ICON_SLOT / 2 }}
             aria-label="Indietro"
           >
             <ArrowLeft size={20} />

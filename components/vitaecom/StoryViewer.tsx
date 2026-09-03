@@ -156,9 +156,10 @@ export function StoryViewer({
   return createPortal(
     <div className="fixed inset-0 z-[80] overflow-hidden bg-black">
       <ColorVaporHalos />
-      {/* Il livello di tocco sta sotto intestazione e barra delle azioni (z-index più
-         basso): un tocco su un pulsante vero viene sempre intercettato da lui, mai da
-         questo, per come sono impilati — nessuno stopPropagation necessario. */}
+      {/* Il livello di tocco sta sotto intestazione, media e barra delle azioni (z-index più
+         basso): un tocco su un pulsante vero, o sul contenuto multimediale stesso, viene
+         sempre intercettato da loro, mai da questo, per come sono impilati — nessuno
+         stopPropagation necessario. */}
       <div
         className="absolute inset-0 z-0"
         onPointerDown={onPointerDown}
@@ -189,7 +190,11 @@ export function StoryViewer({
         </div>
       </div>
 
-      <div className="flex h-full w-full items-center justify-center">
+      {/* pointer-events-none: questo livello serve solo a issare foto/video sopra ai vapori
+         di colore (altrimenti, essendo un elemento "statico" dentro un contenitore flessibile,
+         dipingerebbe SOTTO gli aloni assolutamente posizionati, non sopra) — le interazioni
+         restano tutte al livello di tocco qui sotto, invariato. */}
+      <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center">
         {videoUrl ? (
           <video
             ref={videoRef}

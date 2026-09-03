@@ -26,7 +26,12 @@ export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: 
       </button>
       {media.type === "image" && imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+        <img
+          src={imageUrl}
+          alt=""
+          className="relative z-10 max-h-full max-w-full object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
       )}
       {media.type === "video" && videoUrl && (
         <video
@@ -34,7 +39,7 @@ export function MediaLightbox({ media, onClose }: { media: DiaryMedia; onClose: 
           controls
           autoPlay
           playsInline
-          className="max-h-full max-w-full"
+          className="relative z-10 max-h-full max-w-full"
           onClick={(e) => e.stopPropagation()}
         />
       )}

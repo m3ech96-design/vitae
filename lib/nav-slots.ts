@@ -15,6 +15,7 @@ import {
   BookHeart,
   Palette,
   PawPrint,
+  GitBranch,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -42,6 +43,7 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/animali", label: "Animali", icon: PawPrint },
   { href: "/finanze", label: "Finanze", icon: Wallet },
   { href: "/rapporti", label: "Rapporti", icon: Sparkles },
+  { href: "/albero-genealogico", label: "Albero genealogico", icon: GitBranch },
   { href: "/map", label: "Mappa", icon: MapPinned },
   { href: "/news", label: "News", icon: Newspaper },
 ];

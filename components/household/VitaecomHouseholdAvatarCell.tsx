@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, ExternalLink, Link2Off } from "lucide-react";
 import { VitaecomAccount } from "@/lib/vitaecom-social-types";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { isNightHour } from "@/lib/time";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 
 /**
@@ -23,6 +24,11 @@ import { AuraAvatar } from "@/components/ui/AuraAvatar";
  * CSS in più, è smettere di essere un discendente DOM del riquadro: `createPortal` verso
  * `document.body`, stesso pattern già usato altrove nell'app (AddToHouseholdMenu,
  * PersonalCardSheet) proprio per lo stesso motivo.
+ *
+ * Corretto secondo le istruzioni: di notte anche un componente della famiglia collegato da
+ * Vitaecom risulta dormiente, come già ogni Persona vera (vedi HouseholdAvatarCell) — qui
+ * senza la possibilità di "svegliarlo" toccandolo, perché non è un suo orario da decidere
+ * per lui: è il suo account, non una Persona che l'utente gestisce.
  */
 export function VitaecomHouseholdAvatarCell({ account, location }: { account: VitaecomAccount; location: "casa" | "fuori-casa" }) {
   const router = useRouter();
@@ -30,7 +36,14 @@ export function VitaecomHouseholdAvatarCell({ account, location }: { account: Vi
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [asleep, setAsleep] = useState(false);
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const tick = () => setAsleep(isNightHour());
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const name = knownNames[account.id];
   const fullName = name?.firstName ? `${name.firstName} ${name.lastName}`.trim() : account.nickname;
@@ -42,8 +55,8 @@ export function VitaecomHouseholdAvatarCell({ account, location }: { account: Vi
           imageUrl={account.avatarUrl}
           firstName={account.nickname}
           size={60}
-          ring={location === "casa" ? "home" : "away"}
-          glowColor="#B79A6B"
+          ring={asleep ? "sleep" : location === "casa" ? "home" : "away"}
+          glowColor={asleep ? undefined : "#B79A6B"}
         />
         <span className="max-w-[64px] truncate text-[11px] text-ink-600">{name?.firstName || account.nickname}</span>
       </button>

@@ -4,27 +4,36 @@ import { Plus, X } from "lucide-react";
 import { useNeeds } from "@/lib/needs-context";
 import { useMood } from "@/lib/mood-context";
 import { NEED_SUGGESTIONS } from "@/lib/needs-catalog";
+import { MoodPicker } from "@/components/vitaecom/MoodPicker";
 
 /**
  * "Quando ho voglia" — nessun bisogno è mai obbligatorio né decade con un fallimento da
  * segnalare: aggiungi solo quello che ti va, quando ti va. Dura una settimana, poi sparisce
  * in silenzio se non lo esaudisci — la Home lo ricorda nel frattempo (vedi WeeklyNeedsCard).
  *
- * Non genera solo lo stato d'animo di arrivo ("Appagato", quando lo esaudisci — vedi
- * WeeklyNeedsCard): sceglierne uno nuovo è già un innesco suo, quello di chi comincia a
+ * Lo stato d'animo che genera esaudendolo non è più uno fisso uguale per tutti ("Appagato"):
+ * si sceglie qui, individualmente per ogni bisogno, con la stessa sfera di selezione già
+ * usata altrove (MoodPicker) — resta "Appagato" di default per chi non tocca la sfera, così
+ * chi non se ne cura può continuare ad aggiungere un bisogno con un tocco solo, come prima.
+ *
+ * Sceglierne uno nuovo resta comunque anche un innesco suo, quello di chi comincia a
  * desiderare qualcosa (di serie "Curioso", configurabile come ogni altro innesco nel
- * pannello degli Stati D'Animo).
+ * pannello degli Stati D'Animo) — quello sì uguale per tutti, perché il desiderio in sé non
+ * cambia da bisogno a bisogno quanto la soddisfazione di averlo esaudito.
  */
 export function WeeklyNeedsSection() {
   const { needs, addNeed, cancelNeed } = useNeeds();
-  const { fireTrigger } = useMood();
+  const { fireTrigger, allMoods } = useMood();
   const [customLabel, setCustomLabel] = useState("");
+  const [moodId, setMoodId] = useState("appagato");
 
   const activeLabels = new Set(needs.map((n) => n.label));
   const availableSuggestions = NEED_SUGGESTIONS.filter((s) => !activeLabels.has(s));
+  const selectedMood = allMoods.find((m) => m.id === moodId);
+  const moodOf = (id: string) => allMoods.find((m) => m.id === id);
 
   const pickNeed = (label: string) => {
-    addNeed(label);
+    addNeed(label, moodId);
     fireTrigger("bisogni:desiderato");
   };
 
@@ -43,7 +52,10 @@ export function WeeklyNeedsSection() {
               key={n.id}
               className="flex items-center justify-between rounded-xl2 border border-aura-cyan/25 bg-aura-cyan/[0.05] px-3.5 py-2.5"
             >
-              <span className="text-sm text-ink-100">{n.label}</span>
+              <span className="flex items-center gap-2 text-sm text-ink-100">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: moodOf(n.moodId)?.color ?? "#8B90A8" }} />
+                {n.label}
+              </span>
               <button
                 onClick={() => cancelNeed(n.id)}
                 className="focus-ring text-ink-800 hover:text-ink-400"
@@ -69,6 +81,13 @@ export function WeeklyNeedsSection() {
           ))}
         </div>
       )}
+
+      <div className="mb-2 flex items-center gap-2">
+        <MoodPicker size={26} color={selectedMood?.color ?? "#8B90A8"} onPick={setMoodId} label="Che stato d'animo genera esaudendolo" />
+        <span className="text-xs text-ink-600">
+          Quando lo esaudisci, provi: <span style={{ color: selectedMood?.color }}>{selectedMood?.label ?? "Appagato"}</span>
+        </span>
+      </div>
 
       <div className="flex items-center gap-2">
         <input

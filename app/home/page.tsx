@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { HeartPulse, Wallet, Sparkles, Pencil, Users, Dumbbell } from "lucide-react";
+import { HeartPulse, Wallet, Sparkles, Pencil, Users, Dumbbell, LocateFixed } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -11,6 +11,7 @@ import { computeAge } from "@/lib/text";
 import { Person } from "@/lib/types";
 import { personWorldStatus, userTaskDrivenLocation } from "@/lib/task-presence";
 import { currentEngagement } from "@/lib/presence";
+import { isAsleep } from "@/lib/time";
 import { usePlaces } from "@/lib/places-context";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { PlaceIconBadge } from "@/components/ui/PlaceIconBadge";
@@ -54,7 +55,7 @@ const SHORTCUTS = [
 ];
 
 export default function HomePage() {
-  const { profile, hydrated: profileHydrated } = useProfile();
+  const { profile, hydrated: profileHydrated, updateProfile } = useProfile();
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
   const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
   const normalMood = allMoods.find((m) => m.id === "normale");
@@ -107,6 +108,7 @@ export default function HomePage() {
   // GPS stesso conferma che sei altrove.
   const gpsConfirmsHome = trackingEnabled && !userIsAway;
   const userIsHome = gpsConfirmsHome ? true : userTaskLocation ? userTaskLocation === "casa" : !userIsAway;
+  const userAsleep = isAsleep(profile.wakeUntil);
   // La posizione di un account Vitaecom nel riquadro Famiglia è simulata (vedi
   // lib/vitaecom-household-presence.ts) — ricalcolata a ogni minuto insieme al resto della
   // Home (lo stesso `tick` già usato per far scorrere le altre presenze). Non più divisa in
@@ -151,15 +153,23 @@ export default function HomePage() {
              Un semplice <div> basta: senza un click proprio, non c'è più bisogno del ruolo
              da bottone né del vincolo "niente bottone dentro bottone" che imponeva. */}
           <div className="relative flex min-w-0 flex-1 items-center gap-4 text-left">
-            <span className="relative inline-flex shrink-0">
+            <span
+              role={userAsleep ? "button" : undefined}
+              tabIndex={userAsleep ? 0 : undefined}
+              onClick={() => {
+                if (!userAsleep) return;
+                updateProfile({ wakeUntil: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
+              }}
+              className={`relative inline-flex shrink-0 ${userAsleep ? "opacity-70" : ""}`}
+            >
               <AuraAvatar
                 imageUrl={profile.avatarUrl}
                 firstName={profile.firstName}
                 lastName={profile.lastName}
                 size={72}
-                ring={userIsHome ? "home" : "away"}
+                ring={userAsleep ? "sleep" : userIsHome ? "home" : "away"}
               />
-              <PlaceIconBadge place={currentPlaceIcon} size={72} />
+              {!userAsleep && <PlaceIconBadge place={currentPlaceIcon} size={72} />}
               <PersonalCardMenu />
             </span>
             <div className="min-w-0 flex-1">
@@ -194,22 +204,47 @@ export default function HomePage() {
       ) : (
         <Reveal delay={0.1} className="mt-6">
           <GlassCard glow="violet" className="p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Users size={16} className="text-aura-violet" />
-              <p className="font-display text-sm text-ink-100">Famiglia</p>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users size={16} className="text-aura-violet" />
+                <p className="font-display text-sm text-ink-100">Famiglia</p>
+              </div>
+              {/* Corretto secondo le istruzioni: spostato qui dal menu Bisogni/Stati
+                 d'animo — un interruttore diretto, più vicino a cosa controlla davvero
+                 (chi in questo riquadro risulta a casa o fuori). */}
+              <button
+                onClick={() => setTrackingEnabled(!trackingEnabled)}
+                className="focus-ring flex h-8 w-8 items-center justify-center rounded-full border border-white/10 transition hover:border-aura-cyan/50"
+                aria-label={`Rilevamento posizione: ${trackingEnabled ? "attivo" : "spento"}`}
+                title={`Rilevamento posizione: ${trackingEnabled ? "attivo" : "spento"}`}
+              >
+                <LocateFixed size={14} className={trackingEnabled ? "text-aura-cyan" : "text-ink-800"} />
+              </button>
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="relative inline-flex">
+              {/* Corretto secondo le istruzioni: di notte anche l'utente principale risulta
+                 dormiente, come già ogni altro componente della famiglia (vedi
+                 HouseholdAvatarCell) — toccando l'avatar ci si sveglia per un'ora, stesso
+                 gesto già in uso per tutti gli altri. */}
+              <div
+                role={userAsleep ? "button" : undefined}
+                tabIndex={userAsleep ? 0 : undefined}
+                onClick={() => {
+                  if (!userAsleep) return;
+                  updateProfile({ wakeUntil: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
+                }}
+                className="flex flex-col items-center gap-1.5"
+              >
+                <span className={`relative inline-flex ${userAsleep ? "opacity-70" : ""}`}>
                   <AuraAvatar
                     imageUrl={profile.avatarUrl}
                     firstName={profile.firstName}
                     lastName={profile.lastName}
                     size={60}
-                    ring={userIsHome ? "home" : "away"}
+                    ring={userAsleep ? "sleep" : userIsHome ? "home" : "away"}
                   />
-                  <PlaceIconBadge place={currentPlaceIcon} size={60} />
+                  {!userAsleep && <PlaceIconBadge place={currentPlaceIcon} size={60} />}
                 </span>
                 <span className="max-w-[64px] truncate text-[11px] text-ink-600">Tu</span>
               </div>
