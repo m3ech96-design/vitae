@@ -10,7 +10,6 @@ import { Match, MatchResult } from "@/lib/hobby-types";
 import { todayIso } from "@/lib/date-format";
 import { TextField, TextArea } from "../ui/TextField";
 import { Button } from "../ui/Button";
-import { Chip } from "../ui/Chip";
 import { PersonPicker } from "../ui/PersonPicker";
 import { ImageCropInput } from "../ui/ImageCropInput";
 import { useResolvedImage } from "@/lib/use-resolved-image";

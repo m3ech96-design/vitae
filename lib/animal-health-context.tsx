@@ -1,6 +1,6 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { newId } from "./id";
+import React, { createContext, useContext, useCallback, useMemo } from "react";
+import { useCollection } from "./use-collection";
 import { deleteImage, isDataUrl } from "./image-store";
 
 const VACCINATIONS_KEY = "vitae:animal-vaccinations";
@@ -112,50 +112,6 @@ interface AnimalHealthContextValue {
 }
 
 const AnimalHealthContext = createContext<AnimalHealthContextValue | null>(null);
-
-/** Stessa forma funzionale sicura di lib/medical-context.tsx (da cui questo file è ricalcato
- * quasi a specchio, con `animalId` in più su ogni record) — un solo posto, non sei quasi
- * identici, per il pattern di persistenza. */
-function useCollection<T extends { id: string }>(key: string) {
-  const [items, setItems] = useState<T[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (raw) setItems(JSON.parse(raw) as T[]);
-    } catch {
-      // dati corrotti: riparte da una lista vuota
-    }
-    setHydrated(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const persist = useCallback(
-    (updater: T[] | ((prev: T[]) => T[])) => {
-      setItems((prev) => {
-        const next = typeof updater === "function" ? (updater as (p: T[]) => T[])(prev) : updater;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(next));
-        } catch {
-          // storage non disponibile: continua solo in memoria
-        }
-        return next;
-      });
-    },
-    [key]
-  );
-
-  const add = useCallback((item: Omit<T, "id">) => persist((prev) => [...prev, { ...item, id: newId() } as T]), [persist]);
-  const update = useCallback(
-    (id: string, patch: Partial<Omit<T, "id">>) => persist((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-    [persist]
-  );
-  const remove = useCallback((id: string) => persist((prev) => prev.filter((x) => x.id !== id)), [persist]);
-  const removeWhere = useCallback((predicate: (item: T) => boolean) => persist((prev) => prev.filter((x) => !predicate(x))), [persist]);
-
-  return { items, hydrated, add, update, remove, removeWhere };
-}
 
 export function AnimalHealthProvider({ children }: { children: React.ReactNode }) {
   const vaccinations = useCollection<AnimalVaccination>(VACCINATIONS_KEY);

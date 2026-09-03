@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { newId } from "./id";
 import { DEFAULT_MOODS } from "./mood-catalog";
 
@@ -223,26 +223,38 @@ export function VitaecomChatProvider({ children }: { children: React.ReactNode }
     [persistGroupMessages]
   );
 
-  return (
-    <VitaecomChatContext.Provider
-      value={{
-        hydrated,
-        messages,
-        messagesWith,
-        sendMessage,
-        setMessageReaction,
-        reactionPing,
-        groups,
-        groupById,
-        createGroup,
-        groupMessages,
-        messagesInGroup,
-        sendGroupMessage,
-      }}
-    >
-      {children}
-    </VitaecomChatContext.Provider>
+  const value = useMemo(
+    () => ({
+      hydrated,
+      messages,
+      messagesWith,
+      sendMessage,
+      setMessageReaction,
+      reactionPing,
+      groups,
+      groupById,
+      createGroup,
+      groupMessages,
+      messagesInGroup,
+      sendGroupMessage,
+    }),
+    [
+      hydrated,
+      messages,
+      messagesWith,
+      sendMessage,
+      setMessageReaction,
+      reactionPing,
+      groups,
+      groupById,
+      createGroup,
+      groupMessages,
+      messagesInGroup,
+      sendGroupMessage,
+    ]
   );
+
+  return <VitaecomChatContext.Provider value={value}>{children}</VitaecomChatContext.Provider>;
 }
 
 export function useVitaecomChat(): VitaecomChatContextValue {

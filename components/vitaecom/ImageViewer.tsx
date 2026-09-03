@@ -39,6 +39,7 @@ export function ImageViewer({
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   const pinchStart = useRef<{ dist: number; scale: number } | null>(null);
   const dragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const account = resolveAccount(post.authorId, userAccount);
   const mood = allMoods.find((m) => m.id === (post.sharedMoodId ?? post.moodId));
@@ -51,6 +52,15 @@ export function ImageViewer({
       const [a, b] = Array.from(pointers.current.values());
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       pinchStart.current = { dist, scale };
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const midX = (a.x + b.x) / 2;
+        const midY = (a.y + b.y) / 2;
+        setOrigin({
+          x: Math.min(100, Math.max(0, ((midX - rect.left) / rect.width) * 100)),
+          y: Math.min(100, Math.max(0, ((midY - rect.top) / rect.height) * 100)),
+        });
+      }
     }
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -94,6 +104,7 @@ export function ImageViewer({
         </button>
 
         <div
+          ref={containerRef}
           className="flex h-full w-full touch-none items-center justify-center"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

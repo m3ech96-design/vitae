@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { X, Camera } from "lucide-react";
+import { Camera } from "lucide-react";
 import { useHealth } from "@/lib/health-context";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { formatDateShort, todayIso } from "@/lib/date-format";

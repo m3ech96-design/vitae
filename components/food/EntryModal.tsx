@@ -5,7 +5,6 @@ import { X, Search, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
 import { Ingredient, FoodEntry, MealSlot, MEAL_SLOT_LABELS, baseQuantity, scaleFactor } from "@/lib/food-types";
-import { kcalForEntry } from "@/lib/food-stats";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { AddIngredientModal } from "./AddIngredientModal";

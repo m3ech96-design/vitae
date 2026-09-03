@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 const KEY = "vitae:vitaecom-draft";
 
@@ -66,11 +66,12 @@ export function VitaecomDraftProvider({ children }: { children: React.ReactNode 
   const setCommentDraft = useCallback((d: Omit<CommentDraft, "kind">) => persist({ kind: "comment", ...d }), [persist]);
   const clearDraft = useCallback(() => persist(null), [persist]);
 
-  return (
-    <VitaecomDraftContext.Provider value={{ draft, setPostDraft, setCommentDraft, clearDraft }}>
-      {children}
-    </VitaecomDraftContext.Provider>
+  const value = useMemo<VitaecomDraftContextValue>(
+    () => ({ draft, setPostDraft, setCommentDraft, clearDraft }),
+    [draft, setPostDraft, setCommentDraft, clearDraft]
   );
+
+  return <VitaecomDraftContext.Provider value={value}>{children}</VitaecomDraftContext.Provider>;
 }
 
 export function useVitaecomDraft(): VitaecomDraftContextValue {

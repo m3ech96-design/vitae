@@ -2573,6 +2573,85 @@ altre non sono state costruite perché mancava un dato reale da mostrare, non pe
 
 Build e type-check puliti su tutte le 27 rotte, nessun residuo Title Case.
 
+## Checkpoint 62 — audit completo dell'app: bug reali trovati e corretti, non solo pulizia
+
+Audit sistematico di tutto il progetto (architettura, ridondanze, sicurezza, performance, UX,
+dipendenze, test), poi riparazione di quasi tutto quello che è emerso. Non un giro superficiale:
+build di produzione e `tsc --noEmit` verificati dopo ogni singola correzione, non solo alla fine.
+
+**Bug reali trovati con conseguenze concrete per chi usa l'app, non solo debito tecnico**:
+- Un task ricorrente mensile o annuale ancorato al giorno 29, 30 o 31 non occorreva mai nei
+  mesi che non arrivano a quel giorno (verificato: il 31 gennaio non incontrava mai il 28
+  febbraio) — spariva silenziosamente, senza errore, ogni volta. Corretto in
+  `lib/recurrence.ts`: se il mese di destinazione non ha il giorno di ancoraggio, la ricorrenza
+  occorre l'ultimo giorno disponibile invece di saltare il mese.
+- Il budget mensile in Finanze non includeva mai le spese pianificate marcate come pagate —
+  il context le leggeva, ma né il totale del ciclo né la tabella cronologica le vedevano.
+  Pagare una spesa pianificata non spostava di una virgola il numero mostrato. Corretto in
+  `lib/finance.ts` e propagato a tutti gli 8 punti che calcolano il budget (pagina Finanze, 6
+  widget, il confronto tra gli ultimi 3 cicli).
+- `app/rapporti/[id]/page.tsx` chiamava due React Hook dopo un `return` condizionale — se la
+  persona veniva cancellata mentre si era su quella pagina, il render successivo chiamava meno
+  hook del precedente, un crash reale ("Rendered fewer hooks than expected"), non solo un
+  warning. La stessa pagina non controllava nemmeno `hydrated` (unica tra le 15 pagine che
+  consumano dati dal context a non farlo), mostrando per un istante "Questa persona non esiste
+  più" anche quando esisteva. Corretti insieme, stessa causa di fondo.
+- Le note vocali del Diario venivano registrate come Blob nativo dal microfono, poi
+  **deliberatamente convertite in una data URL base64 pesante** prima di salvarle — la
+  direzione opposta al fix già fatto per i video (una data URI pesante non è affidabile su
+  molti browser mobili). Nessun limite di durata sulla registrazione rendeva concreto, non
+  teorico, il rischio. Riscritto `lib/audio-store.ts` sullo stesso modello di
+  `lib/video-store.ts`: Blob nativo in IndexedDB, `URL.createObjectURL` per la riproduzione,
+  compatibilità retroattiva per l'audio già salvato come stringa.
+- `putImage()` in `ImageCropInput.tsx` non aveva un try/catch: se IndexedDB falliva (Safari
+  privato, storage pieno), la modale di ritaglio restava bloccata senza nessun messaggio.
+  Aggiunta gestione errore visibile e stato di salvataggio.
+- `importBackup()` scriveva localStorage e poi tre store IndexedDB in sequenza senza alcuna
+  transazione: un fallimento a metà lasciava il dispositivo con un mix di dati vecchi e nuovi.
+  Ora valida l'intero file prima di scrivere qualunque cosa, prende uno snapshot dello stato
+  attuale con `exportBackup`, e se una fase fallisce lo ripristina invece di lasciare uno stato
+  ibrido.
+- Nessun Error Boundary in tutta l'app: un errore runtime in un componente qualsiasi collassava
+  l'intera interfaccia su schermo bianco. Aggiunti `app/error.tsx` (per le singole route) e
+  `app/global-error.tsx` (per il caso limite di un errore nel layout radice stesso, dove vivono
+  i 21 Provider).
+
+**Ridondanza reale, non solo somiglianza superficiale**: `useCollection` (il hook di
+persistenza generico usato da referti medici e cartelle sanitarie animali) era definito
+identico, carattere per carattere, in due file diversi — copiato invece che condiviso.
+Estratto in `lib/use-collection.ts`. Stessa storia più contenuta per i tre hook
+`use-resolved-{image,audio,video}` (generalizzati in `lib/use-resolved-media.ts`, preservando
+le differenze reali tra loro: le immagini restano un caso a parte per un corto circuito
+sincrono che le altre due varianti non hanno) e per i quattro *Notifier (Task, Medication,
+Engagement, Animal), che condividevano lo stesso scheletro di polling ma con due strategie di
+dedup diverse per un motivo reale — persistita su un evento singolo, o un Set effimero per
+orari ricorrenti — mai forzate a essere uguali, solo lo scheletro esterno è stato condiviso
+(`lib/use-notification-polling.ts`).
+
+`/api/news` veniva chiamato in modo indipendente da tre punti (la pagina e due widget), e i
+widget ridefinivano localmente `NewsItem`/`NewsCategory` come un sottoinsieme incompleto dei
+tipi reali della route. Centralizzato in `lib/use-news.ts` con una cache di sessione condivisa
+e i tipi importati da un solo posto.
+
+Sei dei ventuno Provider di contesto costruivano il proprio `value` senza `useMemo`
+(`vitaecom-social` — 37 proprietà — incluso), causando ri-render non necessari a ogni
+consumer a ogni render del provider. Corretti tutti e sei, coerenti con gli altri quindici che
+già lo facevano bene.
+
+**Pulizia**: rimossa `jimp` (mai importata da nessuna parte), una `newId()` ridefinita
+localmente invece di importata da `lib/id.ts`, una decina di import morti, la lista di
+precaricamento del service worker (copriva 10 sezioni su 29, ora tutte le principali — cache
+versione incrementata di conseguenza, altrimenti il service worker non se ne sarebbe accorto),
+un prop `widgetId` passato a `WidgetShell` senza che servisse a nulla.
+
+**Dichiarato onestamente, non corretto**: gli oltre 80 widget della Home dichiarano un prop
+`size` che quasi nessuno usa per adattare il proprio contenuto alla dimensione — non è un
+bug meccanico da sistemare, è una scelta di prodotto (completare l'adattività o togliere il
+prop) che non spetta a un audit decidere da solo. Lasciato così, segnalato.
+
+Build e type-check puliti dopo ogni singola correzione, non solo alla fine. Nessuna
+dipendenza circolare (verificato su 394 file).
+
 ## Sviluppo in locale
 
 ```bash

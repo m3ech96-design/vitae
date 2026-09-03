@@ -181,14 +181,14 @@ export function RecentPhotoWidget({ size }: { size: WidgetSize }) {
 }
 
 export function BudgetLast3CyclesWidget({ size }: { size: WidgetSize }) {
-  const { cycleStartDay, recurringExpenses, singleExpenses } = useFinance();
+  const { cycleStartDay, recurringExpenses, singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
 
   const cycles: { label: string; total: number }[] = [];
   let ref = new Date();
   for (let i = 0; i < 3; i++) {
-    const { total, range } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay, ref);
+    const { total, range } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay, ref);
     cycles.unshift({ label: i === 0 ? "Ora" : `-${i}`, total });
     const prevRef = new Date(range.start);
     prevRef.setDate(prevRef.getDate() - 1);

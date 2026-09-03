@@ -223,31 +223,48 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     return Math.max(0, 1 - elapsed / MOOD_DURATION_MS);
   }, [activeMood, now]);
 
-  return (
-    <MoodContext.Provider
-      value={{
-        hydrated,
-        allMoods,
-        triggerMap,
-        setTriggerMoods,
-        addCustomMood,
-        removeCustomMood,
-        fireTrigger,
-        suggestMood,
-        pendingSuggestion,
-        confirmMood,
-        dismissSuggestion,
-        setMoodManually,
-        clearMood,
-        activeMood,
-        activeMoodIntensity,
-        shareMoodOnVitaecom,
-        setShareMoodOnVitaecom,
-      }}
-    >
-      {children}
-    </MoodContext.Provider>
+  const value = useMemo(
+    () => ({
+      hydrated,
+      allMoods,
+      triggerMap,
+      setTriggerMoods,
+      addCustomMood,
+      removeCustomMood,
+      fireTrigger,
+      suggestMood,
+      pendingSuggestion,
+      confirmMood,
+      dismissSuggestion,
+      setMoodManually,
+      clearMood,
+      activeMood,
+      activeMoodIntensity,
+      shareMoodOnVitaecom,
+      setShareMoodOnVitaecom,
+    }),
+    [
+      hydrated,
+      allMoods,
+      triggerMap,
+      setTriggerMoods,
+      addCustomMood,
+      removeCustomMood,
+      fireTrigger,
+      suggestMood,
+      pendingSuggestion,
+      confirmMood,
+      dismissSuggestion,
+      setMoodManually,
+      clearMood,
+      activeMood,
+      activeMoodIntensity,
+      shareMoodOnVitaecom,
+      setShareMoodOnVitaecom,
+    ]
   );
+
+  return <MoodContext.Provider value={value}>{children}</MoodContext.Provider>;
 }
 
 export function useMood(): MoodContextValue {

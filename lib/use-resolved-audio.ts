@@ -1,25 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getAudio } from "./audio-store";
+import { getAudioBlob } from "./audio-store";
+import { useResolvedMedia } from "./use-resolved-media";
 
-/** Risolve una chiave IndexedDB in un URL riproducibile — stesso pattern di
- * use-resolved-image.ts e use-resolved-video.ts. */
+/** Risolve una chiave IndexedDB in un URL riproducibile a partire dal Blob salvato (vedi
+ * audio-store.ts) — stesso pattern di use-resolved-video.ts, con la stessa necessità di
+ * createObjectURL/revokeObjectURL invece di una data URL diretta, per la stessa ragione di
+ * affidabilità su browser mobili con file più pesanti (vedi use-resolved-media.ts). */
 export function useResolvedAudio(key: string | undefined): string | undefined {
-  const [url, setUrl] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (!key) {
-      setUrl(undefined);
-      return;
-    }
-    let cancelled = false;
-    getAudio(key).then((v) => {
-      if (!cancelled) setUrl(v);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [key]);
-
-  return url;
+  return useResolvedMedia(key, getAudioBlob, (blob) => {
+    const url = URL.createObjectURL(blob);
+    return { url, revoke: () => URL.revokeObjectURL(url) };
+  });
 }

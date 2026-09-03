@@ -10,6 +10,7 @@ import React, {
   useRef,
 } from "react";
 import { Person, HomeLocation, Place, emptyPersonalDetails } from "./types";
+import { newId } from "./id";
 import {
   distanceMeters,
   HOME_LEAVE_THRESHOLD_METERS,
@@ -55,10 +56,6 @@ interface HouseholdContextValue {
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
-
-function newId() {
-  return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
-}
 
 function normalizePerson(p: Partial<Person> & { id: string }): Person {
   return {

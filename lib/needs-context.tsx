@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { NEED_DURATION_DAYS } from "./needs-catalog";
 import { newId } from "./id";
 
@@ -107,11 +107,12 @@ export function NeedsProvider({ children }: { children: React.ReactNode }) {
     [needs, persist]
   );
 
-  return (
-    <NeedsContext.Provider value={{ hydrated, needs, addNeed, cancelNeed, fulfillNeed }}>
-      {children}
-    </NeedsContext.Provider>
+  const value = useMemo<NeedsContextValue>(
+    () => ({ hydrated, needs, addNeed, cancelNeed, fulfillNeed }),
+    [hydrated, needs, addNeed, cancelNeed, fulfillNeed]
   );
+
+  return <NeedsContext.Provider value={value}>{children}</NeedsContext.Provider>;
 }
 
 export function useNeeds(): NeedsContextValue {

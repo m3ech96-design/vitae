@@ -1,8 +1,8 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Bell, Gem, UserPlus, UserCheck, AtSign, Home, Sparkles, Search, Plus, Users, X } from "lucide-react";
+import { MessageSquare, Bell, Gem, UserPlus, UserCheck, AtSign, Home, Search, Plus, Users, X } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";

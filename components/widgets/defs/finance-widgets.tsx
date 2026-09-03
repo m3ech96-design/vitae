@@ -10,10 +10,10 @@ import { WidgetRing, WidgetStat, WidgetEmpty, WidgetComparison } from "../primit
 import { WidgetSize } from "@/lib/widgets/types";
 
 export function BudgetCycleWidget({ size }: { size: WidgetSize }) {
-  const { monthlyBudget, cycleStartDay, recurringExpenses, singleExpenses } = useFinance();
+  const { monthlyBudget, cycleStartDay, recurringExpenses, singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
-  const { total } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay);
+  const { total } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay);
   if (!monthlyBudget) return <WidgetEmpty icon={Wallet} label="Nessun budget impostato" />;
   const pct = total / monthlyBudget;
   const color = pct < 0.7 ? "#00E5C7" : pct < 1 ? "#FFB454" : "#FF4D6D";
@@ -21,10 +21,10 @@ export function BudgetCycleWidget({ size }: { size: WidgetSize }) {
 }
 
 export function LastExpenseWidget({ size }: { size: WidgetSize }) {
-  const { singleExpenses } = useFinance();
+  const { singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
-  const items = allExpenseItems(tasks, places, singleExpenses);
+  const items = allExpenseItems(tasks, places, singleExpenses, plannedExpenses);
   const last = items[0];
   if (!last) return <WidgetEmpty icon={Receipt} label="Ancora nessuna spesa" />;
   return <WidgetStat icon={Receipt} value={`${Math.round(last.amount)}€`} label={last.label} color="#8B90A8" />;
@@ -37,10 +37,10 @@ export function SavingsGoalsTotalWidget({ size }: { size: WidgetSize }) {
 }
 
 export function CycleLeftoverWidget({ size }: { size: WidgetSize }) {
-  const { monthlyBudget, cycleStartDay, recurringExpenses, singleExpenses } = useFinance();
+  const { monthlyBudget, cycleStartDay, recurringExpenses, singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
-  const { total } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay);
+  const { total } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay);
   if (!monthlyBudget) return <WidgetEmpty icon={Wallet} label="Nessun budget impostato" />;
   const leftover = monthlyBudget - total;
   return (
@@ -61,10 +61,10 @@ export function NextPlannedExpenseWidget({ size }: { size: WidgetSize }) {
 }
 
 export function TopCategoryWidget({ size }: { size: WidgetSize }) {
-  const { cycleStartDay, recurringExpenses, singleExpenses } = useFinance();
+  const { cycleStartDay, recurringExpenses, singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
-  const { byCategory } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay);
+  const { byCategory } = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay);
   const entries = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
   const top = entries[0];
   if (!top) return <WidgetEmpty icon={Tag} label="Ancora nessuna spesa" />;
@@ -73,15 +73,15 @@ export function TopCategoryWidget({ size }: { size: WidgetSize }) {
 }
 
 export function CycleComparisonWidget({ size }: { size: WidgetSize }) {
-  const { cycleStartDay, recurringExpenses, singleExpenses } = useFinance();
+  const { cycleStartDay, recurringExpenses, singleExpenses, plannedExpenses } = useFinance();
   const { tasks } = useTasks();
   const { places } = usePlaces();
   const today = todayIso();
   const range = currentCycleRange(cycleStartDay, new Date(today));
   const previousRef = new Date(range.start);
   previousRef.setDate(previousRef.getDate() - 1);
-  const current = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay).total;
-  const previous = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay, previousRef).total;
+  const current = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay).total;
+  const previous = computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay, previousRef).total;
   return (
     <WidgetComparison
       icon={current >= previous ? TrendingUp : TrendingDown}

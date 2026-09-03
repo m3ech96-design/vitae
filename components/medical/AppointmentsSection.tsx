@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { Plus, X, CalendarPlus, Check } from "lucide-react";
 import { useMedical } from "@/lib/medical-context";
 import { openMedicalAppointmentInCalendar } from "@/lib/ics";
-import { formatDateShort } from "@/lib/date-format";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 

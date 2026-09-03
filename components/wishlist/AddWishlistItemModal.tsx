@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ImagePlus, Trash2 } from "lucide-react";
+import { X, ImagePlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";

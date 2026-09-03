@@ -39,7 +39,13 @@ export function EducationWorkSection({
 }: {
   data: PersonalDetails;
   onUpdate: (patch: Partial<PersonalDetails>) => void;
-  /** A chi va attribuito il marker creato in automatico: "user" per il wizard, l'id della persona per le Scoperte. */
+  /** Ricevuto da ogni chiamante (incluso PersonWindow con person.id) ma non ancora
+   * consumato in questo file: l'attribuzione "a chi appartiene questo dato" avviene già
+   * correttamente tramite `onUpdate`, che il chiamante chiude sulla persona giusta — non
+   * serve linkedPersonId per quello. Riservato a un uso non ancora implementato (verosimilmente
+   * generare una voce nel feed/Scoperte quando si scopre dove una persona studia/lavora,
+   * coerente con come viene chiamato da PersonWindow.tsx), ma finché resta inutilizzato non
+   * promettere qui un comportamento che il codice non attua. */
   linkedPersonId?: string;
   justSavedKeys?: string[];
 }) {

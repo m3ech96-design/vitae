@@ -1,6 +1,6 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { newId } from "./id";
+import React, { createContext, useContext } from "react";
+import { useCollection } from "./use-collection";
 
 const REPORTS_KEY = "vitae:medical-reports";
 const APPOINTMENTS_KEY = "vitae:medical-appointments";
@@ -189,50 +189,6 @@ interface MedicalContextValue {
 }
 
 const MedicalContext = createContext<MedicalContextValue | null>(null);
-
-/** Una singola collezione persistita — stessa forma per tutte e dieci, con la forma
- * funzionale di setState (vedi la stessa correzione, con la stessa causa reale, applicata
- * altrove in household-context.tsx: due scritture di seguito nello stesso gestore di evento
- * altrimenti si perderebbero a vicenda). */
-function useCollection<T extends { id: string }>(key: string) {
-  const [items, setItems] = useState<T[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (raw) setItems(JSON.parse(raw) as T[]);
-    } catch {
-      // dati corrotti: riparte da una lista vuota
-    }
-    setHydrated(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const persist = useCallback(
-    (updater: T[] | ((prev: T[]) => T[])) => {
-      setItems((prev) => {
-        const next = typeof updater === "function" ? (updater as (p: T[]) => T[])(prev) : updater;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(next));
-        } catch {
-          // storage non disponibile: continua solo in memoria
-        }
-        return next;
-      });
-    },
-    [key]
-  );
-
-  const add = useCallback((item: Omit<T, "id">) => persist((prev) => [...prev, { ...item, id: newId() } as T]), [persist]);
-  const update = useCallback(
-    (id: string, patch: Partial<Omit<T, "id">>) => persist((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-    [persist]
-  );
-  const remove = useCallback((id: string) => persist((prev) => prev.filter((x) => x.id !== id)), [persist]);
-
-  return { items, hydrated, add, update, remove };
-}
 
 export function MedicalProvider({ children }: { children: React.ReactNode }) {
   const reports = useCollection<MedicalReport>(REPORTS_KEY);

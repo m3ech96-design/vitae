@@ -67,6 +67,21 @@ export function downloadBackup(backup: BackupFile) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Corretto secondo le istruzioni: prima le fasi di scrittura (localStorage, poi immagini,
+ * poi video, poi audio) avvenivano in sequenza senza alcuna transazione — se una fase falliva
+ * a metà (es. IndexedDB pieno durante il ripristino dei video), il dispositivo restava con
+ * un mix di dati vecchi e nuovi, mai uno stato coerente, e l'unico segnale per l'utente era
+ * un messaggio d'errore generico che non diceva quanto del backup fosse davvero entrato.
+ *
+ * Ora: (1) il file viene validato per intero prima di scrivere qualsiasi cosa, così un
+ * backup malformato non tocca nulla; (2) uno snapshot completo dello stato attuale viene
+ * preso con la stessa `exportBackup` usata per creare i backup, prima di scrivere;
+ * (3) se una qualunque fase di scrittura lancia, lo snapshot viene riscritto per riportare
+ * il dispositivo esattamente allo stato precedente, e solo dopo l'errore risale al chiamante
+ * — l'utente non si trova mai con un mix, o l'importazione riesce per intero o non cambia
+ * nulla.
+ */
 export async function importBackup(file: File): Promise<void> {
   const text = await file.text();
   let backup: BackupFile;
@@ -75,19 +90,33 @@ export async function importBackup(file: File): Promise<void> {
   } catch {
     throw new Error("Il file non è un backup valido.");
   }
-  if (!backup || backup.version !== 1 || !backup.data) {
+  if (!backup || backup.version !== 1 || !backup.data || typeof backup.data !== "object") {
     throw new Error("Il file non è un backup valido.");
   }
-  Object.entries(backup.data).forEach(([key, value]) => {
-    window.localStorage.setItem(key, value);
-  });
-  if (backup.images) {
-    await restoreAllImages(backup.images);
-  }
-  if (backup.videos) {
-    await restoreAllVideos(backup.videos);
-  }
-  if (backup.audio) {
-    await restoreAllAudio(backup.audio);
+
+  const snapshot = await exportBackup();
+
+  const writeAll = async (b: BackupFile) => {
+    Object.entries(b.data).forEach(([key, value]) => {
+      window.localStorage.setItem(key, value);
+    });
+    await restoreAllImages(b.images ?? {});
+    await restoreAllVideos(b.videos ?? {});
+    await restoreAllAudio(b.audio ?? {});
+  };
+
+  try {
+    await writeAll(backup);
+  } catch (err) {
+    // Una fase di scrittura è fallita a metà: riporta il dispositivo esattamente allo stato
+    // di prima invece di lasciarlo con un mix di dati vecchi e nuovi. Se anche il ripristino
+    // fallisse (stesso motivo del fallimento originale, es. storage pieno) l'errore originale
+    // resta comunque quello mostrato all'utente.
+    try {
+      await writeAll(snapshot);
+    } catch {
+      // best-effort: non c'è altro da fare qui senza un secondo livello di backup.
+    }
+    throw new Error("Importazione non riuscita: i tuoi dati precedenti sono stati ripristinati.");
   }
 }

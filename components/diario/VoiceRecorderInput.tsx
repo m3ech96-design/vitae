@@ -75,13 +75,9 @@ export function VoiceRecorderInput({ onSaved }: { onSaved: (key: string) => void
 
   const confirm = async () => {
     if (!blobRef.current) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const key = await putAudio(reader.result as string);
-      onSaved(key);
-      discard();
-    };
-    reader.readAsDataURL(blobRef.current);
+    const key = await putAudio(blobRef.current);
+    onSaved(key);
+    discard();
   };
 
   if (phase === "idle") {

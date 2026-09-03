@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { VitaecomPost, VitaecomComment, VitaecomTag, PostReport, ReportReason } from "./vitaecom-social-types";
 import { buildDemoPosts, DEMO_ACCOUNTS } from "./vitaecom-demo-data";
 import { chainRootOf } from "./vitaecom-lato-stato";
@@ -922,50 +922,88 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     [persistHouseholdMembers]
   );
 
-  return (
-    <VitaecomSocialContext.Provider
-      value={{
-        hydrated,
-        posts,
-        notifications,
-        hasUnreadNotification: notifications.some((n) => !n.read),
-        markNotificationsRead,
-        publish,
-        publishStory,
-        seenStoryIds,
-        markStorySeen,
-        sharePost,
-        moodTallies,
-        setPostReaction,
-        toggleLike,
-        toggleCommentLike,
-        addComment,
-        removePost,
-        hiddenPostIds,
-        mutedAccountIds,
-        hidePost,
-        muteAccount,
-        reports,
-        reportPost,
-        dismissReport,
-        knownAccountIds,
-        sentRequests,
-        receivedRequests,
-        sendKnowRequest,
-        acceptKnowRequest,
-        knownNames,
-        setKnownName,
-        householdMembers,
-        householdSentRequests,
-        householdReceivedRequests,
-        sendHouseholdRequest,
-        respondHouseholdRequest,
-        dissociateFromHousehold,
-      }}
-    >
-      {children}
-    </VitaecomSocialContext.Provider>
+  const hasUnreadNotification = useMemo(() => notifications.some((n) => !n.read), [notifications]);
+
+  const value = useMemo(
+    () => ({
+      hydrated,
+      posts,
+      notifications,
+      hasUnreadNotification,
+      markNotificationsRead,
+      publish,
+      publishStory,
+      seenStoryIds,
+      markStorySeen,
+      sharePost,
+      moodTallies,
+      setPostReaction,
+      toggleLike,
+      toggleCommentLike,
+      addComment,
+      removePost,
+      hiddenPostIds,
+      mutedAccountIds,
+      hidePost,
+      muteAccount,
+      reports,
+      reportPost,
+      dismissReport,
+      knownAccountIds,
+      sentRequests,
+      receivedRequests,
+      sendKnowRequest,
+      acceptKnowRequest,
+      knownNames,
+      setKnownName,
+      householdMembers,
+      householdSentRequests,
+      householdReceivedRequests,
+      sendHouseholdRequest,
+      respondHouseholdRequest,
+      dissociateFromHousehold,
+    }),
+    [
+      hydrated,
+      posts,
+      notifications,
+      hasUnreadNotification,
+      markNotificationsRead,
+      publish,
+      publishStory,
+      seenStoryIds,
+      markStorySeen,
+      sharePost,
+      moodTallies,
+      setPostReaction,
+      toggleLike,
+      toggleCommentLike,
+      addComment,
+      removePost,
+      hiddenPostIds,
+      mutedAccountIds,
+      hidePost,
+      muteAccount,
+      reports,
+      reportPost,
+      dismissReport,
+      knownAccountIds,
+      sentRequests,
+      receivedRequests,
+      sendKnowRequest,
+      acceptKnowRequest,
+      knownNames,
+      setKnownName,
+      householdMembers,
+      householdSentRequests,
+      householdReceivedRequests,
+      sendHouseholdRequest,
+      respondHouseholdRequest,
+      dissociateFromHousehold,
+    ]
   );
+
+  return <VitaecomSocialContext.Provider value={value}>{children}</VitaecomSocialContext.Provider>;
 }
 
 export function useVitaecomSocial(): VitaecomSocialContextValue {

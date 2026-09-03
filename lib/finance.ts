@@ -1,4 +1,4 @@
-import { Task, Place, SingleExpense, RecurringExpense, ExpenseCategory } from "./types";
+import { Task, Place, SingleExpense, RecurringExpense, PlannedExpense, ExpenseCategory } from "./types";
 import { PLACE_TYPE_TO_CATEGORY } from "./finance-meta";
 import { SPEND_ITEM_TO_EXPENSE_CATEGORY } from "./spending-categories";
 
@@ -8,7 +8,7 @@ export interface MonthlyExpenseItem {
   amount: number;
   category: ExpenseCategory;
   date: string;
-  source: "task" | "luogo" | "manuale" | "ricorrente";
+  source: "task" | "luogo" | "manuale" | "ricorrente" | "pianificata";
 }
 
 export interface CycleRange {
@@ -52,14 +52,27 @@ function weeksInMonth(ref: Date): number {
   return days / 7;
 }
 
-/** Le voci discrete (task completate, visite a un luogo, spese manuali) con un importo e una
- * data vera — mai le ricorrenti, che sono una configurazione, non un evento databile: non
- * hanno senso in una cronologia di transazioni reali. Senza `range` restituisce tutte le
- * voci di sempre (usato dalla tabella cronologica); con `range` solo quelle dentro il ciclo
- * (usato dal calcolo del ciclo corrente) — stessa costruzione, un solo posto da mantenere
- * invece di due copie quasi identiche.
+/** Le voci discrete (task completate, visite a un luogo, spese manuali, spese pianificate
+ * già pagate) con un importo e una data vera — mai le ricorrenti, che sono una
+ * configurazione, non un evento databile: non hanno senso in una cronologia di transazioni
+ * reali. Senza `range` restituisce tutte le voci di sempre (usato dalla tabella
+ * cronologica); con `range` solo quelle dentro il ciclo (usato dal calcolo del ciclo
+ * corrente) — stessa costruzione, un solo posto da mantenere invece di due copie quasi
+ * identiche.
+ *
+ * Corretto secondo le istruzioni: una spesa pianificata segnata come pagata (`paid: true`)
+ * prima restava fuori da qui — il context la leggeva ma né il totale del ciclo né la
+ * cronologia la vedevano mai, quindi pagare una spesa pianificata non spostava di una virgola
+ * il budget mostrato. La data della transazione è `dueDate`: è il giorno a cui la spesa è
+ * legata, non quando è stata creata la pianificazione.
  */
-function buildDiscreteItems(tasks: Task[], places: Place[], singleExpenses: SingleExpense[], range?: CycleRange): MonthlyExpenseItem[] {
+function buildDiscreteItems(
+  tasks: Task[],
+  places: Place[],
+  singleExpenses: SingleExpense[],
+  plannedExpenses: PlannedExpense[],
+  range?: CycleRange
+): MonthlyExpenseItem[] {
   const inScope = (iso: string) => !range || (new Date(iso) >= range.start && new Date(iso) < range.end);
   const items: MonthlyExpenseItem[] = [];
 
@@ -97,6 +110,11 @@ function buildDiscreteItems(tasks: Task[], places: Place[], singleExpenses: Sing
     items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.date, source: "manuale" });
   });
 
+  plannedExpenses.forEach((e) => {
+    if (!e.paid || !inScope(e.dueDate)) return;
+    items.push({ id: e.id, label: e.label, amount: e.amount, category: e.category, date: e.dueDate, source: "pianificata" });
+  });
+
   return items;
 }
 
@@ -105,11 +123,12 @@ export function computeMonthlySpending(
   places: Place[],
   singleExpenses: SingleExpense[],
   recurringExpenses: RecurringExpense[],
+  plannedExpenses: PlannedExpense[] = [],
   cycleStartDay = 1,
   ref: Date = new Date()
 ) {
   const range = currentCycleRange(cycleStartDay, ref);
-  const items = buildDiscreteItems(tasks, places, singleExpenses, range);
+  const items = buildDiscreteItems(tasks, places, singleExpenses, plannedExpenses, range);
 
   recurringExpenses
     .filter((e) => e.active)
@@ -139,6 +158,11 @@ export function computeMonthlySpending(
 /** Tutte le voci discrete di sempre, più recenti prima — la tabella cronologica richiesta
  * esplicitamente. Le ricorrenti restano fuori (vedi buildDiscreteItems): sono già mostrate
  * nell'anello del ciclo corrente, qui servono solo transazioni reali con una data vera. */
-export function allExpenseItems(tasks: Task[], places: Place[], singleExpenses: SingleExpense[]): MonthlyExpenseItem[] {
-  return buildDiscreteItems(tasks, places, singleExpenses).sort((a, b) => b.date.localeCompare(a.date));
+export function allExpenseItems(
+  tasks: Task[],
+  places: Place[],
+  singleExpenses: SingleExpense[],
+  plannedExpenses: PlannedExpense[] = []
+): MonthlyExpenseItem[] {
+  return buildDiscreteItems(tasks, places, singleExpenses, plannedExpenses).sort((a, b) => b.date.localeCompare(a.date));
 }

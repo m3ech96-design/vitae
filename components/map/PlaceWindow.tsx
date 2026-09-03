@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { X, MapPin, LogIn, LogOut, Trash2, Star, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { Place } from "@/lib/types";
-import { PLACE_TYPE_META, SPENDING_PLACE_TYPES } from "@/lib/places-meta";
+import { PLACE_TYPE_META } from "@/lib/places-meta";
 import { spendCategoriesFor } from "@/lib/spending-categories";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";

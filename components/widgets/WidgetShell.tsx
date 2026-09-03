@@ -24,7 +24,6 @@ const SIZE_SPAN: Record<WidgetSize, string> = {
  */
 export function WidgetShell({
   placedId,
-  widgetId,
   title,
   size,
   allowedSizes,
@@ -33,7 +32,6 @@ export function WidgetShell({
   pages,
 }: {
   placedId: string;
-  widgetId: string;
   title: string;
   size: WidgetSize;
   allowedSizes: WidgetSize[];

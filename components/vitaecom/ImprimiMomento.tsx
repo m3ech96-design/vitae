@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Camera, Video, X, Loader2, UserPlus } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { useTasks } from "@/lib/tasks-context";
-import { useProfile } from "@/lib/profile-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { useVitaecomDraft } from "@/lib/vitaecom-draft-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
@@ -17,7 +16,6 @@ const HOUR_MS = 3_600_000;
 export function ImprimiMomento({ onClose }: { onClose: () => void }) {
   const { activeMood, allMoods } = useMood();
   const { tasks } = useTasks();
-  const { profile } = useProfile();
   const { publish } = useVitaecomSocial();
   const { draft, setPostDraft, clearDraft } = useVitaecomDraft();
   const existing = draft?.kind === "post" ? draft : undefined;

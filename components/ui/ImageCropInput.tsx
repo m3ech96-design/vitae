@@ -28,6 +28,8 @@ export function ImageCropInput({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => setMounted(true), []);
 
   const onFile = (file: File | undefined) => {
@@ -55,14 +57,26 @@ export function ImageCropInput({
     setRawImage(null);
     setZoom(1);
     setCrop({ x: 0, y: 0 });
+    setError(null);
   };
 
   const confirm = async () => {
     if (!rawImage || !croppedAreaPixels) return;
-    const result = await getCroppedImage(rawImage, croppedAreaPixels);
-    const key = await putImage(result);
-    onChange(key);
-    reset();
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await getCroppedImage(rawImage, croppedAreaPixels);
+      const key = await putImage(result);
+      onChange(key);
+      reset();
+    } catch {
+      // putImage può fallire (IndexedDB non disponibile, es. Safari in modalità privata, o
+      // storage esaurito) — prima l'eccezione risaliva non gestita e la modale restava
+      // bloccata senza che l'utente capisse perché "Conferma" non facesse nulla.
+      setError("Non sono riuscito a salvare l'immagine. Riprova.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -98,12 +112,13 @@ export function ImageCropInput({
               className="mt-4 w-full accent-[#7C5CFF]"
               aria-label="Zoom immagine"
             />
+            {error && <p className="mt-3 text-xs text-aura-pink">{error}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={reset}>
+              <Button variant="ghost" size="sm" onClick={reset} disabled={saving}>
                 <X size={16} /> Annulla
               </Button>
-              <Button size="sm" onClick={confirm}>
-                <Check size={16} /> Conferma
+              <Button size="sm" onClick={confirm} disabled={saving}>
+                <Check size={16} /> {saving ? "Salvo..." : "Conferma"}
               </Button>
             </div>
           </div>

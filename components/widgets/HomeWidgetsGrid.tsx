@@ -17,7 +17,6 @@ export function HomeWidgetsGrid() {
           <WidgetShell
             key={p.id}
             placedId={p.id}
-            widgetId={p.widgetId}
             title={def.title}
             size={p.size}
             allowedSizes={def.allowedSizes}

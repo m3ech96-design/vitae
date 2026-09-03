@@ -30,11 +30,14 @@ export default function FinanzePage() {
   } = useFinance();
 
   const { total, byCategory, range } = useMemo(
-    () => computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, cycleStartDay),
-    [tasks, places, singleExpenses, recurringExpenses, cycleStartDay]
+    () => computeMonthlySpending(tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay),
+    [tasks, places, singleExpenses, recurringExpenses, plannedExpenses, cycleStartDay]
   );
   const projected = useMemo(() => projectedMonthlySpending(total, range), [total, range]);
-  const allItems = useMemo(() => allExpenseItems(tasks, places, singleExpenses), [tasks, places, singleExpenses]);
+  const allItems = useMemo(
+    () => allExpenseItems(tasks, places, singleExpenses, plannedExpenses),
+    [tasks, places, singleExpenses, plannedExpenses]
+  );
   const { fireTrigger } = useMood();
 
   // Una volta sola per ciclo, non ad ogni apertura della pagina — altrimenti sarebbe solo

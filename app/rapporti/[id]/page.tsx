@@ -38,10 +38,18 @@ function scoreMagnitude(before: Person, patch: Partial<Person>): number {
 
 export default function RelationshipDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { people, updatePerson } = useHousehold();
-  const { profile } = useProfile();
+  const { hydrated: householdHydrated, people, updatePerson } = useHousehold();
+  const { hydrated: profileHydrated, profile } = useProfile();
   const { tasks } = useTasks();
   const { places } = usePlaces();
+  const [pulses, setPulses] = useState<DeltaPulse[]>([]);
+  const { fireTrigger } = useMood();
+
+  // Stesso pattern di app/animali/[id]/page.tsx: tutti gli hook chiamati incondizionatamente
+  // prima di qualunque return anticipato — altrimenti se la persona viene cancellata mentre
+  // si è su questa pagina, il render successivo chiamerebbe meno hook di quello precedente
+  // (bug reale corretto: "Rendered fewer hooks than expected").
+  if (!householdHydrated || !profileHydrated) return null;
 
   const person = people.find((p) => p.id === params.id);
   if (!person) {
@@ -57,8 +65,6 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
 
   const isAnimal = ANIMAL_KINDS.includes(person.kind);
   const isPartner = profile.partnerPersonId === person.id;
-  const [pulses, setPulses] = useState<DeltaPulse[]>([]);
-  const { fireTrigger } = useMood();
 
   const handlePick = (label: string, positive: boolean) => {
     const { patch, event } = applyInteraction(person, label, positive, isPartner);

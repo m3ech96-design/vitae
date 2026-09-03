@@ -1,11 +1,46 @@
-// "vitae-shell-v2": il nome della cache va cambiato ogni volta che gli asset della shell
+// "vitae-shell-v3": il nome della cache va cambiato ogni volta che gli asset della shell
 // (icone comprese) cambiano davvero — è l'unico modo per cui il service worker si accorge
 // di essere diverso e rifà install/activate, ripulendo la cache vecchia. Restare fermi sullo
 // stesso nome per checkpoint su checkpoint (come "v1" per molto tempo) è la causa reale già
 // trovata dietro "l'icona dell'app è sparita": un'icona rimasta in cache da tanto tempo fa,
 // mai più rinfrescata perché il browser non aveva motivo di rieseguire l'installazione.
-const CACHE_NAME = "vitae-shell-v2";
-const SHELL_URLS = ["/", "/wizard", "/profilo", "/home", "/map", "/task", "/mondo", "/salute", "/rapporti", "/finanze", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+//
+// v3: SHELL_URLS copriva solo le prime 10 sezioni esistenti quando fu scritto — le sezioni
+// aggiunte da allora (animali, hobby, diario, wishlist, vitaecom, news, ecc.) funzionano
+// comunque offline dopo la prima visita online (la strategia sotto le mette in cache al primo
+// fetch), ma non erano precaricate all'installazione: la primissima visita di ciascuna,
+// se fatta offline, falliva. Aggiunte qui le sezioni principali (restano escluse le route con
+// parametro dinamico come /animali/[id], che richiedono un id specifico e non hanno senso
+// come URL fisso da precaricare).
+const CACHE_NAME = "vitae-shell-v3";
+const SHELL_URLS = [
+  "/",
+  "/wizard",
+  "/profilo",
+  "/home",
+  "/map",
+  "/task",
+  "/mondo",
+  "/salute",
+  "/rapporti",
+  "/finanze",
+  "/animali",
+  "/hobby",
+  "/diario",
+  "/wishlist",
+  "/alimentazione",
+  "/attivita-peso",
+  "/albero-genealogico",
+  "/news",
+  "/segnalazioni",
+  "/vitaecom",
+  "/vitaecom/chat",
+  "/vitaecom/persone",
+  "/vitaecom/profilo",
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

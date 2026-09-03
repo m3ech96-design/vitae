@@ -5,9 +5,16 @@ export interface AddressSuggestion {
 }
 
 /**
- * Nominatim (OpenStreetMap): nessuna chiave richiesta, adatto a un suggerimento
- * mentre l'utente digita. La richiesta parte solo dal browser dell'utente finale,
- * mai dal nostro server, quindi rispetta da sola il limite d'uso (un utente, una richiesta alla volta).
+ * Nominatim (OpenStreetMap): nessuna chiave richiesta, adatto a un suggerimento mentre
+ * l'utente digita. La richiesta parte solo dal browser dell'utente finale, mai dal nostro
+ * server.
+ *
+ * Nota tecnica sulla policy d'uso di Nominatim: richiede un header User-Agent identificativo
+ * dell'app, ma da una fetch() lato browser quell'header è "forbidden" dallo standard Fetch —
+ * il browser lo imposta sempre da sé, un valore custom passato qui verrebbe ignorato in
+ * silenzio senza dare l'effetto voluto. Una reale conformità richiederebbe instradare questa
+ * chiamata attraverso una propria API route (come già fatto per /api/news), dove l'header è
+ * impostabile lato server.
  */
 export async function searchAddress(query: string): Promise<AddressSuggestion[]> {
   if (query.trim().length < 3) return [];

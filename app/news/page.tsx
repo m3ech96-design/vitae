@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Newspaper, Share2, ExternalLink } from "lucide-react";
-import { NewsCategory, NewsItem } from "@/app/api/news/route";
+import { NewsItem } from "@/app/api/news/route";
+import { useNews } from "@/lib/use-news";
 import { ShareNewsComposer } from "@/components/news/ShareNewsComposer";
 
 function timeAgo(iso?: string): string {
@@ -55,20 +56,17 @@ function NewsCard({ item, onShare }: { item: NewsItem; onShare: () => void }) {
 }
 
 export default function NewsPage() {
-  const [categories, setCategories] = useState<NewsCategory[] | null>(null);
+  const { categories, error } = useNews();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [error, setError] = useState(false);
   const [sharingItem, setSharingItem] = useState<NewsItem | null>(null);
 
+  // Imposta la prima categoria come attiva non appena i dati arrivano — l'hook condiviso può
+  // già avere una cache pronta al primo render (altro consumer l'ha già popolata), quindi
+  // questo deve reagire a `categories` invece che al solo mount.
   useEffect(() => {
-    fetch("/api/news")
-      .then((res) => res.json())
-      .then((data) => {
-        setCategories(data.categories ?? []);
-        setActiveId(data.categories?.[0]?.id ?? null);
-      })
-      .catch(() => setError(true));
-  }, []);
+    if (categories && activeId === null) setActiveId(categories[0]?.id ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories]);
 
   const active = categories?.find((c) => c.id === activeId);
 

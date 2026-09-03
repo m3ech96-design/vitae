@@ -1,29 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
 import { Newspaper } from "lucide-react";
 import { WidgetList } from "../primitives";
 import { WidgetSize } from "@/lib/widgets/types";
-
-interface NewsItem {
-  title: string;
-  link: string;
-  pubDate: string;
-}
-interface NewsCategory {
-  id: string;
-  label: string;
-  items: NewsItem[];
-}
+import { useNews } from "@/lib/use-news";
 
 export function LatestNewsWidget({ size }: { size: WidgetSize }) {
-  const [categories, setCategories] = useState<NewsCategory[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/news")
-      .then((r) => r.json())
-      .then((data) => setCategories(data.categories ?? []))
-      .catch(() => setCategories([]));
-  }, []);
+  const { categories } = useNews();
 
   const items = (categories ?? [])
     .flatMap((c) => c.items.slice(0, 2))
@@ -35,14 +17,7 @@ export function LatestNewsWidget({ size }: { size: WidgetSize }) {
 }
 
 export function TodayDigestWidget({ size }: { size: WidgetSize }) {
-  const [categories, setCategories] = useState<NewsCategory[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/news")
-      .then((r) => r.json())
-      .then((data) => setCategories(data.categories ?? []))
-      .catch(() => setCategories([]));
-  }, []);
+  const { categories } = useNews();
 
   const today = new Date().toISOString().slice(0, 10);
   const items = (categories ?? [])

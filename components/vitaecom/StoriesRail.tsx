@@ -52,7 +52,7 @@ export function StoriesRail() {
           <span className="max-w-[60px] truncate text-[10px] text-ink-600">Tu</span>
         </div>
 
-        {otherGroups.map((group, i) => {
+        {otherGroups.map((group) => {
           const account = resolveAccount(group.authorId, userAccount);
           const allSeen = group.stories.every((s) => seenStoryIds.includes(s.id));
           return (

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Target, X } from "lucide-react";
+import { Target } from "lucide-react";
 import { useHealth, WeeklyGoalType } from "@/lib/health-context";
 import { addDaysIso, todayIso } from "@/lib/date-format";
 import { GlassCard } from "../ui/GlassCard";
