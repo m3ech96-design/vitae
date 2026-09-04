@@ -107,7 +107,7 @@ export function QuickAddTaskWidget({ size }: { size: WidgetSize }) {
     setText("");
   };
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 px-1">
+    <div className="flex h-full flex-col items-center justify-center gap-2 px-1" onClick={(e) => e.stopPropagation()}>
       <input
         value={text}
         onChange={(e) => setText(e.target.value)}

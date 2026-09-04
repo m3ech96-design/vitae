@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLongPress } from "@/lib/use-long-press";
 import { useWidgets } from "@/lib/widgets/widgets-context";
 import { WidgetSize } from "@/lib/widgets/types";
@@ -21,6 +22,15 @@ const SIZE_SPAN: Record<WidgetSize, string> = {
  * a schermo intero, qui applicata dentro una card. `touch-action: pan-x` sulla fascia di
  * scroll fa sì che il gesto orizzontale resti isolato lì: il resto della schermata non si
  * muove durante lo scroll/swipe di un widget, come richiesto.
+ *
+ * Corretto secondo le istruzioni: un tocco sulla card non portava mai da nessuna parte — il
+ * widget mostrava il dato ma toccarlo non faceva nulla, mentre l'unico gesto riconosciuto
+ * (la pressione lunga) apre le azioni del widget stesso (ridimensiona/sposta/rimuovi), non il
+ * contesto del dato mostrato. Un tocco normale ora porta a `href` quando presente — la
+ * pagina/scheda a cui appartiene quel dato — mentre la pressione lunga resta quella di
+ * sempre: `useLongPress` già distingue le due cose da sé (un tocco che diventa pressione
+ * lunga non fa scattare ANCHE il click, vedi `onClickCapture` nell'hook), quindi basta
+ * aggiungere `onClick` allo stesso contenitore senza toccare quella logica.
  */
 export function WidgetShell({
   placedId,
@@ -30,6 +40,7 @@ export function WidgetShell({
   index,
   total,
   pages,
+  href,
 }: {
   placedId: string;
   title: string;
@@ -38,7 +49,9 @@ export function WidgetShell({
   index: number;
   total: number;
   pages: React.ReactNode[];
+  href?: string;
 }) {
+  const router = useRouter();
   const { removeWidget, resizeWidget, reorder } = useWidgets();
   const [actionsOpen, setActionsOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -56,7 +69,9 @@ export function WidgetShell({
     <div className={`${SIZE_SPAN[size]} relative`}>
       <div
         {...longPress.handlers}
-        className={`glass sheen-top relative h-full overflow-hidden rounded-xl3 transition ${longPress.pressing ? "scale-[0.97] opacity-80" : ""}`}
+        onClick={href ? () => router.push(href) : undefined}
+        role={href ? "link" : undefined}
+        className={`glass sheen-top relative h-full overflow-hidden rounded-xl3 transition ${longPress.pressing ? "scale-[0.97] opacity-80" : ""} ${href ? "cursor-pointer" : ""}`}
       >
         {pages.length > 1 ? (
           <>

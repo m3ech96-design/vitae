@@ -20,30 +20,55 @@ import { Button } from "../ui/Button";
  * "Tempo libero + spese fisse entra nel budget": la somma delle due diventa il budget del
  * ciclo corrente (`setMonthlyBudget`) — è quanto ti sei detto di poter spendere, non un'altra
  * spesa registrata a parte.
+ *
+ * Corretto secondo le istruzioni: i tre campi percentuale erano legati direttamente al numero
+ * persistito, e cancellare la cifra scritta faceva ripartire `parseInt` da una stringa vuota
+ * (`NaN`), rimesso subito a `0` — uno "0" che ricompariva a ogni cancellazione, impossibile da
+ * togliere per scrivere una cifra nuova. Ora ogni campo ha il proprio stato di testo locale
+ * (può restare vuoto mentre si scrive, come già fanno tutti gli altri campi numerici
+ * dell'app): il numero persistito si aggiorna solo quando il testo è già una cifra valida, e
+ * resta quello di prima finché il campo è vuoto o a metà — mai forzato a 0 nel frattempo.
  */
 export function SalarySplitCalculator() {
   const { salarySplit, setSalarySplit, setMonthlyBudget, addSavingsEntry } = useFinance();
   const { fireTrigger } = useMood();
   const [salary, setSalary] = useState("");
   const [justApplied, setJustApplied] = useState(false);
+  const [speseFisseText, setSpeseFisseText] = useState(() => String(salarySplit.speseFisse));
+  const [tempoLiberoText, setTempoLiberoText] = useState(() => String(salarySplit.tempoLibero));
+  const [risparmiText, setRisparmiText] = useState(() => String(salarySplit.risparmi));
 
   const n = parseFloat(salary.replace(",", "."));
   const validSalary = !Number.isNaN(n) && n > 0;
-  const totalPercent = salarySplit.speseFisse + salarySplit.tempoLibero + salarySplit.risparmi;
+
+  // Per il calcolo e l'anteprima si usa sempre il testo scritto ORA, non l'ultimo valore
+  // persistito — così l'anteprima (e il controllo "fa 100%?") riflette esattamente quello che
+  // si vede nei campi, campo vuoto incluso (conta come 0 solo qui, mai scritto nel campo).
+  const speseFissePct = speseFisseText === "" ? 0 : parseInt(speseFisseText, 10) || 0;
+  const tempoLiberoPct = tempoLiberoText === "" ? 0 : parseInt(tempoLiberoText, 10) || 0;
+  const risparmiPct = risparmiText === "" ? 0 : parseInt(risparmiText, 10) || 0;
+  const totalPercent = speseFissePct + tempoLiberoPct + risparmiPct;
   const percentOk = totalPercent === 100;
 
-  const speseFisseAmount = validSalary ? (n * salarySplit.speseFisse) / 100 : 0;
-  const tempoLiberoAmount = validSalary ? (n * salarySplit.tempoLibero) / 100 : 0;
-  const risparmiAmount = validSalary ? (n * salarySplit.risparmi) / 100 : 0;
+  const speseFisseAmount = validSalary ? (n * speseFissePct) / 100 : 0;
+  const tempoLiberoAmount = validSalary ? (n * tempoLiberoPct) / 100 : 0;
+  const risparmiAmount = validSalary ? (n * risparmiPct) / 100 : 0;
 
-  const updatePercent = (key: keyof typeof salarySplit, value: string) => {
-    const parsed = parseInt(value, 10);
-    setSalarySplit({ ...salarySplit, [key]: Number.isNaN(parsed) ? 0 : Math.max(0, Math.min(100, parsed)) });
+  const setPercentText = (key: keyof typeof salarySplit, text: string) => {
+    // Solo cifre (o vuoto) — un numero incompleto o vuoto resta locale, non tocca mai
+    // l'impostazione persistita finché non torna un valore leggibile.
+    if (text !== "" && !/^\d{1,3}$/.test(text)) return;
+    if (key === "speseFisse") setSpeseFisseText(text);
+    if (key === "tempoLibero") setTempoLiberoText(text);
+    if (key === "risparmi") setRisparmiText(text);
+    if (text === "") return;
+    const clamped = Math.max(0, Math.min(100, parseInt(text, 10)));
+    setSalarySplit({ ...salarySplit, [key]: clamped });
   };
 
   const apply = () => {
     if (!validSalary || !percentOk) return;
-    addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${salarySplit.risparmi}% di ${n.toLocaleString("it-IT")}€)`);
+    addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${risparmiPct}% di ${n.toLocaleString("it-IT")}€)`);
     setMonthlyBudget(speseFisseAmount + tempoLiberoAmount);
     fireTrigger("finanze:stipendio-diviso");
     setSalary("");
@@ -77,8 +102,8 @@ export function SalarySplitCalculator() {
           <input
             type="number"
             inputMode="numeric"
-            value={salarySplit.speseFisse}
-            onChange={(e) => updatePercent("speseFisse", e.target.value)}
+            value={speseFisseText}
+            onChange={(e) => setPercentText("speseFisse", e.target.value)}
             className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
           />
           <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(speseFisseAmount).toLocaleString("it-IT")}€</p>
@@ -90,8 +115,8 @@ export function SalarySplitCalculator() {
           <input
             type="number"
             inputMode="numeric"
-            value={salarySplit.tempoLibero}
-            onChange={(e) => updatePercent("tempoLibero", e.target.value)}
+            value={tempoLiberoText}
+            onChange={(e) => setPercentText("tempoLibero", e.target.value)}
             className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
           />
           <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(tempoLiberoAmount).toLocaleString("it-IT")}€</p>
@@ -103,8 +128,8 @@ export function SalarySplitCalculator() {
           <input
             type="number"
             inputMode="numeric"
-            value={salarySplit.risparmi}
-            onChange={(e) => updatePercent("risparmi", e.target.value)}
+            value={risparmiText}
+            onChange={(e) => setPercentText("risparmi", e.target.value)}
             className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
           />
           <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(risparmiAmount).toLocaleString("it-IT")}€</p>

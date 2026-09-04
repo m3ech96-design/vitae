@@ -59,6 +59,7 @@ export function HomeWidgetsGrid({ onAddWidget }: { onAddWidget: () => void }) {
             index={index}
             total={placed.length}
             pages={[<Comp key="main" size={p.size} />]}
+            href={def.href}
           />
         );
       })}

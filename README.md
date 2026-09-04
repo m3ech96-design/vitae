@@ -2713,6 +2713,33 @@ dopo le correzioni.
   che sposta solo la vista sulla zona suggerita; il marker si mette sempre e solo toccando la
   mappa.
 
+## Checkpoint 67 — due bug corretti: campo percentuale mai svuotabile, widget che non portavano da nessuna parte
+
+**Un campo numerico restituiva sempre uno "0" non cancellabile**
+- Le tre percentuali del Calcolatore Stipendio (Checkpoint 66) erano legate direttamente al
+  numero salvato: cancellare la cifra scritta lasciava una stringa vuota, `parseInt` la
+  leggeva come `NaN`, e il codice la rimetteva subito a `0` — uno "0" impossibile da
+  cancellare per scriverne uno nuovo. Corretto dando a ogni campo un proprio stato di testo
+  locale (può restare vuoto mentre si scrive, come già fanno tutti gli altri campi numerici
+  dell'app): il numero salvato si aggiorna solo quando il testo è già una cifra valida, mai
+  forzato a 0 nel frattempo. Controllati anche gli altri 18 file dell'app con campi numerici:
+  nessun altro aveva questo problema.
+
+**Le card dei widget non portavano mai da nessuna parte**
+- L'unico gesto riconosciuto su una card era la pressione lunga, che apre le azioni del
+  widget stesso (ridimensiona/sposta/rimuovi) — un tocco normale non faceva letteralmente
+  nulla, anche se il widget mostrava il dato di una scheda precisa. Aggiunta una destinazione
+  (`href`) a 81 dei 84 widget del catalogo, verso la scheda/pagina a cui appartiene il dato
+  mostrato (Task, Finanze, Salute/Attività e peso divisi correttamente, Rapporti, Mappa,
+  eccetera): un tocco normale ora porta lì, la pressione lunga resta quella di sempre, già
+  in grado da sola di distinguere le due cose. Lasciati senza destinazione solo i 3 widget la
+  cui funzione è già interamente nella card (messaggio rapido alla casa, selettore stato
+  d'animo, stato della casa) — portare altrove non aggiungerebbe nulla — e protetti i due
+  widget con un proprio controllo interno (aggiungi task rapida, scrivi nota rapida) perché
+  scrivere o confermare lì non attivasse anche la navigazione della card.
+
+Build di produzione e `tsc --noEmit` verificati dopo entrambe le correzioni.
+
 ## Sviluppo in locale
 
 ```bash
