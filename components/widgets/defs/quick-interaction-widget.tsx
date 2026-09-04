@@ -88,18 +88,12 @@ export function QuickInteractionWidget({ size }: { size: WidgetSize }) {
   const openDiscoveriesPerson = openDiscoveriesFor ? byId.get(openDiscoveriesFor) ?? null : null;
 
   return (
-    // stopPropagation al primo pointerdown, sull'intero widget: il guscio (WidgetShell) ha
-    // una propria pressione lunga sul contenitore per ridimensionare/spostare/rimuovere (vedi
-    // useLongPress) — qui dentro i gesti devono restare tap secchi e ripetuti, e anche scrivere
-    // nella ricerca non deve rischiare di far scattare quel menu se il dito resta fermo un
-    // filo più a lungo del previsto. Un solo handler qui in cima basta per tutti i figli,
-    // stesso principio già usato da ShortcutsWidget.tsx sui propri pulsanti interni.
-    <div onPointerDown={(e) => e.stopPropagation()}>
+    <div>
       <p className="mb-3 flex items-center gap-1.5 font-display text-xs text-ink-100">
         <Users size={13} className="text-ink-600" /> Interazione rapida
       </p>
 
-      <div className="relative mb-3 shrink-0">
+      <div className="relative mb-3 shrink-0" onPointerDown={(e) => e.stopPropagation()}>
         <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-800" />
         <input
           value={query}
@@ -119,7 +113,11 @@ export function QuickInteractionWidget({ size }: { size: WidgetSize }) {
       </div>
 
       {query.trim() ? (
-        <div className="max-h-64 space-y-2 overflow-y-auto overscroll-contain" style={{ touchAction: "pan-y" }}>
+        <div
+          className="max-h-64 space-y-2 overflow-y-auto overscroll-contain"
+          style={{ touchAction: "pan-y" }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {searchResults.length === 0 && <p className="py-4 text-center text-xs text-ink-800">Nessun risultato.</p>}
           {searchResults.map((p) => (
             <button
@@ -142,7 +140,7 @@ export function QuickInteractionWidget({ size }: { size: WidgetSize }) {
           {recent.length > 0 && (
             <div className="mb-3 shrink-0">
               <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-ink-800">Appena salutate</p>
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar" onPointerDown={(e) => e.stopPropagation()}>
                 {recent.map((p) => (
                   <button
                     key={p.id}

@@ -38,7 +38,15 @@ export function QuickInteractionCard({
       <p className="min-w-0 flex-1 truncate font-display text-sm text-ink-100">
         {person.firstName} {person.lastName}
       </p>
-      <div className="flex shrink-0 items-center gap-1.5">
+      {/* stopPropagation solo qui, non su tutta la card: il guscio del widget (WidgetShell)
+         ha una propria pressione lunga sull'intero contenitore per ridimensionare/spostare/
+         rimuovere (vedi useLongPress) — deve restare libera di scattare da qualunque punto
+         "vuoto" del widget (come già succede su ShortcutsWidget.tsx), quindi lo stop va messo
+         sui singoli elementi interattivi, non su un contenitore che li avvolge tutti: farlo
+         più in alto blocca la pressione lunga per l'INTERO widget, non solo per i pulsanti
+         (bug reale, corretto: un tocco lungo ovunque nella card non apriva più le impostazioni
+         del widget stesso, né risaliva fino a "aggiungi widget" in HomeWidgetsGrid.tsx). */}
+      <div className="flex shrink-0 items-center gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
         <button
           ref={positiveRef}
           onClick={() => positiveRef.current && onPositive(positiveRef.current)}

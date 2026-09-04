@@ -2884,6 +2884,22 @@ Stato "con te ora"/"appena salutate" persistito in `localStorage`
 (`quick-interaction-context.tsx`), un fatto isolato di questo widget — non tocca in alcun modo
 il modello `Person` né lo stato mostrato altrove nell'app (Mondo, Home, presenza).
 
+**Bug corretto in revisione**: il widget non poteva essere rimosso (la pressione lunga non
+apriva `WidgetActionsSheet` come sugli altri widget) e, tenendo premuto su di esso, non si
+arrivava nemmeno ad "aggiungi widget" sulla griglia sottostante. Causa: uno `stopPropagation`
+messo per errore sul CONTENITORE RADICE dell'intero widget invece che sui singoli pulsanti —
+`WidgetShell` affida la pressione lunga a `onPointerDown` (vedi `useLongPress`), e fermare
+quell'evento già al primo livello dentro il widget impediva alla propria pressione lunga di
+scattare, non solo a quella della griglia. Corretto spostando lo stop sui soli elementi
+interattivi (barra di ricerca, chip "Appena salutate", pulsanti della card persona) — lo
+stesso identico criterio già seguito da `ShortcutsWidget.tsx`, non una tecnica nuova.
+Controllati per lo stesso errore tutti gli altri widget del catalogo: nessun altro lo usa
+in questa forma. Due widget di "Azioni rapide" (`QuickDiaryNoteWidget`, `QuickAddTaskWidget`)
+hanno un `stopPropagation` apparentemente simile, ma su `onClick` — un evento diverso, che
+`useLongPress` non ascolta affatto — e serve a un problema diverso (impedire che scrivere una
+nota/task rapida navighi via, dato che quei due widget hanno un `href`): verificato che non
+condividono il bug.
+
 Build di produzione e `tsc --noEmit` verificati dopo l'intero checkpoint.
 
 ## Sviluppo in locale
