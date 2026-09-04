@@ -16,6 +16,8 @@ import { GenealogyProvider } from "@/lib/genealogy-context";
 import { NewsSourcesProvider } from "@/lib/news-sources-context";
 import { HouseholdMessagesProvider } from "@/lib/household-messages-context";
 import { WidgetsProvider } from "@/lib/widgets/widgets-context";
+import { ShortcutsProvider } from "@/lib/shortcuts-context";
+import { QuickInteractionProvider } from "@/lib/quick-interaction-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
@@ -78,6 +80,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <NewsSourcesProvider>
                     <HouseholdMessagesProvider>
                     <WidgetsProvider>
+                    <ShortcutsProvider>
+                    <QuickInteractionProvider>
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
@@ -98,6 +102,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
+                    </QuickInteractionProvider>
+                    </ShortcutsProvider>
                     </WidgetsProvider>
                     </HouseholdMessagesProvider>
                     </NewsSourcesProvider>

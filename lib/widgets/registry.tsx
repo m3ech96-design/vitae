@@ -84,6 +84,7 @@ import {
   NextBirthdayCountdownWidget,
 } from "@/components/widgets/defs/rapporti-widgets";
 import { LatestNewsWidget, TodayDigestWidget } from "@/components/widgets/defs/news-widgets";
+import { ShortcutsWidget } from "@/components/widgets/defs/shortcuts-widget";
 import {
   GeneralStreakWidget,
   ProfileCompletionWidget,
@@ -97,6 +98,7 @@ import {
   WeeklyTimelineWidget,
 } from "@/components/widgets/defs/cross-widgets";
 import { QuickHouseholdMessageWidget } from "@/components/widgets/defs/action-widgets";
+import { QuickInteractionWidget } from "@/components/widgets/defs/quick-interaction-widget";
 
 /**
  * Il catalogo — ogni voce esiste sempre qui, a prescindere da quante ne siano piazzate in
@@ -202,6 +204,12 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "rapporti-in-world", title: "Persone nel mondo ora", category: "Rapporti", href: "/rapporti", defaultSize: "square", allowedSizes: ["square"], Component: PeopleInWorldNowWidget },
   { id: "rapporti-not-contacted", title: "Non senti da un po'", category: "Rapporti", href: "/rapporti", defaultSize: "square", allowedSizes: ["square", "half"], Component: NotContactedWidget },
   { id: "rapporti-next-birthday-countdown", title: "Countdown prossimo compleanno", category: "Rapporti", href: "/rapporti", defaultSize: "square", allowedSizes: ["square"], Component: NextBirthdayCountdownWidget },
+  // Niente `href`: il widget è interattivo al proprio interno (ricerca, richiamo, le
+  // interazioni stesse), non un riepilogo che rimanda altrove — un tocco sulla card non deve
+  // portare via dalla Home mentre si sta usando. Solo taglia intera e niente ridimensionamento:
+  // deve restare spazioso con più persone dentro, non schiacciato come un widget qualunque
+  // (vedi il commento in cima a quick-interaction-widget.tsx).
+  { id: "rapporti-quick-interaction", title: "Interazione rapida", category: "Rapporti", defaultSize: "full", allowedSizes: ["full"], Component: QuickInteractionWidget },
 
   // --- News ---
   { id: "news-latest", title: "Ultime notizie", category: "News", href: "/news", defaultSize: "half", allowedSizes: ["half", "full"], Component: LatestNewsWidget },
@@ -221,6 +229,11 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
 
   // --- Azioni rapide ---
   { id: "action-household-message", title: "Messaggio rapido alla casa", category: "Azioni rapide", defaultSize: "half", allowedSizes: ["half", "full"], Component: QuickHouseholdMessageWidget },
+
+  // --- Scorciatoie ---
+  // Niente `href` qui, apposta: contiene più link diversi al proprio interno (vedi il
+  // commento sopra ShortcutsWidget) invece di uno solo verso cui portare l'intera card.
+  { id: "cross-shortcuts", title: "Scorciatoie", category: "Trasversali", defaultSize: "full", allowedSizes: ["half", "full"], Component: ShortcutsWidget },
 ];
 
 export const WIDGET_MAP: Record<string, WidgetCatalogEntry> = Object.fromEntries(WIDGET_REGISTRY.map((w) => [w.id, w]));

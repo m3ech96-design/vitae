@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, Phone, MessageCircle, CalendarClock, Trash2, Sparkles, Check, PawPrint } from "lucide-react";
+import { X, Phone, MessageCircle, MessageSquare, CalendarClock, Trash2, Sparkles, Check, PawPrint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Person, PERSON_KIND_LABEL, ANIMAL_KINDS, kindForGenderChange } from "@/lib/types";
 import { describeDiscoveries } from "@/lib/discovery-feed";
@@ -165,15 +165,33 @@ export function PersonWindow({ person, onClose }: { person: Person; onClose: () 
           {person.deceased && (
             <p className="mt-1.5 text-xs text-ink-800">{lifespanLabel(person.birthday, person.deceasedYear)}</p>
           )}
-          {phone && (
+          {(phone || person.vitaecomAccountId) && (
             <div className="mt-3 flex gap-2">
-              <a href={`tel:${phone}`} className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 hover:border-aura-cyan/50 hover:text-aura-cyan">
-                <Phone size={15} />
-              </a>
+              {phone && (
+                <a href={`tel:${phone}`} className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 hover:border-aura-cyan/50 hover:text-aura-cyan">
+                  <Phone size={15} />
+                </a>
+              )}
               {waLink && (
                 <a href={waLink} target="_blank" rel="noopener noreferrer" className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 hover:border-aura-emerald/50 hover:text-aura-emerald">
                   <MessageCircle size={15} />
                 </a>
+              )}
+              {/* Solo per una Persona nata dal ponte Vitaecom↔Mondo (vedi
+                 `vitaecomAccountId`): la sua conversazione vera vive lì, non un link
+                 esterno come WhatsApp — stessa chat raggiungibile anche da KnowPanel sul
+                 suo profilo Vitaecom. */}
+              {person.vitaecomAccountId && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push(`/vitaecom/chat/${person.vitaecomAccountId}`);
+                  }}
+                  className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 hover:border-[#B79A6B]/50 hover:text-[#B79A6B]"
+                  aria-label={`Apri la chat Vitaecom con ${displayName}`}
+                >
+                  <MessageSquare size={15} />
+                </button>
               )}
             </div>
           )}

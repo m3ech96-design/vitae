@@ -2740,6 +2740,152 @@ dopo le correzioni.
 
 Build di produzione e `tsc --noEmit` verificati dopo entrambe le correzioni.
 
+## Checkpoint 68 — Vitaecom e Mondo unificati, alimentazione con macro e ricette, dashboard espanse, stipendio al contrario, scorciatoie come widget
+
+Il lavoro più esteso finora in un solo checkpoint, su sette fronti diversi. Riassunto per area,
+con le correzioni trovate in un secondo giro di revisione integrate al punto giusto invece che
+elencate a parte.
+
+**Vitaecom e Mondo, finalmente un'unica scheda**
+- Eliminato il pulsante a tre puntini ("Esplora Altro") dall'avatar di un profilo Vitaecom
+  altrui — portava a un pannello che diceva onestamente "arriverà quando Mondo e Persone
+  diventeranno un'unica scheda". Quel giorno è arrivato.
+- Conoscere qualcuno su Vitaecom crea ora, in automatico e una volta sola, una vera Persona
+  in Mondo (`vitaecomAccountId` su Person) — stesso wizard delle Scoperte, stesso Rapporto
+  (relationshipScore e la sua pagina dedicata), stessa scheda di chiunque altro conosci
+  offline, non una copia parallela. Copre anche chi aveva già dei conosciuti salvati prima
+  di questo cambiamento, e non torna mai indietro: smettere di essere "conosciuto" non
+  cancella la Persona né le scoperte già fatte su di lei.
+- KnowPanel (il riquadro "Persona Conosciuta"/"Sconosciuto" sul profilo) apre ora due azioni
+  per chi già conosci: "Scoperte" (la scheda vera appena descritta) e "Chat".
+- Mondo ha un nuovo filtro, "Vitaecom", per vedere solo chi hai conosciuto lì, con un badge
+  sulla card per riconoscerle a colpo d'occhio nell'elenco misto.
+- La scheda "Persone" di Vitaecom (elenco separato, ormai ridondante) è stata rimossa insieme
+  al suo componente card dedicato.
+- Corretto in revisione: rimuovendo "Persone" dalla barra online, arrivare da dentro Vitaecom
+  a "chi conosci" (ora in Mondo) richiedeva prima di uscire su Home e passare alla barra
+  offline — un giro più lungo di prima. Aggiunto un collegamento diretto sia in Impostazioni
+  ("Chi conosci su Vitaecom" → apre Mondo col filtro giusto) sia nella scheda Chat, quando la
+  lista è vuota.
+
+**Barra di navigazione online: Chat al posto di Persone, Impostazioni al suo fianco**
+- Sequenza aggiornata: Home (uscita) / Profilo / Vitaeworld / Chat / Impostazioni.
+- Nuova scheda Impostazioni per il proprio account Vitaecom: nickname (stesso controllo di
+  unicità del primo accesso), accesso rapido alla propria vetrina/bacheca, alle Segnalazioni,
+  e la gestione degli account silenziati — comprese le riattivazioni, che prima non erano
+  proprio possibili (mancava una funzione simmetrica a "silenzia", aggiunta ora).
+
+**Alimentazione: obiettivi per macronutriente e carboidrati netti**
+- Negli Obiettivi, nuova sezione "Suddividi i macronutrienti": tre percentuali sempre
+  complementari a 100 tra Carboidrati, Proteine e Grassi (la stessa logica delle diete Low
+  Carb/Keto/Low Fat/High Protein) — spostarne una ribilancia le altre due mantenendo tra loro
+  la proporzione che avevano, non semplicemente a metà. Richiede un obiettivo di calorie
+  giornaliere già impostato, da cui derivare i grammi-obiettivo di ciascun macro.
+- Quando un macronutriente supera il proprio obiettivo, il suo valore si segna in rosso nella
+  card "Calorie di oggi" e nel dettaglio espanso; in revisione è stato aggiunto lo stesso
+  segnale anche accanto al menù dei pasti stesso, non solo scrollando fino alla card
+  riassuntiva più in alto.
+- Aggiunta la meccanica dei carboidrati netti (Carboidrati totali meno Fibre — non sottrae i
+  polioli/alcoli di zucchero, categoria che questa scheda ingrediente non traccia a parte,
+  dichiarato nel codice), attivabile e disattivabile da un interruttore dedicato: quando
+  attivo sostituisce "Carboidrati" ovunque nel modulo, coerentemente in ogni vista (corretta
+  in revisione un'incoerenza nel dettaglio giornaliero espanso, che mostrava ancora sempre i
+  totali).
+
+**Ricette come ingredienti**
+- Nella creazione di un ingrediente, una nuova modalità "Ricetta" (solo in creazione, non in
+  modifica): componi il piatto scegliendo ingredienti esistenti o creandone di nuovi al volo,
+  con le loro quantità; i macronutrienti totali per 100 g o per 100 ml (scelta corretta in
+  revisione: prima la ricetta era sempre forzata a grammi, anche per una zuppa o un frullato)
+  si calcolano da soli sommando pesato i componenti e normalizzando sul peso reale della
+  ricetta — una ricetta da 800 g con 40 g di proteine ha 5 g di proteine per 100 g, non 40.
+  Dimensione di servizio e note facoltative. Una volta salvata, la ricetta è un ingrediente
+  come qualunque altro: si registra in un pasto senza che il resto dell'app sappia che
+  dietro c'è una composizione.
+
+**Le card "Calorie di oggi" e "Ultimi 7 giorni" si espandono**
+- Toccare "Calorie di oggi" apre una pagina di dettaglio con il confronto in grammi (non solo
+  percentuale) tra ciascun macronutriente e il proprio obiettivo, le calorie per pasto con
+  relativa barra, il digiuno più lungo della giornata, e l'intero menù con macro dettagliati
+  per singola voce.
+- Toccare "Ultimi 7 giorni" apre un grafico a barre giorno per giorno (con lo stesso codice
+  colore di sforamento/sotto-obiettivo/nel range), quanti giorni hanno rispettato l'obiettivo
+  calorico, il giorno migliore e quello da tenere d'occhio della settimana, e le medie
+  giornaliere dei tre macronutrienti.
+
+**Suddividi lo stipendio: calcolo anche al contrario**
+- Nuovo interruttore Percentuali/Importi sul calcolatore. In modalità Importi si scrive
+  direttamente quanti euro destinare a una categoria (es. 800€ di spese fisse su 1600€ di
+  stipendio): la percentuale sull'intero si calcola da sola e le altre due categorie si
+  ribilanciano di conseguenza, mantenendo tra loro la proporzione precedente — la stessa
+  meccanica di ribilanciamento complementare della suddivisione macro qui sopra, astratta in
+  un'unica funzione condivisa (`rebalanceThreeWaySplit`) invece di duplicarla. Corretto in
+  revisione: le altre due categorie ora mostrano sempre sia la percentuale sia l'importo in
+  euro equivalente, aggiornati insieme — prima si vedeva solo la percentuale.
+
+**Scorciatoie: da sezione fissa della Home a widget configurabile**
+- La sezione "Scorciatoie" (quattro voci sempre uguali: Salute, Attività e peso, Finanze,
+  Rapporti) è stata rimossa dalla Home e trasformata in un widget a sé, con un catalogo di
+  quindici scorciatoie possibili verso le schede principali dell'app tra cui scegliere
+  liberamente da un pannello di gestione dedicato — le quattro originali restano il punto di
+  partenza per chi non ha ancora scelto nulla, non sono sparite. Corretto in revisione: a
+  dimensione ridotta il widget ne mostra solo alcune per motivi di spazio; ora segnala quante
+  ne restano nascoste invece di troncarle in silenzio.
+
+Build di produzione e `tsc --noEmit` verificati dopo l'intero checkpoint, inclusa la seconda
+passata di revisione.
+
+## Checkpoint 69 — Interazione rapida: un widget per registrare interazioni sul momento
+
+Nuovo widget per la Home, "Interazione rapida" — nasce da un bisogno reale: registrare
+un'interazione con qualcuno oggi costa aprire Mondo, trovare la persona, aprire Rapporti,
+cercarla di nuovo, aprire la sua pagina, scrivere una frase. Troppi passaggi per un gesto che
+capita spesso — questo widget lo riduce a un tocco.
+
+**Come funziona**: tre fasce. "Con te ora" — le persone richiamate a mano, con accanto
+👍 (verde, interazione positiva), 👎 (rosso, negativa), un'icona documento (apre le Scoperte
+di quella persona) e una X ("ci siamo salutati" — la persona esce da questa fascia, non viene
+toccata in alcun modo come Persona: torna semplicemente disponibile per essere richiamata la
+prossima volta che la vedi davvero, esattamente come nella vita si saluta qualcuno e basta,
+senza che il rapporto stesso ne risenta). "Appena salutate" — le ultime tre uscite con la X,
+sempre pronte a un tocco per essere richiamate di nuovo. Una ricerca in cima per richiamare
+chiunque altro.
+
+**Nessun testo da scrivere qui, di proposito**: 👍/👎 registrano l'interazione subito, con
+una frase segnaposto ("Interazione positiva/negativa — da raccontare"), stesso 3% di sempre
+(`applyInteraction`, lib/relationship.ts — nessuna logica duplicata). Raccontarla con calma
+resta compito della scheda Rapporti: **Recenti e Cronologia sono ora modificabili**
+(`EditableInteractionRow.tsx`), un tocco sulla riga apre un campo di testo inline per
+rinominare la frase — punteggio, asse e data restano quelli originali per costruzione
+(`editRelationshipEventLabel`), riscrivere il racconto non può mai spostare un punteggio già
+maturato.
+
+**Auto-richiamo dalle Task**: una persona taggata in una task che si trova nel suo orario in
+corso ora entra da sola in "Con te ora" — stessa identica finestra oraria già usata per lo
+stato Casa/Fuori Casa (`isTaskActiveNow`, ora esportata da `lib/task-presence.ts` invece di
+restare privata: stesso calcolo, non una seconda versione da tenere allineata a mano).
+Nessun doppione: richiamarla a mano quando è già presente per una task non la duplica.
+
+**Non trattato come un widget qualunque**, su indicazione esplicita: solo taglia intera,
+niente ridimensionamento (`allowedSizes: ["full"]`), e niente `href` — un tocco non porta
+altrove, l'intera interazione con le persone avviene dentro il riquadro stesso. Bug evitato
+per costruzione, non corretto dopo: il guscio comune dei widget (`WidgetShell.tsx`) dà
+altezza al contenuto tramite un contenitore `h-full` — un widget con `flex-1`/`h-full` al
+proprio interno collasserebbe a zero pixel (lo stesso principio, in piccolo, dei fogli
+"intrappolati nella card" del Checkpoint 19/58: un genitore senza altezza propria non passa
+altezza a un figlio che gliela chiede). Il widget cresce invece con la propria altezza
+intrinseca come gli altri "full" del catalogo, e oltre una soglia scrolla al proprio interno
+con un `max-h` esplicito. Il "+N%" fluttuante che conferma il tocco (stesso di
+`FloatingDelta.tsx` in Rapporti) esce invece sempre dal DOM con un portal su `document.body`
+e si ancora a coordinate di schermo prese dall'icona toccata (`AnchoredDeltaLayer.tsx`): resta
+sopra tutto qualunque scroll o overflow ci sia nel mezzo, mai tagliato dal contenitore.
+
+Stato "con te ora"/"appena salutate" persistito in `localStorage`
+(`quick-interaction-context.tsx`), un fatto isolato di questo widget — non tocca in alcun modo
+il modello `Person` né lo stato mostrato altrove nell'app (Mondo, Home, presenza).
+
+Build di produzione e `tsc --noEmit` verificati dopo l'intero checkpoint.
+
 ## Sviluppo in locale
 
 ```bash

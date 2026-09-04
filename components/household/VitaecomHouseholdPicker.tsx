@@ -4,24 +4,26 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, Check, Pencil } from "lucide-react";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { useHousehold } from "@/lib/household-context";
 import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { capitalizeWords } from "@/lib/text";
 
 /**
- * Il "wizard delle scoperte" minimo applicato direttamente a un account Vitaecom (vedi
- * knownNames in vitaecom-social-context.tsx): oggi è solo Nome e Cognome, il minimo che
- * questa richiesta specifica serve a verificare — non l'intera scheda a sei sezioni, che
- * avrà senso costruire quando Mondo e Persone si uniranno per davvero.
+ * Aggiorna direttamente il Nome e Cognome della Persona di Mondo creata dal ponte
+ * Vitaecom↔Mondo (vedi `vitaecomAccountId` su Person) — lo stesso identico dato che vedresti
+ * aprendo la sua scheda Scoperte, non più un elenco separato: conoscere qualcuno su Vitaecom
+ * crea sempre questa Persona (vedi l'effect in vitaecom-social-context.tsx), qui la si
+ * completa solo più in fretta, senza uscire dal riquadro Casa.
  */
-function NameQuickEntry({ accountId, onSaved }: { accountId: string; onSaved: () => void }) {
-  const { setKnownName } = useVitaecomSocial();
+function NameQuickEntry({ personId, onSaved }: { personId: string; onSaved: () => void }) {
+  const { updatePerson } = useHousehold();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
   const save = () => {
     if (!firstName.trim()) return;
-    setKnownName(accountId, capitalizeWords(firstName.trim()), capitalizeWords(lastName.trim()));
+    updatePerson(personId, { firstName: capitalizeWords(firstName.trim()), lastName: capitalizeWords(lastName.trim()) });
     onSaved();
   };
 
@@ -54,20 +56,30 @@ function NameQuickEntry({ accountId, onSaved }: { accountId: string; onSaved: ()
 /**
  * "Da Vitaecom" — sceglie, tra le persone conosciute, chi invitare nel riquadro casa. Una
  * card toccata si inspessisce (bordo/sfondo più marcati) per dare spazio al pulsante
- * "Scegli" in basso a destra; "Scegli" controlla che tu conosca almeno il suo nome — se no,
+ * "Scegli" in basso a destra; "Scegli" controlla che tu conosca davvero il suo nome (non
+ * solo il nickname, con cui la sua Persona in Mondo parte per forza compilata) — se no,
  * l'errore compare qui accanto con un modo rapido per rimediare sul posto, invece di
  * mandarti altrove e farti perdere il filo.
  */
 export function VitaecomHouseholdPicker({ onClose }: { onClose: () => void }) {
-  const { knownAccountIds, knownNames, householdMembers, householdSentRequests, sendHouseholdRequest } = useVitaecomSocial();
+  const { knownAccountIds, personIdForAccount, householdMembers, householdSentRequests, sendHouseholdRequest } = useVitaecomSocial();
+  const { people } = useHousehold();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
 
   const candidates = DEMO_ACCOUNTS.filter((a) => knownAccountIds.includes(a.id));
 
-  const confirmChoice = (accountId: string) => {
-    if (!knownNames[accountId]?.firstName) {
+  const knownFullName = (accountId: string, nickname: string) => {
+    const person = people.find((p) => p.id === personIdForAccount(accountId));
+    // "Conosciuto il nome" per davvero solo quando differisce dal nickname di partenza —
+    // altrimenti ogni Persona appena creata passerebbe subito il controllo, svuotandolo.
+    if (!person || !person.firstName.trim() || person.firstName === nickname) return null;
+    return `${person.firstName} ${person.lastName}`.trim();
+  };
+
+  const confirmChoice = (accountId: string, nickname: string) => {
+    if (!knownFullName(accountId, nickname)) {
       setError(accountId);
       setEditingName(false);
       return;
@@ -100,7 +112,7 @@ export function VitaecomHouseholdPicker({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
           {candidates.length === 0 && (
             <p className="py-8 text-center text-sm text-ink-800">
-              Non conosci ancora nessuno su Vitaecom — vedi la scheda &quot;Persone&quot;.
+              Non conosci ancora nessuno su Vitaecom — vedi la scheda &quot;Chat&quot; per iniziare a conoscere qualcuno.
             </p>
           )}
           <div className="space-y-2.5">
@@ -126,10 +138,8 @@ export function VitaecomHouseholdPicker({ onClose }: { onClose: () => void }) {
                     <AuraAvatar imageUrl={a.avatarUrl} firstName={a.nickname} size={44} ring="idle" glowColor="#B79A6B" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-ink-100">@{a.nickname}</p>
-                      {knownNames[a.id]?.firstName && (
-                        <p className="truncate text-xs text-ink-800">
-                          {knownNames[a.id].firstName} {knownNames[a.id].lastName}
-                        </p>
+                      {knownFullName(a.id, a.nickname) && (
+                        <p className="truncate text-xs text-ink-800">{knownFullName(a.id, a.nickname)}</p>
                       )}
                       {already && <p className="text-xs text-ink-800">Già nella tua casa</p>}
                       {pending && <p className="text-xs text-ink-800">Richiesta inviata…</p>}
@@ -156,7 +166,7 @@ export function VitaecomHouseholdPicker({ onClose }: { onClose: () => void }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          confirmChoice(a.id);
+                          confirmChoice(a.id, a.nickname);
                         }}
                         className="focus-ring rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 px-4 py-1.5 text-xs text-ink-100 transition hover:bg-[#B79A6B]/25"
                       >
@@ -164,8 +174,8 @@ export function VitaecomHouseholdPicker({ onClose }: { onClose: () => void }) {
                       </button>
                     </motion.div>
                   )}
-                  {isSelected && error === a.id && editingName && (
-                    <NameQuickEntry accountId={a.id} onSaved={() => setError(null)} />
+                  {isSelected && error === a.id && editingName && personIdForAccount(a.id) && (
+                    <NameQuickEntry personId={personIdForAccount(a.id)!} onSaved={() => setError(null)} />
                   )}
                 </div>
               );

@@ -4,13 +4,48 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
+import { rebalanceMacroPercents } from "@/lib/food-types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
+import { SwitchVisual } from "../ui/Switch";
 
 function toNullableInt(v: string): number | null {
   if (!v.trim()) return null;
   const n = parseInt(v, 10);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Uno slider percentuale della suddivisione macro — muoversi qui ribilancia sempre le
+ * altre due tramite `rebalanceMacroPercents` (vedi lib/food-types.ts), così la somma resta
+ * fissa a 100 senza che l'utente debba mai farla tornare a mano. */
+function MacroPercentSlider({
+  label,
+  color,
+  value,
+  onChange,
+}: {
+  label: string;
+  color: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-ink-200">{label}</span>
+        <span className="font-display text-ink-100">{value}%</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="mt-1.5 w-full accent-current"
+        style={{ color }}
+      />
+    </div>
+  );
 }
 
 export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
@@ -20,6 +55,15 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
   const [weeklyMin, setWeeklyMin] = useState(goals.weeklyKcalMin !== null ? String(goals.weeklyKcalMin) : "");
   const [weeklyMax, setWeeklyMax] = useState(goals.weeklyKcalMax !== null ? String(goals.weeklyKcalMax) : "");
   const [water, setWaterGoal] = useState(goals.waterGoalLiters !== null ? String(goals.waterGoalLiters) : "");
+  const [macroSplitEnabled, setMacroSplitEnabled] = useState(goals.macroSplitEnabled);
+  const [percents, setPercents] = useState({ carbs: goals.carbsPercent, protein: goals.proteinPercent, fat: goals.fatPercent });
+  const [netCarbsEnabled, setNetCarbsEnabled] = useState(goals.netCarbsEnabled);
+
+  const changePercent = (key: "carbs" | "protein" | "fat", value: number) => {
+    setPercents((prev) => rebalanceMacroPercents(prev, key, value));
+  };
+
+  const hasDailyKcalGoal = toNullableInt(dailyMax) !== null || toNullableInt(dailyMin) !== null;
 
   const submit = () => {
     setGoals({
@@ -28,6 +72,11 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
       weeklyKcalMin: toNullableInt(weeklyMin),
       weeklyKcalMax: toNullableInt(weeklyMax),
       waterGoalLiters: water.trim() ? Math.max(0, parseFloat(water.replace(",", "."))) : null,
+      macroSplitEnabled,
+      carbsPercent: percents.carbs,
+      proteinPercent: percents.protein,
+      fatPercent: percents.fat,
+      netCarbsEnabled,
     });
     onClose();
   };
@@ -70,6 +119,61 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <TextField label="Obiettivo acqua giornaliero (L)" type="number" inputMode="decimal" value={water} onChange={(e) => setWaterGoal(e.target.value)} />
+
+          {/* Suddivisione macro — come nelle diete Low Carb, Keto, Low Fat, High Protein: le
+             tre percentuali restano sempre complementari a 100 (vedi MacroPercentSlider),
+             e da qui derivano i grammi-obiettivo di Carboidrati/Proteine/Grassi che, se
+             superati nella giornata, vengono segnati in rosso nel menù (vedi
+             DailyTotalsCard). Serve un obiettivo di Calorie giornaliere sopra: senza un
+             totale da suddividere, le percentuali restano impostate ma inattive. */}
+          <div className="border-t border-white/[0.06] pt-5">
+            <button
+              type="button"
+              onClick={() => setMacroSplitEnabled((v) => !v)}
+              className={`flex w-full items-center justify-between rounded-xl2 border px-4 py-3 text-sm transition ${
+                macroSplitEnabled ? "border-aura-violet/50 bg-aura-violet/10 text-ink-100" : "border-white/10 text-ink-600"
+              }`}
+            >
+              Suddividi i macronutrienti
+              <SwitchVisual checked={macroSplitEnabled} />
+            </button>
+
+            {macroSplitEnabled && (
+              <div className="mt-4 space-y-4">
+                {!hasDailyKcalGoal && (
+                  <p className="text-[11px] text-aura-amber">
+                    Imposta anche un obiettivo di Calorie giornaliere qui sopra: senza un totale, le percentuali non hanno nulla da
+                    suddividere.
+                  </p>
+                )}
+                <MacroPercentSlider label="Carboidrati" color="#00E5C7" value={percents.carbs} onChange={(v) => changePercent("carbs", v)} />
+                <MacroPercentSlider label="Proteine" color="#7C5CFF" value={percents.protein} onChange={(v) => changePercent("protein", v)} />
+                <MacroPercentSlider label="Grassi" color="#FFB454" value={percents.fat} onChange={(v) => changePercent("fat", v)} />
+                <p className="text-[11px] text-ink-800">
+                  {percents.carbs}% + {percents.protein}% + {percents.fat}% = 100%
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Carboidrati netti — vedi lib/food-types.ts, netCarbs, per la definizione e il
+             limite dichiarato (i polioli non sono tracciati come categoria a parte). */}
+          <div className="border-t border-white/[0.06] pt-5">
+            <button
+              type="button"
+              onClick={() => setNetCarbsEnabled((v) => !v)}
+              className={`flex w-full items-center justify-between rounded-xl2 border px-4 py-3 text-sm transition ${
+                netCarbsEnabled ? "border-aura-cyan/50 bg-aura-cyan/10 text-ink-100" : "border-white/10 text-ink-600"
+              }`}
+            >
+              Calcola i carboidrati netti
+              <SwitchVisual checked={netCarbsEnabled} tone="ink" />
+            </button>
+            <p className="mt-2 text-[11px] text-ink-800">
+              Carboidrati totali meno Fibre — la cifra che conta per una dieta Low Carb o Chetogenica. Quando attivo, sostituisce
+              &quot;Carboidrati&quot; ovunque nel modulo Alimentazione.
+            </p>
+          </div>
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">

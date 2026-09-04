@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home as HomeIcon, User, Globe2, Users, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, User, Globe2, MessageSquare, Settings } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -11,8 +11,8 @@ const ITEMS = [
   { href: "/home", label: "Home", icon: HomeIcon, exits: true },
   { href: "/vitaecom/profilo", label: "Profilo", icon: User },
   { href: "/vitaecom", label: "Vitaeworld", icon: Globe2 },
-  { href: "/vitaecom/persone", label: "Persone", icon: Users },
   { href: "/vitaecom/chat", label: "Chat", icon: MessageSquare },
+  { href: "/vitaecom/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
 /** Stesso linguaggio dell'alone condiviso di BottomNav (`layoutId` proprio, diverso dal suo:
@@ -33,11 +33,15 @@ function ActiveGlow() {
  * il commento nel codice lo dichiarava ("stessa posizione e dimensione"), ma il markup era
  * stato scritto da zero invece di riusare quello vero. Ora il contenitore, il padding, le
  * dimensioni di icona/etichetta, il vetro più traslucido (`.glass-nav`), la transizione di
- * comparsa e l'alone a scivolo sono tutti nello stesso linguaggio di BottomNav — cambia solo
- * la sequenza di schede (Home/Profilo/Vitaeworld/Persone/Chat), come da richiesta originale,
- * non anche la forma. "Home" non è una scheda di Vitaecom: è l'uscita — porta fuori, dove la
- * barra "offline" riprende da sola (vedi NavSwitcher, che sceglie quale barra mostrare in
- * base al percorso, non in base a uno stato da tenere sincronizzato a mano).
+ * comparsa e l'alone a scivolo sono tutti nello stesso linguaggio di BottomNav.
+ *
+ * "Persone" è confluita in Mondo (vedi app/mondo/page.tsx, filtro "Vitaecom") — non serve
+ * più una seconda scheda qui per lo stesso elenco. Al suo posto, nella stessa sequenza,
+ * "Chat" è salita di una posizione e "Impostazioni" (il tuo account Vitaecom — nickname,
+ * account silenziati, segnalazioni) chiude la barra alla sua destra, come da richiesta.
+ * "Home" non è una scheda di Vitaecom: è l'uscita — porta fuori, dove la barra "offline"
+ * riprende da sola (vedi NavSwitcher, che sceglie quale barra mostrare in base al percorso,
+ * non in base a uno stato da tenere sincronizzato a mano).
  */
 export function OnlineNav() {
   const pathname = usePathname();

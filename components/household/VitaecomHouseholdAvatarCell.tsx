@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, ExternalLink, Link2Off } from "lucide-react";
 import { VitaecomAccount } from "@/lib/vitaecom-social-types";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { useHousehold } from "@/lib/household-context";
 import { isNightHour } from "@/lib/time";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { PlaceIconBadge } from "@/components/ui/PlaceIconBadge";
@@ -33,7 +34,8 @@ import { PlaceIconBadge } from "@/components/ui/PlaceIconBadge";
  */
 export function VitaecomHouseholdAvatarCell({ account, location }: { account: VitaecomAccount; location: "casa" | "fuori-casa" }) {
   const router = useRouter();
-  const { knownNames, dissociateFromHousehold } = useVitaecomSocial();
+  const { knownNames, personIdForAccount, dissociateFromHousehold } = useVitaecomSocial();
+  const { people } = useHousehold();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -46,7 +48,11 @@ export function VitaecomHouseholdAvatarCell({ account, location }: { account: Vi
     return () => clearInterval(id);
   }, []);
 
-  const name = knownNames[account.id];
+  // Il nome vero vive ora sulla Persona di Mondo collegata (vedi `vitaecomAccountId`) —
+  // `knownNames` resta solo come ripiego per chi l'aveva scritto prima che questo ponte
+  // esistesse, così un nome già dato non sparisce dalla vista.
+  const linkedPerson = people.find((p) => p.id === personIdForAccount(account.id));
+  const name = linkedPerson?.firstName ? { firstName: linkedPerson.firstName, lastName: linkedPerson.lastName } : knownNames[account.id];
   const fullName = name?.firstName ? `${name.firstName} ${name.lastName}`.trim() : account.nickname;
 
   return (

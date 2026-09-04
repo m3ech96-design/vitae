@@ -1,4 +1,4 @@
-import { Ingredient, FoodEntry, MealSlot, scaleFactor } from "./food-types";
+import { Ingredient, FoodEntry, MealSlot, scaleFactor, baseQuantity, netCarbs } from "./food-types";
 import { addDaysIso } from "./date-format";
 
 export function findIngredient(ingredients: Ingredient[], id: string): Ingredient | undefined {
@@ -46,6 +46,66 @@ export function macroTotals(dayEntries: FoodEntry[], ingredients: Ingredient[]):
   }, EMPTY_TOTALS);
 }
 
+/** I Carboidrati di un totale già calcolato (vedi `macroTotals`/`weeklyTotals`) — totali o
+ * netti a seconda di `netCarbsEnabled` (vedi FoodGoals). Un solo punto da cui leggere
+ * "quanti carboidrati", invece di ripetere lo stesso controllo in ogni componente che li
+ * mostra: dashboard, obiettivi, evidenziazione dello sforamento restano sempre d'accordo su
+ * quale dei due numeri stanno guardando. */
+export function carbsForDisplay(totals: Pick<MacroTotals, "carbs" | "fiber">, netCarbsEnabled: boolean): number {
+  return netCarbsEnabled ? netCarbs(totals.carbs, totals.fiber) : totals.carbs;
+}
+
+/**
+ * Macro e calorie "per 100 g" di una Ricetta, a partire dalla sua composizione (vedi
+ * RecipeComposition) — somma pesata dei componenti (ciascuno scalato alla sua quantità
+ * dichiarata, con `scaleFactor`, esattamente come per una voce di pasto) e poi normalizzata
+ * sul peso totale della ricetta, non su 100 g fissi: una ricetta da 800 g con 40 g di
+ * proteine totali ha 5 g di proteine per 100 g, non 40. Un componente "altro" senza
+ * `gramsPerUnit` valorizzato contribuisce 0 al peso totale (non può, altrimenti dividere
+ * per il peso totale) — la UI di creazione ricetta impedisce di salvare finché non è
+ * risolto, non questa funzione. `null` se il peso totale è zero: non esiste un "per 100"
+ * di una ricetta che non pesa nulla.
+ *
+ * Se la ricetta finita è dichiarata "per 100 ml" (una zuppa, un frullato — vedi la scelta
+ * unità in RecipeComposer), la somma resta comunque calcolata in grammi dei componenti: la
+ * stessa equivalenza 1g=1ml già assunta da `baseQuantity` per qualunque ingrediente "ml"
+ * esistente in questa app, non un'approssimazione nuova introdotta qui. */
+export function recipeMacrosPer100(
+  lines: { ingredientId: string; quantity: number }[],
+  ingredients: Ingredient[]
+): (MacroTotals & { totalGrams: number }) | null {
+  let totalGrams = 0;
+  const sums: MacroTotals = { ...EMPTY_TOTALS };
+  for (const line of lines) {
+    const ing = findIngredient(ingredients, line.ingredientId);
+    if (!ing) continue;
+    const grams = baseQuantity(ing, line.quantity);
+    const factor = grams / 100;
+    totalGrams += grams;
+    sums.kcal += ing.kcal * factor;
+    sums.fat += ing.fat * factor;
+    sums.saturatedFat += ing.saturatedFat * factor;
+    sums.carbs += ing.carbs * factor;
+    sums.sugars += ing.sugars * factor;
+    sums.fiber += ing.fiber * factor;
+    sums.protein += ing.protein * factor;
+    sums.salt += ing.salt * factor;
+  }
+  if (totalGrams <= 0) return null;
+  const scaleToHundred = 100 / totalGrams;
+  return {
+    totalGrams,
+    kcal: sums.kcal * scaleToHundred,
+    fat: sums.fat * scaleToHundred,
+    saturatedFat: sums.saturatedFat * scaleToHundred,
+    carbs: sums.carbs * scaleToHundred,
+    sugars: sums.sugars * scaleToHundred,
+    fiber: sums.fiber * scaleToHundred,
+    protein: sums.protein * scaleToHundred,
+    salt: sums.salt * scaleToHundred,
+  };
+}
+
 /** Ultimi 7 giorni (compreso quello selezionato), stessa finestra mobile già usata in
  * "Attività e peso" — non la settimana di calendario lun-dom, per coerenza con il resto
  * dell'app. */
@@ -53,6 +113,24 @@ export function weeklyTotals(entries: FoodEntry[], ingredients: Ingredient[], en
   const start = addDaysIso(endDate, -6);
   const weekEntries = entries.filter((e) => e.date >= start && e.date <= endDate);
   return macroTotals(weekEntries, ingredients);
+}
+
+export interface DayTotals {
+  date: string;
+  totals: MacroTotals;
+}
+
+/** Un totale per ciascuno degli ultimi 7 giorni (stessa finestra di `weeklyTotals`, ma
+ * spezzata giorno per giorno) — la serie che alimenta il grafico a barre della vista
+ * "Ultimi 7 giorni" espansa, così ogni giorno si vede separatamente invece che solo nel
+ * cumulo. */
+export function dailyTotalsForLastWeek(entries: FoodEntry[], ingredients: Ingredient[], endDate: string): DayTotals[] {
+  const days: DayTotals[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = addDaysIso(endDate, -i);
+    days.push({ date, totals: macroTotals(entriesForDate(entries, date), ingredients) });
+  }
+  return days;
 }
 
 export function entriesBySlot(dayEntries: FoodEntry[], slot: MealSlot): FoodEntry[] {

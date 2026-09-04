@@ -8,6 +8,13 @@ import { newId } from "./id";
  * un animale, in HungryBadge.tsx). */
 const WRITTEN_INTERACTION_DELTA = 3;
 
+/** Le interazioni registrate dal widget Interazione Rapida non hanno un testo scritto sul
+ * momento — quello resta compito della scheda Rapporti, dopo (vedi editRelationshipEventLabel
+ * qui sotto). Due frasi segnaposto, distinguibili a colpo d'occhio da quelle scritte a mano
+ * finché non vengono raccontate per davvero. */
+export const QUICK_INTERACTION_LABEL_POSITIVE = "Interazione positiva — da raccontare";
+export const QUICK_INTERACTION_LABEL_NEGATIVE = "Interazione negativa — da raccontare";
+
 export interface InteractionResult {
   patch: Partial<Person>;
   event: RelationshipEvent;
@@ -77,6 +84,17 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
  * del tempo. */
 export function isRecentInteraction(event: RelationshipEvent, now: number = Date.now()): boolean {
   return now - new Date(event.date).getTime() < ONE_DAY_MS;
+}
+
+/** Cambia solo il testo di un'interazione già registrata (tipicamente una di quelle scritte
+ * dal widget Interazione Rapida, per raccontarla dopo con calma) — `delta`, `axis` e `date`
+ * restano intatti: rinominare una frase non deve mai alterare un punteggio già maturato. */
+export function editRelationshipEventLabel(
+  history: RelationshipEvent[],
+  eventId: string,
+  newLabel: string
+): RelationshipEvent[] {
+  return history.map((e) => (e.id === eventId ? { ...e, label: newLabel } : e));
 }
 
 export function relationshipLabel(p: Person): string {

@@ -88,6 +88,11 @@ export function PersonCard({ person, onOpen }: { person: Person; onOpen: () => v
         <p className="truncate text-xs text-ink-800">
           {subtitle}
           {outings > 0 && ` · ${outings} Uscite`}
+          {person.vitaecomAccountId && (
+            <span className="ml-1.5 rounded-full bg-[#B79A6B]/15 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-[#B79A6B]">
+              Vitaecom
+            </span>
+          )}
           {person.isDemo && (
             <span className="ml-1.5 rounded-full bg-[#B79A6B]/15 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-[#B79A6B]">
               Esempio

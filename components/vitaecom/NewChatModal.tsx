@@ -35,7 +35,7 @@ export function NewChatModal({ knownAccounts, onClose }: { knownAccounts: Vitaec
         <div className="space-y-2">
           <p className="mb-3 text-xs text-ink-800">Scegli una persona conosciuta per una chat singola, o crea un gruppo.</p>
           {knownAccounts.length === 0 && (
-            <p className="text-center text-sm text-ink-800">Non conosci ancora nessuno — vedi la scheda &quot;persone&quot;.</p>
+            <p className="text-center text-sm text-ink-800">Non conosci ancora nessuno — vedi la scheda &quot;Mondo&quot;.</p>
           )}
           {knownAccounts.map((a) => (
             <button

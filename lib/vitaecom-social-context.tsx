@@ -1,11 +1,12 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { VitaecomPost, VitaecomComment, VitaecomTag, PostReport, ReportReason } from "./vitaecom-social-types";
+import { VitaecomPost, VitaecomComment, VitaecomTag, PostReport, ReportReason, VitaecomAccount } from "./vitaecom-social-types";
 import { buildDemoPosts, DEMO_ACCOUNTS } from "./vitaecom-demo-data";
 import { chainRootOf } from "./vitaecom-lato-stato";
 import { STORY_DURATION_MS } from "./vitaecom-stories";
 import { DEFAULT_MOODS } from "./mood-catalog";
 import { newId } from "./id";
+import { useHousehold } from "./household-context";
 
 const POSTS_KEY = "vitae:vitaecom-posts";
 const NOTIF_KEY = "vitae:vitaecom-notifications";
@@ -75,6 +76,9 @@ interface VitaecomSocialContextValue {
   mutedAccountIds: string[];
   hidePost: (postId: string) => void;
   muteAccount: (accountId: string) => void;
+  /** Simmetrica a `muteAccount` — riattiva un account silenziato dalla scheda Impostazioni
+   * di Vitaecom (vedi app/vitaecom/impostazioni/page.tsx). */
+  unmuteAccount: (accountId: string) => void;
   reports: PostReport[];
   reportPost: (postId: string, authorId: string, reason: ReportReason, note?: string) => void;
   dismissReport: (reportId: string) => void;
@@ -93,15 +97,24 @@ interface VitaecomSocialContextValue {
   sendKnowRequest: (accountId: string) => void;
   acceptKnowRequest: (accountId: string) => void;
   /**
-   * Il nome vero (Nome, Cognome) che hai scoperto per un account Vitaecom — il minimo
-   * indispensabile di "wizard delle scoperte" applicato direttamente all'account, non più
-   * pescato da una Persona di Mondo collegata (quel ponte è stato tolto, vedi
-   * ExploreProfileSheet). Serve a una sola cosa per ora: "Devi almeno conoscere il suo
-   * nome!" prima di poterlo aggiungere alla tua Casa — il seme di quello che sarà, quando
-   * Mondo e Persone si uniranno, la scheda Scoperte vera di ogni account.
+   * Il nome vero (Nome, Cognome) che hai scoperto per un account Vitaecom prima ancora che
+   * il ponte Vitaecom↔Mondo esistesse — oggi serve solo come nome iniziale per la Persona
+   * creata automaticamente in `ensurePersonForAccount` (vedi l'effect qui sotto e
+   * `vitaecomAccountId` su Person): una volta creata, è la Persona stessa — non più questo
+   * elenco — a tenere il nome vero, modificabile dalla sua scheda Scoperte come per chiunque
+   * altro. Resta usato anche da "Devi almeno conoscere il suo nome!" prima di poterlo
+   * aggiungere alla tua Casa.
    */
   knownNames: Record<string, { firstName: string; lastName: string }>;
   setKnownName: (accountId: string, firstName: string, lastName: string) => void;
+  /**
+   * L'id della Persona di Mondo collegata a un account conosciuto (vedi `vitaecomAccountId`
+   * su Person) — undefined finché l'effect di creazione non ha ancora girato (un solo
+   * render, subito dopo l'idratazione) o se l'account non è mai stato conosciuto. Serve ai
+   * componenti che devono aprire la scheda vera (KnowPanel, ProfileHeader) senza dover
+   * ripetere ovunque la stessa ricerca in `useHousehold().people`.
+   */
+  personIdForAccount: (accountId: string) => string | undefined;
   /**
    * L'appartenenza alla Casa è reciproca come "conoscersi": una richiesta, un'accettazione,
    * poi entrambi gli avatar compaiono nel riquadro Casa dell'altro. Stessa idea già usata
@@ -127,7 +140,14 @@ function mapComment(c: VitaecomComment, fn: (c: VitaecomComment) => VitaecomComm
 
 const DEMO_REPLY_TEXTS = ["Bellissimo 🙂", "Mi piace tantissimo questa cosa.", "Vero, capisco perfettamente.", "Che bello leggerlo."];
 
+/** Solo gli account dimostrativi sono risolvibili oggi (niente vero backend) — "user" non
+ * compare mai qui: non puoi conoscere te stesso, quindi non genera mai una Persona. */
+function resolveKnowableAccount(id: string): VitaecomAccount | undefined {
+  return DEMO_ACCOUNTS.find((a) => a.id === id);
+}
+
 export function VitaecomSocialProvider({ children }: { children: React.ReactNode }) {
+  const { hydrated: householdHydrated, people, addPerson } = useHousehold();
   const [hydrated, setHydrated] = useState(false);
   const [posts, setPosts] = useState<VitaecomPost[]>([]);
   const [notifications, setNotifications] = useState<VitaecomNotification[]>([]);
@@ -184,6 +204,42 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     receivedRef.current = receivedRequests;
   }, [receivedRequests]);
+
+  /**
+   * Il ponte Vitaecom↔Mondo (vedi `vitaecomAccountId` su Person, lib/types.ts): appena un
+   * account entra tra i "conosciuti" — con qualunque delle tre strade che possono farlo
+   * accadere (richiesta accettata da un lato o dall'altro, o il seeding di prova
+   * all'apertura) — riceve qui, una volta sola, la sua Persona in Mondo, così scoperte e
+   * rapporto vivono da subito sulla stessa scheda che vedresti aggiungendola a mano. Un solo
+   * punto invece che uno per ciascuna delle tre strade: più robusto, e copre anche chi aveva
+   * già conosciuti salvati prima che questo ponte esistesse. Mai il contrario: "sconosciuto"
+   * non elimina la Persona già creata (le scoperte fatte restano, come una Persona vera).
+   */
+  useEffect(() => {
+    if (!householdHydrated || !hydrated) return;
+    const missing = knownAccountIds.filter((id) => !people.some((p) => p.vitaecomAccountId === id));
+    if (missing.length === 0) return;
+    missing.forEach((accountId) => {
+      const account = resolveKnowableAccount(accountId);
+      if (!account) return;
+      const knownName = knownNames[accountId];
+      addPerson({
+        firstName: knownName?.firstName || account.nickname,
+        lastName: knownName?.lastName || "",
+        avatarUrl: account.avatarUrl,
+        // "uomo" è solo un punto di partenza tecnico, non un'informazione vera: un account
+        // Vitaecom non porta un campo genere da cui dedurlo (vedi VitaecomAccount), e
+        // l'enum di PersonKind non ha un valore davvero neutro in italiano. Correggibile
+        // subito nella sua scheda Scoperte (campo "Sesso"), come per qualunque altra
+        // Persona — non è un dato definitivo, solo il default meno peggio finché non lo sai.
+        kind: "uomo",
+        livesAtHome: false,
+        isDemo: account.isDemo,
+        vitaecomAccountId: accountId,
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [knownAccountIds, householdHydrated, hydrated, people, addPerson]);
 
   const persistPosts = useCallback((updater: VitaecomPost[] | ((prev: VitaecomPost[]) => VitaecomPost[])) => {
     setPosts((prev) => {
@@ -789,6 +845,19 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
     });
   }, []);
 
+  const unmuteAccount = useCallback((accountId: string) => {
+    setMutedAccountIds((prev) => {
+      if (!prev.includes(accountId)) return prev;
+      const next = prev.filter((id) => id !== accountId);
+      try {
+        window.localStorage.setItem(MUTED_ACCOUNTS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
+  }, []);
+
   /** "Segnala questo post" — scrive la segnalazione (vedi PostReport per la forma, già
    * pensata per un domani con un vero server) e, come una scelta ragionevole più che una
    * regola rigida, nasconde subito anche il post dal tuo Vitaeworld: difficilmente vuoi
@@ -924,6 +993,11 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
 
   const hasUnreadNotification = useMemo(() => notifications.some((n) => !n.read), [notifications]);
 
+  const personIdForAccount = useCallback(
+    (accountId: string) => people.find((p) => p.vitaecomAccountId === accountId)?.id,
+    [people]
+  );
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -946,6 +1020,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       mutedAccountIds,
       hidePost,
       muteAccount,
+      unmuteAccount,
       reports,
       reportPost,
       dismissReport,
@@ -956,6 +1031,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       acceptKnowRequest,
       knownNames,
       setKnownName,
+      personIdForAccount,
       householdMembers,
       householdSentRequests,
       householdReceivedRequests,
@@ -984,6 +1060,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       mutedAccountIds,
       hidePost,
       muteAccount,
+      unmuteAccount,
       reports,
       reportPost,
       dismissReport,
@@ -994,6 +1071,7 @@ export function VitaecomSocialProvider({ children }: { children: React.ReactNode
       acceptKnowRequest,
       knownNames,
       setKnownName,
+      personIdForAccount,
       householdMembers,
       householdSentRequests,
       householdReceivedRequests,

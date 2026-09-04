@@ -1,7 +1,10 @@
 import { Task } from "./types";
 
-/** Nessuna Task ha un orario di fine: assumo una durata di un'ora, come per gli Impegni. */
-function isTaskActiveNow(task: Task, now: Date = new Date()): boolean {
+/** Nessuna Task ha un orario di fine: assumo una durata di un'ora, come per gli Impegni.
+ * Esportata (oltre che usata qui sotto) perché il widget Interazione Rapida se ne serve per
+ * richiamare in automatico le persone taggate in una task in corso — stessa identica finestra
+ * oraria, non una seconda versione da tenere allineata a mano. */
+export function isTaskActiveNow(task: Task, now: Date = new Date()): boolean {
   if (task.completed || !task.time) return false;
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   if (task.date !== todayIso) return false;

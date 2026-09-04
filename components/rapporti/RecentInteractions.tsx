@@ -1,11 +1,20 @@
 "use client";
 import { RelationshipEvent } from "@/lib/types";
+import { EditableInteractionRow } from "./EditableInteractionRow";
 
 /** Le interazioni scritte nelle ultime 24 ore — restano qui, non ancora in Cronologia, come
  * richiesto ("rimangono nella lista per 1 giorno, poi si depositano nella cronologia").
  * Nessuno stato da gestire: RelationshipDetailPage le filtra da relationshipHistory in base
- * alla data, lo stesso array di sempre. */
-export function RecentInteractions({ events }: { events: RelationshipEvent[] }) {
+ * alla data, lo stesso array di sempre. Ogni riga è ora modificabile (vedi
+ * EditableInteractionRow) — soprattutto per le interazioni nate dal widget Interazione
+ * Rapida in Home, che arrivano qui senza testo apposta, da raccontare con calma dopo. */
+export function RecentInteractions({
+  events,
+  onEditLabel,
+}: {
+  events: RelationshipEvent[];
+  onEditLabel: (eventId: string, newLabel: string) => void;
+}) {
   if (events.length === 0) return null;
   const recent = [...events].reverse();
 
@@ -14,16 +23,7 @@ export function RecentInteractions({ events }: { events: RelationshipEvent[] }) 
       <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Interazioni recenti</p>
       <div className="space-y-2">
         {recent.map((e) => (
-          <div
-            key={e.id}
-            className="flex items-center justify-between gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5"
-          >
-            <span className="text-xs text-ink-300">{e.label}</span>
-            <span className={`shrink-0 font-display text-xs ${e.delta >= 0 ? "text-aura-cyan" : "text-aura-pink"}`}>
-              {e.delta >= 0 ? "+" : ""}
-              {e.delta.toFixed(1)}%
-            </span>
-          </div>
+          <EditableInteractionRow key={e.id} event={e} onSave={(newLabel) => onEditLabel(e.id, newLabel)} />
         ))}
       </div>
     </div>

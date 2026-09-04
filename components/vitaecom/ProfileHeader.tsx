@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { MoreHorizontal, Flag } from "lucide-react";
+import { Flag } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { useProfile } from "@/lib/profile-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
@@ -13,7 +13,6 @@ import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { DialogueBubble } from "@/components/persone/DialogueBubble";
 import { AccountActionLine } from "./AccountActionLine";
 import { ShowcaseDrawer } from "./ShowcaseDrawer";
-import { ExploreProfileSheet } from "./ExploreProfileSheet";
 import { KnowPanel } from "./KnowPanel";
 import { flippedMenuTop } from "@/lib/dropdown-position";
 
@@ -70,7 +69,6 @@ export function ProfileHeader({
   // a un'intensità fissa e tranquilla, non un battito a caso.
   const auraIntensityValue = isOwner && activeMood && shareMoodOnVitaecom ? activeMoodIntensity : 0.4;
 
-  const [exploreOpen, setExploreOpen] = useState(false);
   const [unknownTipOpen, setUnknownTipOpen] = useState(false);
   const [unknownTipPos, setUnknownTipPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -113,15 +111,6 @@ export function ProfileHeader({
         }}
       >
         <span className="relative inline-flex">
-          {!isOwner && (
-            <button
-              onClick={() => setExploreOpen(true)}
-              className="focus-ring absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-void-900/90 text-ink-300 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-[#B79A6B]/50 hover:text-ink-100"
-              aria-label={`Esplora altro su ${account.nickname}`}
-            >
-              <MoreHorizontal size={14} />
-            </button>
-          )}
           {/* "Segnalazioni" — solo tue, mai una scheda che gli altri account hanno: per
              questo vive qui, ancorata al tuo stesso profilo, non tra le schede assegnabili
              della barra di navigazione (vedi app/segnalazioni/page.tsx per la nota onesta
@@ -207,8 +196,6 @@ export function ProfileHeader({
           </AnimatePresence>,
           document.body
         )}
-
-      {exploreOpen && <ExploreProfileSheet nickname={account.nickname} onClose={() => setExploreOpen(false)} />}
     </div>
   );
 }

@@ -108,11 +108,16 @@ function ChatList() {
 
       <div className="mt-6 space-y-2.5">
         {visibleAccounts.length === 0 && visibleGroups.length === 0 && (
-          <p className="mt-10 text-center text-sm text-ink-800">
-            {q
-              ? "Nessuna conversazione trovata."
-              : "Non conosci ancora nessuno con cui chattare — vedi la scheda \"persone\"."}
-          </p>
+          <div className="mt-10 flex flex-col items-center gap-2 text-center">
+            <p className="text-sm text-ink-800">
+              {q ? "Nessuna conversazione trovata." : "Non conosci ancora nessuno con cui chattare."}
+            </p>
+            {!q && (
+              <Link href="/mondo" className="focus-ring text-sm text-[#B79A6B] hover:text-[#B79A6B]/80">
+                Vedi chi conosci in Mondo
+              </Link>
+            )}
+          </div>
         )}
         {visibleGroups.map((g) => {
           const members = g.memberIds.map((id) => resolveAccount(id, userAccount));

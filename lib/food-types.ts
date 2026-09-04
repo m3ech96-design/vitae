@@ -11,6 +11,8 @@
  * macro/calorie di N unità si calcolano scalando quel peso, non chiedendoli mai a mano una
  * seconda volta in un'altra base.
  */
+import { rebalanceThreeWaySplit } from "./split3";
+
 export type FoodUnit = "g" | "ml" | "altro";
 
 export interface Ingredient {
@@ -33,6 +35,34 @@ export interface Ingredient {
    * stessa base "per 100" dei macro — mai chieste direttamente, sempre derivate. */
   kcal: number;
   createdAt: string;
+  /** Presente solo per un ingrediente nato come Ricetta (vedi RecipeComposition qui sotto)
+   * — la sua composizione, tenuta per poter tornare a modificarla; i macro/kcal "per 100"
+   * qui sopra restano comunque gli stessi campi di un ingrediente qualunque, derivati dalla
+   * composizione al momento del salvataggio (vedi `recipeMacrosPer100` in food-stats.ts),
+   * così una ricetta si registra in un pasto esattamente come qualsiasi altro ingrediente,
+   * senza che il resto dell'app debba sapere che dietro c'è una lista di componenti. */
+  recipe?: RecipeComposition;
+}
+
+/** Una riga della composizione: quanto di quell'ingrediente (esistente o creato al momento
+ * durante la stessa creazione della ricetta) entra nella ricetta — nell'unità propria
+ * dell'ingrediente componente, non normalizzata: la normalizzazione a "per 100" della
+ * ricetta risultante avviene una sola volta, sul totale (vedi `recipeMacrosPer100`). */
+export interface RecipeIngredientLine {
+  id: string;
+  ingredientId: string;
+  quantity: number;
+}
+
+export interface RecipeComposition {
+  lines: RecipeIngredientLine[];
+  /** Dimensione di servizio dichiarata per la ricetta finita (es. "1 porzione = 250 g") —
+   * distinta dalla base "per 100" dei macro, che resta sempre la stessa di ogni altro
+   * ingrediente: questo è solo un aiuto a registrare il pasto senza dover pesare la singola
+   * porzione ogni volta. */
+  servingSizeGrams?: number;
+  servingLabel?: string;
+  notes?: string;
 }
 
 /** Quanti grammi (o millilitri) rappresenta una quantità nell'unità propria
@@ -87,6 +117,27 @@ export interface FoodGoals {
   weeklyKcalMin: number | null;
   weeklyKcalMax: number | null;
   waterGoalLiters: number | null;
+  /** Suddivisione dei macronutrienti in percentuali complementari a 100 (come nelle diete
+   * Low Carb, Keto, Low Fat, High Protein, ecc.) — quando attiva, le tre percentuali
+   * decidono quanti grammi-obiettivo di Carboidrati/Proteine/Grassi derivano dall'obiettivo
+   * calorico giornaliero (vedi `macroGramGoals`), e il menù segna in rosso ogni
+   * macronutriente che nella giornata li supera. Le percentuali si muovono sempre insieme —
+   * alzarne una abbassa le altre due, mai una scelta libera indipendente — così restano
+   * sempre una suddivisione dell'intero, mai una somma arbitraria. Serve comunque un
+   * obiettivo calorico giornaliero (`dailyKcalMax` o, in mancanza, `dailyKcalMin`): senza
+   * un totale da suddividere le percentuali non hanno nulla su cui applicarsi.
+   */
+  macroSplitEnabled: boolean;
+  carbsPercent: number;
+  proteinPercent: number;
+  fatPercent: number;
+  /** "Carboidrati netti" (Carboidrati totali − Fibre — vedi `netCarbs` qui sotto):
+   * un'opzione da attivare esplicitamente, non il comportamento di default, perché cambia
+   * cosa conta davvero come "Carboidrati" ovunque nel modulo (menù del giorno, sforamento
+   * dell'obiettivo, dashboard) — un cambiamento che chi non segue una dieta low-carb/cheto
+   * non si aspetta un giorno.
+   */
+  netCarbsEnabled: boolean;
 }
 
 export const DEFAULT_FOOD_GOALS: FoodGoals = {
@@ -95,6 +146,11 @@ export const DEFAULT_FOOD_GOALS: FoodGoals = {
   weeklyKcalMin: null,
   weeklyKcalMax: null,
   waterGoalLiters: 2,
+  macroSplitEnabled: false,
+  carbsPercent: 50,
+  proteinPercent: 20,
+  fatPercent: 30,
+  netCarbsEnabled: false,
 };
 
 /** Litri di acqua bevuti, un totale per giorno — data ISO come chiave. */
@@ -102,4 +158,46 @@ export type WaterLog = Record<string, number>;
 
 export function computeKcal(fat: number, carbs: number, protein: number): number {
   return Math.round(fat * 9 + carbs * 4 + protein * 4);
+}
+
+/**
+ * Carboidrati netti — quelli che il corpo digerisce e assorbe davvero, la cifra che conta
+ * per chi segue una dieta Low Carb/Chetogenica: Carboidrati totali meno Fibre, mai sotto
+ * zero (un ingrediente con più fibra che carboidrati totali non può avere carboidrati netti
+ * negativi). Non sottrae i polioli (alcoli dello zucchero, es. eritritolo, maltitolo): la
+ * scheda ingrediente di quest'app non li traccia come categoria propria, solo Grassi/di cui
+ * Saturi/Carboidrati/di cui Zuccheri/Fibre/Proteine/Sale — dichiarato qui invece di far
+ * finta che il calcolo sia più completo di quanto sia.
+ */
+export function netCarbs(carbs: number, fiber: number): number {
+  return Math.max(0, carbs - fiber);
+}
+
+/**
+ * Ribilancia le tre percentuali complementari (Carboidrati/Proteine/Grassi) quando una di
+ * esse cambia — la stessa meccanica delle diete Low Carb/Keto/Low Fat/High Protein (vedi
+ * `rebalanceThreeWaySplit`, la versione generica condivisa anche col calcolatore stipendio):
+ * la percentuale toccata prende il valore scelto, le altre due si dividono ciò che resta
+ * fino a 100 mantenendo tra loro la stessa proporzione che avevano prima. */
+export function rebalanceMacroPercents(
+  current: { carbs: number; protein: number; fat: number },
+  changed: "carbs" | "protein" | "fat",
+  newValue: number
+): { carbs: number; protein: number; fat: number } {
+  return rebalanceThreeWaySplit(current, ["carbs", "protein", "fat"], changed, newValue);
+}
+
+/** Grammi-obiettivo di ciascun macronutriente, derivati dalle percentuali complementari e
+ * dall'obiettivo calorico giornaliero — Atwater alla rovescia (Grassi e Proteine 4/9
+ * kcal/g invertito). `null` se manca un obiettivo calorico da cui partire (vedi il commento
+ * su `macroSplitEnabled`) o se la suddivisione non è attiva. */
+export function macroGramGoals(goals: FoodGoals): { carbs: number; protein: number; fat: number } | null {
+  if (!goals.macroSplitEnabled) return null;
+  const kcalGoal = goals.dailyKcalMax ?? goals.dailyKcalMin;
+  if (!kcalGoal || kcalGoal <= 0) return null;
+  return {
+    carbs: (kcalGoal * (goals.carbsPercent / 100)) / 4,
+    protein: (kcalGoal * (goals.proteinPercent / 100)) / 4,
+    fat: (kcalGoal * (goals.fatPercent / 100)) / 9,
+  };
 }

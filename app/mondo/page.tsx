@@ -12,7 +12,7 @@ import { AddPersonModal } from "@/components/persone/AddPersonModal";
 import { PersonWindow } from "@/components/persone/PersonWindow";
 
 type SortMode = "alfabetico" | "frequentazione";
-type FilterMode = "tutti" | "persone" | "animali" | "in-casa";
+type FilterMode = "tutti" | "persone" | "animali" | "in-casa" | "vitaecom";
 
 export default function MondoPage() {
   const { hydrated, people } = useHousehold();
@@ -30,6 +30,7 @@ export default function MondoPage() {
     if (filter === "persone") arr = arr.filter((p) => !ANIMAL_KINDS.includes(p.kind));
     if (filter === "animali") arr = arr.filter((p) => ANIMAL_KINDS.includes(p.kind));
     if (filter === "in-casa") arr = arr.filter((p) => p.livesAtHome);
+    if (filter === "vitaecom") arr = arr.filter((p) => Boolean(p.vitaecomAccountId));
     if (query.trim()) arr = arr.filter((p) => personMatchesQuery(p, query));
     if (sort === "alfabetico") arr.sort((a, b) => a.firstName.localeCompare(b.firstName, "it"));
     else arr.sort((a, b) => totalOutings(b.id, tasks, places) - totalOutings(a.id, tasks, places));
@@ -107,6 +108,7 @@ export default function MondoPage() {
           ["persone", "Persone"],
           ["animali", "Animali"],
           ["in-casa", "In casa"],
+          ["vitaecom", "Vitaecom"],
         ] as [FilterMode, string][]).map(([mode, label]) => (
           <button
             key={mode}

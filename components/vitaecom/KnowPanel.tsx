@@ -2,22 +2,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Aperture, MessageSquare } from "lucide-react";
+import { Aperture, MessageSquare, Sparkles } from "lucide-react";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
+import { useHousehold } from "@/lib/household-context";
+import { PersonWindow } from "@/components/persone/PersonWindow";
 
 /**
- * Il riquadro che decide cosa vedi di un altro account: "Persona Conosciuta" con "Chat"
- * accanto, "Sconosciuto" con "Inizia A Conoscere" a sinistra, o — solo quando quell'account
- * ti ha già mandato una richiesta — "Accetta"/"Accetta E Conosci Anche Tu". Largo quasi
- * quanto lo schermo apposta (stesso breakout della Vetrina, `w-screen` con margini negativi
- * sul viewport): rompe il colore ambra del tema esattamente come richiesto, non solo la
- * larghezza.
+ * Il riquadro che decide cosa vedi di un altro account: "Persona Conosciuta" con "Scoperte"
+ * (apre la stessa scheda Persona di Mondo — wizard delle scoperte, rapporto — perché
+ * conoscere qualcuno su Vitaecom crea sempre quella Persona, vedi `vitaecomAccountId` su
+ * Person) e "Chat" accanto, "Sconosciuto" con "Inizia A Conoscere" a sinistra, o — solo
+ * quando quell'account ti ha già mandato una richiesta — "Accetta"/"Accetta E Conosci Anche
+ * Tu". Largo quasi quanto lo schermo apposta (stesso breakout della Vetrina, `w-screen` con
+ * margini negativi sul viewport): rompe il colore ambra del tema esattamente come richiesto,
+ * non solo la larghezza.
  */
 export function KnowPanel({ accountId }: { accountId: string }) {
   const router = useRouter();
-  const { knownAccountIds, sentRequests, receivedRequests, sendKnowRequest, acceptKnowRequest } = useVitaecomSocial();
+  const { knownAccountIds, sentRequests, receivedRequests, sendKnowRequest, acceptKnowRequest, personIdForAccount } = useVitaecomSocial();
+  const { people } = useHousehold();
   const [revealed, setRevealed] = useState(false);
   const [justAccepted, setJustAccepted] = useState(false);
+  const [scopertesOpen, setScopertesOpen] = useState(false);
+
+  const linkedPersonId = personIdForAccount(accountId);
+  const linkedPerson = people.find((p) => p.id === linkedPersonId);
 
   const known = knownAccountIds.includes(accountId);
   const pendingReceived = receivedRequests.includes(accountId);
@@ -59,8 +68,14 @@ export function KnowPanel({ accountId }: { accountId: string }) {
               </button>
             </motion.div>
           ) : known ? (
-            <motion.div key="known" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-between gap-3">
-              <span className="flex-1 text-sm text-ink-200">Persona conosciuta</span>
+            <motion.div key="known" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2.5">
+              <button
+                onClick={() => setScopertesOpen(true)}
+                disabled={!linkedPerson}
+                className="focus-ring flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 py-2.5 text-sm text-ink-100 transition hover:bg-[#B79A6B]/25 disabled:opacity-50"
+              >
+                <Sparkles size={14} /> Scoperte
+              </button>
               <button
                 onClick={() => router.push(`/vitaecom/chat/${accountId}`)}
                 className="focus-ring flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#B79A6B]/50 bg-[#B79A6B]/15 py-2.5 text-sm text-ink-100 transition hover:bg-[#B79A6B]/25"
@@ -90,6 +105,8 @@ export function KnowPanel({ accountId }: { accountId: string }) {
           )}
         </AnimatePresence>
       </div>
+
+      {scopertesOpen && linkedPerson && <PersonWindow person={linkedPerson} onClose={() => setScopertesOpen(false)} />}
     </div>
   );
 }

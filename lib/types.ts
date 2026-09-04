@@ -262,10 +262,17 @@ export interface Person extends PersonalDetails {
   kind: PersonKind;
   livesAtHome: boolean;
   /** Badge "Esempio" in Mondo, per non confondere una persona di prova con un contatto
-   * reale — nessuna scorciatoia la crea più da sola (il collegamento Vitaecom↔Mondo che la
-   * generava è stato tolto, vedi ExploreProfileSheet), il campo resta solo per chi l'aveva
-   * già creata così prima di questo cambiamento. */
+   * reale — indipendente da `vitaecomAccountId` qui sotto: una persona collegata a un
+   * account dimostrativo di Vitaecom eredita comunque questo badge (vedi
+   * ensurePersonForAccount in vitaecom-social-context.tsx), il campo resta anche per chi
+   * l'aveva creata a mano prima che il ponte Vitaecom↔Mondo esistesse. */
   isDemo?: boolean;
+  /** Il ponte Vitaecom↔Mondo: quando conosci un account su Vitaecom (vedi KnowPanel),
+   * questa stessa Persona viene creata automaticamente in Mondo — stesso wizard delle
+   * scoperte, stesso rapporto, stessa scheda di chiunque altro, non una copia parallela.
+   * Assente per una Persona creata a mano, offline. Univoco: al più una Persona per ogni
+   * account (vedi ensurePersonForAccount). */
+  vitaecomAccountId?: string;
   /** Impostato solo alla creazione, dal wizard — vedi AddPersonModal. Cambia il trattamento
    * dell'avatar ovunque compaia (desaturato, respiro che si assesta una volta sola) e fa
    * comparire "Defunto"/"Defunta" nella scheda della persona. */

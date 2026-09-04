@@ -1,9 +1,10 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useFood } from "@/lib/food-context";
-import { BASE_SLOTS, SNACK_SLOTS, MEAL_SLOT_LABELS, MealSlot } from "@/lib/food-types";
-import { entriesForDate, macroTotals, weeklyTotals, slotsWithEntries } from "@/lib/food-stats";
+import { BASE_SLOTS, SNACK_SLOTS, MEAL_SLOT_LABELS, MealSlot, macroGramGoals } from "@/lib/food-types";
+import { entriesForDate, macroTotals, weeklyTotals, slotsWithEntries, carbsForDisplay } from "@/lib/food-stats";
 import { todayIso, addDaysIso, weekdayShort } from "@/lib/date-format";
 import { DayStrip } from "@/components/task/DayStrip";
 import { MealSlotSection } from "@/components/food/MealSlotSection";
@@ -14,6 +15,7 @@ import { FoodGoalsModal } from "@/components/food/FoodGoalsModal";
 import { FoodFunStats } from "@/components/food/FoodFunStats";
 
 export default function AlimentazionePage() {
+  const router = useRouter();
   const { hydrated, entries, ingredients, goals } = useFood();
   const [date, setDate] = useState(todayIso());
   const [extraSnacks, setExtraSnacks] = useState<MealSlot[]>([]);
@@ -23,6 +25,19 @@ export default function AlimentazionePage() {
   const dailyTotals = useMemo(() => macroTotals(dayEntries, ingredients), [dayEntries, ingredients]);
   const weekTotals = useMemo(() => weeklyTotals(entries, ingredients, date), [entries, ingredients, date]);
   const activeSlots = slotsWithEntries(dayEntries);
+
+  // Stesso confronto già fatto in DailyTotalsCard, qui riusato per segnalare lo sforamento
+  // anche vicino al menù dei pasti (vedi MealSlotSection) — "nel menù", non solo scrollando
+  // fino alla card riassuntiva più in alto.
+  const gramGoals = macroGramGoals(goals);
+  const carbsShown = carbsForDisplay(dailyTotals, goals.netCarbsEnabled);
+  const overMacroLabels = gramGoals
+    ? [
+        carbsShown > gramGoals.carbs ? (goals.netCarbsEnabled ? "Carboidrati netti" : "Carboidrati") : null,
+        dailyTotals.protein > gramGoals.protein ? "Proteine" : null,
+        dailyTotals.fat > gramGoals.fat ? "Grassi" : null,
+      ].filter((l): l is string => Boolean(l))
+    : [];
 
   const changeDate = (iso: string) => {
     setDate(iso);
@@ -73,20 +88,29 @@ export default function AlimentazionePage() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <DailyTotalsCard totals={dailyTotals} goals={goals} onEditGoals={() => setGoalsOpen(true)} />
+        <DailyTotalsCard totals={dailyTotals} goals={goals} onEditGoals={() => setGoalsOpen(true)} onOpen={() => router.push(`/alimentazione/oggi/${date}`)} />
         <div className="space-y-3">
-          <WeeklyCaloriesCard totals={weekTotals} goals={goals} />
+          <WeeklyCaloriesCard totals={weekTotals} goals={goals} onOpen={() => router.push(`/alimentazione/settimana/${date}`)} />
           <WaterTracker date={date} />
         </div>
       </div>
 
       <div className="mt-6 space-y-3">
-        {BASE_SLOTS.map((slot) => (
-          <MealSlotSection key={slot} date={date} slot={slot} dayEntries={dayEntries} />
-        ))}
-        {visibleSnackSlots.map((slot) => (
-          <MealSlotSection key={slot} date={date} slot={slot} dayEntries={dayEntries} />
-        ))}
+        {[...BASE_SLOTS, ...visibleSnackSlots].map((slot, i) => {
+          // Il segnale rosso compare una sola volta, sulla prima sezione del giorno che ha
+          // già delle voci — non ripetuto identico su ogni card del menù, che sarebbe
+          // rumoroso senza aggiungere informazione.
+          const isFirstWithEntries = activeSlots.has(slot) && [...BASE_SLOTS, ...visibleSnackSlots].slice(0, i).every((s) => !activeSlots.has(s));
+          return (
+            <MealSlotSection
+              key={slot}
+              date={date}
+              slot={slot}
+              dayEntries={dayEntries}
+              overMacroLabels={isFirstWithEntries ? overMacroLabels : undefined}
+            />
+          );
+        })}
       </div>
 
       {addableSnackSlots.length > 0 && (

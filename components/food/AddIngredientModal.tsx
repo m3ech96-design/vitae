@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X, ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
 import { Ingredient, FoodUnit, computeKcal, scaleFactor } from "@/lib/food-types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { Chip } from "../ui/Chip";
+import { RecipeComposer } from "./RecipeComposer";
 
 const UNIT_OPTIONS: { id: FoodUnit; label: string }[] = [
   { id: "g", label: "Grammi" },
@@ -31,6 +32,8 @@ export function AddIngredientModal({
   onSaved?: (ingredient: Ingredient) => void;
 }) {
   const { addIngredient, updateIngredient } = useFood();
+  const [mode, setMode] = useState<"singolo" | "ricetta">("singolo");
+  const [recipeOpen, setRecipeOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? initialName ?? "");
   const [unit, setUnit] = useState<FoodUnit>(initial?.unit ?? "g");
   const [unitLabel, setUnitLabel] = useState(initial?.unitLabel ?? "");
@@ -111,6 +114,30 @@ export function AddIngredientModal({
           </button>
         </div>
 
+        {/* La scelta tra "Singolo ingrediente" e "Ricetta" (vedi RecipeComposer) esiste
+           solo in creazione — modificare un ingrediente già esistente resta sempre la
+           stessa identica cosa che era, con o senza una composizione dietro: cambiare
+           natura a metà modifica creerebbe più confusione di quanta ne risolva. */}
+        {!initial && (
+          <div className="shrink-0 flex gap-2 px-6 pt-4">
+            <Chip label="Singolo ingrediente" selected={mode === "singolo"} onClick={() => setMode("singolo")} />
+            <Chip label="Ricetta" selected={mode === "ricetta"} onClick={() => setMode("ricetta")} />
+          </div>
+        )}
+
+        {mode === "ricetta" && !initial ? (
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <ChefHat size={22} className="text-aura-emerald" />
+              <p className="text-sm text-ink-200">
+                Componi la ricetta dai tuoi ingredienti (o creane di nuovi al volo): i valori nutrizionali per 100 g/ml verranno
+                calcolati per te.
+              </p>
+              <Button onClick={() => setRecipeOpen(true)}>Apri la composizione</Button>
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <TextField label="Nome" value={name} onChange={(e) => setName(e.target.value)} placeholder="Es. Petto di pollo" />
 
@@ -197,7 +224,19 @@ export function AddIngredientModal({
             Salva ingrediente
           </Button>
         </div>
+        </>
+        )}
       </motion.div>
+
+      {recipeOpen && (
+        <RecipeComposer
+          onClose={() => setRecipeOpen(false)}
+          onSaved={(created) => {
+            onSaved?.(created);
+            onClose();
+          }}
+        />
+      )}
     </div>,
     document.body
   );

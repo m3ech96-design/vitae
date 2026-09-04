@@ -9,7 +9,7 @@ import { usePlaces } from "@/lib/places-context";
 import { ANIMAL_KINDS, Person } from "@/lib/types";
 import { capArray } from "@/lib/cap-array";
 import { outingsPerMonth } from "@/lib/frequency";
-import { applyInteraction, isRecentInteraction, relationshipLabel } from "@/lib/relationship";
+import { applyInteraction, editRelationshipEventLabel, isRecentInteraction, relationshipLabel } from "@/lib/relationship";
 import { AuraAvatar } from "@/components/ui/AuraAvatar";
 import { RelationshipGauge, LoveGauge } from "@/components/rapporti/RelationshipGauge";
 import { InteractionComposer } from "@/components/rapporti/InteractionComposer";
@@ -89,6 +89,14 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
     }
   };
 
+  // Cambia solo il testo di un'interazione già registrata — usata dalle righe modificabili
+  // di Recenti e Cronologia (vedi EditableInteractionRow), soprattutto per raccontare con
+  // calma le interazioni nate senza testo dal widget Interazione Rapida in Home. Punteggi e
+  // data restano quelli originali, per costruzione (vedi editRelationshipEventLabel).
+  const handleEditLabel = (eventId: string, newLabel: string) => {
+    updatePerson(person.id, { relationshipHistory: editRelationshipEventLabel(person.relationshipHistory, eventId, newLabel) });
+  };
+
   // Le interazioni scritte nell'ultimo giorno restano nella lista "recenti"; dopo un giorno
   // esatto si depositano da sole in cronologia (stesso array, solo filtrato per data — vedi
   // lib/relationship.ts).
@@ -136,14 +144,14 @@ export default function RelationshipDetailPage({ params }: { params: { id: strin
 
       {recentEvents.length > 0 && (
         <div className="mt-8">
-          <RecentInteractions events={recentEvents} />
+          <RecentInteractions events={recentEvents} onEditLabel={handleEditLabel} />
         </div>
       )}
 
       <div className="mt-8 space-y-6">
         <FrequencyChart points={outingsPerMonth(person.id, tasks, places)} />
         <RelationshipChart events={person.relationshipHistory} />
-        <RelationshipHistory events={historyEvents} />
+        <RelationshipHistory events={historyEvents} onEditLabel={handleEditLabel} />
       </div>
     </div>
   );

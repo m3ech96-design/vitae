@@ -1,13 +1,28 @@
 "use client";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
 import { useFood } from "@/lib/food-context";
 import { FoodEntry, MealSlot, MEAL_SLOT_LABELS } from "@/lib/food-types";
 import { entriesBySlot, kcalForEntry, sameSlotLastWeek } from "@/lib/food-stats";
 import { GlassCard } from "../ui/GlassCard";
 import { EntryModal } from "./EntryModal";
 
-export function MealSlotSection({ date, slot, dayEntries }: { date: string; slot: MealSlot; dayEntries: FoodEntry[] }) {
+export function MealSlotSection({
+  date,
+  slot,
+  dayEntries,
+  overMacroLabels,
+}: {
+  date: string;
+  slot: MealSlot;
+  dayEntries: FoodEntry[];
+  /** Etichette dei macronutrienti già sopra il proprio obiettivo giornaliero (vedi
+   * macroGramGoals in app/alimentazione/page.tsx) — mostrate qui, vicino al menù dei
+   * pasti stesso, non solo nella card "Calorie di oggi" più in alto: lo stesso segnale
+   * rosso richiesto "nel menù", raggiungibile senza dover risalire la pagina. Assente o
+   * vuoto quando nessun macro è sforato, o la suddivisione non è attiva. */
+  overMacroLabels?: string[];
+}) {
   const { ingredients, entries } = useFood();
   const [addOpen, setAddOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
@@ -30,6 +45,12 @@ export function MealSlotSection({ date, slot, dayEntries }: { date: string; slot
           </button>
         </div>
       </div>
+
+      {overMacroLabels && overMacroLabels.length > 0 && (
+        <p className="mb-3 flex items-center gap-1.5 text-[11px] text-aura-pink">
+          <AlertTriangle size={11} /> {overMacroLabels.join(", ")} {overMacroLabels.length === 1 ? "superato" : "superati"} oggi
+        </p>
+      )}
 
       {slotEntries.length === 0 ? (
         <div>
