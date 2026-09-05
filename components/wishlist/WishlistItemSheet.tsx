@@ -23,18 +23,21 @@ function DetailPhoto({ photoKey }: { photoKey?: string }) {
  * Il ponte tra Wishlist e Finanze — vive qui, non in nessuno dei due contesti, perché
  * `WishlistProvider` è più esterno di `FinanceProvider` nell'albero (vedi app/layout.tsx) e
  * quindi non può vedere `useFinance()` da solo; questo componente sì, essendo dentro
- * entrambi. Vedi il commento su `linkedSavingsGoalId` in lib/wishlist-types.ts per il
- * significato dei due stati.
+ * entrambi. Vedi il commento su `linkedTo` in lib/wishlist-types.ts per il significato dei
+ * vari stati — in breve: il flusso versa/preleva va sempre e solo Finanze → Wishlist, mai il
+ * contrario, quindi ogni movimento reale (versare, prelevare, esaudire) avviene qui tramite
+ * le funzioni di FinanceContext, mai tramite un pulsante manuale sull'articolo.
  */
 export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClose: () => void }) {
-  const { removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount } = useWishlist();
+  const { removeItem, setLinkedTo, fulfillItem, unfulfillItem } = useWishlist();
   const { places } = usePlaces();
   const { savingsGoals, contributeSavingsGoal, addSavingsEntry } = useFinance();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const place = item.linkedPlaceId ? places.find((p) => p.id === item.linkedPlaceId) : undefined;
-  const linkedGoal = item.linkedSavingsGoalId ? savingsGoals.find((g) => g.id === item.linkedSavingsGoalId) : undefined;
+  const linkedTo = item.linkedTo;
+  const linkedGoal = linkedTo?.kind === "goal" ? savingsGoals.find((g) => g.id === linkedTo.goalId) : undefined;
   const positionBits = [
     item.row && `Fila ${item.row}`,
     item.aisle && `Corsia ${item.aisle}`,
@@ -42,37 +45,52 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
     item.shelf && `Scaffale ${item.shelf}`,
   ].filter(Boolean) as string[];
 
-  // Non collegato: un versamento/prelievo manuale resta un contatore proprio dell'articolo
-  // (addFunds/removeFunds di sempre), MA genera anche una voce reale nel salvadanaio
-  // generale (addSavingsEntry) — le due contabilità non divergono mai, invece di essere due
-  // numeri scollegati che l'utente dovrebbe tenere allineati a mano (vedi il commento su
-  // `savedAmount` in wishlist-types.ts).
-  const handleAddFunds = (amount: number) => {
-    addFunds(item.id, amount);
-    addSavingsEntry(amount, `Wishlist — ${item.name}`);
-  };
-  const handleRemoveFunds = (amount: number) => {
-    removeFunds(item.id, amount);
-    addSavingsEntry(-amount, `Wishlist — ${item.name}`);
-  };
-
-  // Collegare: i fondi già accantonati sull'articolo si spostano dentro l'obiettivo (sommati
-  // al suo currentAmount) — altrimenti sparirebbero dalla vista, non più mostrati né qui né
-  // lì. L'articolo passa a "sola lettura" (linkedSavingsGoalId impostato): da qui in poi la
-  // sua quota è quella dell'obiettivo, mai più un numero suo.
-  const handleLink = (goalId: string) => {
-    if (item.savedAmount > 0) contributeSavingsGoal(goalId, item.savedAmount);
-    setLinkedSavingsGoal(item.id, goalId);
+  // Collegare: i fondi già accantonati sull'articolo (se ce n'erano, es. arrivando da un
+  // collegamento precedente scollegato di recente) si spostano dentro la nuova destinazione
+  // — altrimenti sparirebbero dalla vista, non più mostrati né qui né lì. L'articolo passa a
+  // seguire dal vivo quella destinazione: da qui in poi la sua quota è la sua, mai più un
+  // numero suo indipendente.
+  const handleLink = (linkedTo: NonNullable<WishlistItem["linkedTo"]>) => {
+    if (item.savedAmount > 0) {
+      if (linkedTo.kind === "general") addSavingsEntry(item.savedAmount, `Wishlist — ${item.name}`);
+      else contributeSavingsGoal(linkedTo.goalId, item.savedAmount);
+    }
+    setLinkedTo(item.id, linkedTo);
   };
 
-  // Scollegare: il saldo attuale dell'obiettivo torna un contatore proprio dell'articolo —
-  // ma resta nell'obiettivo (scollegare non è un prelievo, solo la fine della sincronia). Un
-  // articolo appena scollegato riparte quindi già dalla stessa cifra che mostrava un attimo
-  // prima, non da zero.
-  const handleUnlink = () => {
-    if (linkedGoal) setSavedAmount(item.id, linkedGoal.currentAmount);
-    setLinkedSavingsGoal(item.id, undefined);
+  // Scollegare: il numero che l'articolo stava già mostrando resta quello che era — non
+  // serve alcuna scrittura esplicita, perché una volta rimosso `linkedTo` l'effect di
+  // sincronizzazione (vedi app/wishlist/page.tsx) smette di toccare `savedAmount`, che
+  // resta fermo all'ultimo valore con cui era stato allineato (il tetto individuale
+  // dell'articolo, mai il saldo intero della destinazione se condivisa con altri —
+  // vedi il commento sul tetto in app/wishlist/page.tsx). Scollegare non è un prelievo: i
+  // soldi restano nella destinazione, solo la sincronia finisce qui.
+  const handleUnlink = () => setLinkedTo(item.id, undefined);
+
+  // "Esaudisci" — SOLO quando l'articolo è già al 100% (garantito dalla UI, vedi
+  // SavingsRing: il pulsante compare solo con `pct >= 1`; la guardia qui sotto è una difesa
+  // in profondità, non un doppione decorativo). Essendo saturo, `item.savedAmount` coincide
+  // per costruzione con `item.price` — mai di più, anche quando altri articoli condividono
+  // la stessa destinazione (vedi il commento in SavingsRing.tsx sul perché più articoli
+  // possono mostrare lo stesso saldo senza un riparto tra loro): prelevare esattamente
+  // `item.savedAmount` non tocca mai più di quanto spettava a QUESTO articolo, indipendente
+  // da quanti altri condividono la stessa destinazione. Genera la voce di cronologia
+  // corrispondente, e fissa quell'importo per sempre su `fulfilledAmount` — da qui in poi
+  // la quota dell'articolo non segue più la destinazione, che può continuare a muoversi per
+  // altri motivi senza più riflettersi su un articolo già chiuso.
+  const handleFulfill = () => {
+    if (!item.price || item.price <= 0 || item.savedAmount < item.price) return;
+    const amount = item.savedAmount;
+    if (linkedTo?.kind === "general") addSavingsEntry(-amount, `Esaudito: ${item.name}`);
+    else if (linkedTo?.kind === "goal") contributeSavingsGoal(linkedTo.goalId, -amount);
+    fulfillItem(item.id, amount);
   };
+
+  // Riaprire: la quota torna a seguire la destinazione (se ancora collegata) — i soldi
+  // prelevati con "Esaudisci" NON tornano da soli (sarebbe un rimborso implicito, mai
+  // richiesto): se l'utente vuole continuare ad accantonare, verserà di nuovo lui stesso da
+  // Finanze.
+  const handleUnfulfill = () => unfulfillItem(item.id);
 
   return (
     <PersonalCardSheet
@@ -93,10 +111,10 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
           item={item}
           linkedGoal={linkedGoal}
           allGoals={savingsGoals}
-          onAddFunds={handleAddFunds}
-          onRemoveFunds={handleRemoveFunds}
           onLink={handleLink}
           onUnlink={handleUnlink}
+          onFulfill={handleFulfill}
+          onUnfulfill={handleUnfulfill}
         />
 
         {(item.siteName || item.siteUrl) && (

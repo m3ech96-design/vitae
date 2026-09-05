@@ -1,76 +1,73 @@
 "use client";
 import { useState } from "react";
-import { Plus, Minus, Target, Link2, Unlink } from "lucide-react";
-import { WishlistItem, savingsPct } from "@/lib/wishlist-types";
+import { Target, PiggyBank, Link2, Unlink, PartyPopper, RotateCcw } from "lucide-react";
+import { WishlistItem, savingsPct, isFulfilled } from "@/lib/wishlist-types";
 import { SavingsGoal } from "@/lib/types";
 import { useCountUp } from "@/lib/use-count-up";
 import { Button } from "../ui/Button";
 import { LinkSavingsGoalSheet } from "./LinkSavingsGoalSheet";
 
 /**
- * Due modalità distinte, mai insieme — vedi il commento su `linkedSavingsGoalId` in
- * wishlist-types.ts:
- * - Non collegato (comportamento di sempre): l'anello mostra `item.savedAmount`, i controlli
- *   +/- restano quelli manuali di sempre.
- * - Collegato a un SavingsGoal delle Finanze (`linkedGoal`, risolto dal chiamante — questo
- *   componente non vede FinanceContext da solo, vedi WishlistItemSheet): l'anello mostra
- *   `linkedGoal.currentAmount`/`linkedGoal.targetAmount` DIRETTAMENTE, mai `item.savedAmount`
- *   o `item.price` — è sempre il dato vero dell'obiettivo, non una copia. I controlli +/-
- *   spariscono: versare o prelevare si fa da Finanze, dove l'obiettivo vive davvero, non da
- *   qui (evita due punti che modificano lo stesso numero con logiche diverse). Resta solo il
- *   pulsante per scollegare.
+ * Il flusso versa/preleva NON è bilaterale (vedi il commento su `linkedTo` in
+ * lib/wishlist-types.ts): versare o prelevare accade sempre in Finanze (salvadanaio
+ * generale o un obiettivo), mai qui — questo componente si limita a MOSTRARE il riflesso di
+ * quel movimento, mai a generarne uno proprio. Nessun pulsante +/- manuale: solo la scelta
+ * di quale destinazione seguire, e "Esaudisci" per chiudere l'articolo.
+ *
+ * Più articoli possono condividere la stessa destinazione — ciascuno mostra semplicemente
+ * lo stesso saldo, con l'unico tetto individuale del proprio prezzo (mai un riparto tra
+ * loro): se il salvadanaio ha 600€ e A costa 200€, B 800€, entrambi collegati, A mostra
+ * 200€ (saturo), B mostra 600€ (non saturo) — nessuna "riserva" divisa, lo stesso numero
+ * fino al proprio tetto.
+ *
+ * "Esaudisci" compare SOLO quando l'articolo è già al 100% (`pct >= 1`, mai su
+ * `displayedAmount > 0`): un articolo sotto il pieno non può essere esaudito. Questo è ciò
+ * che rende sempre corretto prelevare `item.savedAmount` alla conferma (vedi
+ * WishlistItemSheet) anche quando più articoli condividono la destinazione — un articolo
+ * al 100% ha `savedAmount === price` per costruzione, mai più del proprio prezzo, quindi
+ * esaudirlo non tocca mai più di quanto gli spettasse davvero.
+ *
+ * Tre stati, mai insieme:
+ * - Non collegato a nulla: quota ferma a 0, invito a collegare una destinazione.
+ * - Collegato (a `linkedGoal` risolto dal chiamante, o al salvadanaio generale se
+ *   `linkedTo.kind === "general"`): l'anello segue dal vivo il saldo della destinazione.
+ * - Esaudito (`item.fulfilledAmount`/`fulfilledAt` impostati): l'anello mostra l'importo
+ *   fissato per sempre a quel momento, sganciato dalla destinazione — che nel frattempo può
+ *   continuare a muoversi per altri motivi senza più riflettersi qui.
  */
 export function SavingsRing({
   item,
   linkedGoal,
   allGoals,
-  onAddFunds,
-  onRemoveFunds,
   onLink,
   onUnlink,
+  onFulfill,
+  onUnfulfill,
 }: {
   item: WishlistItem;
-  /** L'obiettivo vero collegato, già risolto dal chiamante (undefined se `linkedSavingsGoalId`
-   * non è impostato o l'obiettivo collegato è stato nel frattempo eliminato da Finanze). */
+  /** L'obiettivo vero collegato, già risolto dal chiamante (undefined se `linkedTo` non è
+   * di tipo "goal", o se l'obiettivo collegato è stato nel frattempo eliminato da Finanze). */
   linkedGoal: SavingsGoal | undefined;
-  /** Gli obiettivi tra cui scegliere per un nuovo collegamento — passati dal chiamante, che
-   * è l'unico dei due contesti a vederli entrambi. */
+  /** Gli obiettivi tra cui scegliere per un nuovo collegamento. */
   allGoals: SavingsGoal[];
-  onAddFunds: (amount: number) => void;
-  onRemoveFunds: (amount: number) => void;
-  onLink: (goalId: string) => void;
+  onLink: (linkedTo: NonNullable<WishlistItem["linkedTo"]>) => void;
   onUnlink: () => void;
+  onFulfill: () => void;
+  onUnfulfill: () => void;
 }) {
   const size = 156;
   const stroke = 12;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const displayedAmount = linkedGoal ? linkedGoal.currentAmount : item.savedAmount;
-  const displayedTarget = linkedGoal ? linkedGoal.targetAmount : item.price ?? 0;
-  const pct = linkedGoal
-    ? displayedTarget > 0
-      ? Math.min(1, displayedAmount / displayedTarget)
-      : 0
-    : savingsPct(item);
+  const fulfilled = isFulfilled(item);
+  const displayedAmount = fulfilled ? item.fulfilledAmount! : item.savedAmount;
+  const pct = savingsPct(item);
   const dash = circumference * pct;
-  const color = pct >= 1 ? "#34D399" : pct >= 0.5 ? "#00E5C7" : "#7C5CFF";
+  const color = fulfilled ? "#34D399" : pct >= 1 ? "#34D399" : pct >= 0.5 ? "#00E5C7" : "#7C5CFF";
   const savedAnimated = useCountUp(Math.round(displayedAmount));
 
-  const [amount, setAmount] = useState("");
   const [linking, setLinking] = useState(false);
-
-  const parsedAmount = () => Math.max(0, parseFloat(amount.replace(",", ".")) || 0);
-  const add = () => {
-    const n = parsedAmount();
-    if (n > 0) onAddFunds(n);
-    setAmount("");
-  };
-  const remove = () => {
-    const n = parsedAmount();
-    if (n > 0) onRemoveFunds(n);
-    setAmount("");
-  };
 
   if (!item.price || item.price <= 0) {
     return <p className="text-xs text-ink-800">Imposta un prezzo per attivare l&apos;obiettivo di risparmio.</p>;
@@ -97,59 +94,65 @@ export function SavingsRing({
           <span className="font-display text-xl text-ink-100">
             {savedAnimated.toLocaleString("it-IT", { maximumFractionDigits: 0 })}€
           </span>
-          <span className="text-xs text-ink-600">su {displayedTarget.toLocaleString("it-IT")}€</span>
+          <span className="text-xs text-ink-600">su {item.price.toLocaleString("it-IT")}€</span>
           <span className="mt-1 text-[11px]" style={{ color }}>
             {Math.round(pct * 100)}%
           </span>
         </div>
       </div>
 
-      {linkedGoal ? (
+      {fulfilled ? (
+        <div className="flex w-full flex-col items-center gap-2">
+          <p className="flex items-center gap-1.5 text-xs text-aura-emerald">
+            <PartyPopper size={12} /> Esaudito
+          </p>
+          <Button variant="outline" size="sm" onClick={onUnfulfill}>
+            <RotateCcw size={13} /> Riapri
+          </Button>
+        </div>
+      ) : item.linkedTo ? (
         <div className="flex w-full flex-col items-center gap-2">
           <p className="flex items-center gap-1.5 text-xs text-ink-600">
-            <Target size={12} className="text-aura-emerald" />
-            Collegato all&apos;obiettivo <span className="text-ink-200">{linkedGoal.label}</span>
+            {item.linkedTo.kind === "general" ? (
+              <>
+                <PiggyBank size={12} className="text-aura-cyan" />
+                Collegato al <span className="text-ink-200">salvadanaio generale</span>
+              </>
+            ) : (
+              <>
+                <Target size={12} className="text-aura-emerald" />
+                Collegato all&apos;obiettivo <span className="text-ink-200">{linkedGoal?.label ?? "eliminato"}</span>
+              </>
+            )}
           </p>
           <p className="text-center text-[11px] text-ink-800">
             Sempre aggiornato da solo — versa o preleva dalla scheda Finanze, non da qui.
           </p>
-          <Button variant="outline" size="sm" onClick={onUnlink}>
-            <Unlink size={13} /> Scollega
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onUnlink}>
+              <Unlink size={13} /> Scollega
+            </Button>
+            {pct >= 1 && (
+              <Button size="sm" onClick={onFulfill}>
+                <PartyPopper size={13} /> Esaudisci
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
-        <>
-          <div className="flex w-full items-center gap-2">
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              placeholder="Importo €"
-              className="focus-ring w-full rounded-xl2 border border-white/10 bg-white/[0.03] px-3 py-2 text-center text-sm text-ink-100 placeholder:text-ink-800"
-            />
-            <Button variant="outline" size="sm" onClick={remove} aria-label="Togli fondi">
-              <Minus size={14} />
-            </Button>
-            <Button size="sm" onClick={add} aria-label="Aggiungi fondi">
-              <Plus size={14} />
-            </Button>
-          </div>
-          {allGoals.length > 0 && (
-            <button
-              onClick={() => setLinking(true)}
-              className="focus-ring flex items-center gap-1.5 text-[11px] text-ink-600 hover:text-ink-300"
-            >
-              <Link2 size={11} /> Collega a un obiettivo di risparmio
-            </button>
-          )}
-        </>
+        <button
+          onClick={() => setLinking(true)}
+          className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-2 text-xs text-ink-300 transition hover:border-aura-cyan/40"
+        >
+          <Link2 size={13} /> Collega a una destinazione di risparmio
+        </button>
       )}
 
       {linking && (
         <LinkSavingsGoalSheet
           goals={allGoals}
-          onSelect={(goalId) => {
-            onLink(goalId);
+          onSelect={(linkedTo) => {
+            onLink(linkedTo);
             setLinking(false);
           }}
           onClose={() => setLinking(false)}

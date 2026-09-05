@@ -1,6 +1,6 @@
 "use client";
-import { MapPin } from "lucide-react";
-import { WishlistItem, savingsPct } from "@/lib/wishlist-types";
+import { MapPin, PartyPopper } from "lucide-react";
+import { WishlistItem, savingsPct, isFulfilled } from "@/lib/wishlist-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 
 function ShortPhoto({ photoKey }: { photoKey?: string }) {
@@ -18,12 +18,18 @@ function ShortPhoto({ photoKey }: { photoKey?: string }) {
 
 function ShortCard({ item, onOpen }: { item: WishlistItem; onOpen: () => void }) {
   const pct = savingsPct(item);
+  const fulfilled = isFulfilled(item);
   return (
     <button
       onClick={onOpen}
       className="focus-ring relative block h-[70dvh] w-full shrink-0 snap-start overflow-hidden rounded-xl3 text-left"
     >
       <ShortPhoto photoKey={item.photoKey} />
+      {fulfilled && (
+        <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-aura-emerald/90 px-2.5 py-1 text-xs text-void-950">
+          <PartyPopper size={12} /> Esaudito
+        </span>
+      )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-void-950 via-void-950/70 to-transparent p-5 pt-16">
         <p className="font-display text-lg text-ink-100">{item.name}</p>
         <div className="mt-1 flex items-center gap-3">

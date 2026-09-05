@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Plus, LayoutGrid, GalleryVertical } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
+import { isFulfilled } from "@/lib/wishlist-types";
 import { useFinance } from "@/lib/finance-context";
 import { WishlistCard } from "@/components/wishlist/WishlistCard";
 import { WishlistShortView } from "@/components/wishlist/WishlistShortView";
@@ -12,30 +13,51 @@ type ViewMode = "griglia" | "verticale";
 
 export default function WishlistPage() {
   const { hydrated, items, setSavedAmount } = useWishlist();
-  const { savingsGoals } = useFinance();
+  const { savingsGoals, savingsEntries } = useFinance();
   const [view, setView] = useState<ViewMode>("griglia");
   const [addOpen, setAddOpen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
 
   /**
-   * Tenere `item.savedAmount` allineato al `currentAmount` dell'obiettivo collegato — non
+   * Tenere `item.savedAmount` allineato al saldo reale della destinazione collegata — non
    * solo quando si apre il dettaglio (WishlistItemSheet), ma ovunque un articolo sia
    * visibile: la card in griglia e la vista verticale leggono entrambe `savingsPct(item)`,
-   * quindi `item.savedAmount`, non l'obiettivo direttamente (vedi wishlist-types.ts — quella
-   * funzione resta apposta ignorante di SavingsGoal). Un contributo fatto dalla scheda
-   * Finanze (`contributeSavingsGoal`, in SavingsSection.tsx) altrimenti non si vedrebbe qui
-   * finché l'utente non riapre il dettaglio dell'articolo — non "sempre aggiornata" come
-   * richiesto. Confronta prima di scrivere (evita un giro di persistenza a vuoto a ogni
-   * render quando è già allineato).
+   * quindi `item.savedAmount`, non la destinazione direttamente (vedi wishlist-types.ts —
+   * quella funzione resta apposta ignorante di SavingsGoal/salvadanaio). Un versamento fatto
+   * dalla scheda Finanze (SavingsSection.tsx, sia al salvadanaio generale sia a un
+   * obiettivo) altrimenti non si vedrebbe qui finché l'utente non riapre il dettaglio
+   * dell'articolo — non "sempre aggiornata" come richiesto. Un articolo già esaudito NON
+   * segue più la destinazione (la sua quota è ormai fissa su `fulfilledAmount`, vedi
+   * isFulfilled) — altrimenti un versamento successivo alla stessa destinazione, fatto per
+   * un motivo del tutto scollegato da questo articolo, gli si rifletterebbe sopra per
+   * errore.
+   *
+   * Corretto secondo le istruzioni: più articoli possono condividere la stessa
+   * destinazione, ciascuno mostra semplicemente il suo saldo — MAI oltre il proprio prezzo
+   * (mai un riparto tra loro, vedi il commento in SavingsRing.tsx). Prima questo effect
+   * scriveva il saldo intero della destinazione dentro `savedAmount` senza applicare
+   * questo tetto: un articolo da 200€ collegato a un salvadanaio con 600€ dentro si
+   * ritrovava `savedAmount = 600`, non 200 — un numero mostrato sbagliato (la sola barra
+   * percentuale restava corretta grazie al clamp in `savingsPct`, ma l'euro mostrato
+   * nell'anello no) che rendeva anche "Esaudisci" capace di prelevare più del dovuto per
+   * quell'articolo. Il tetto va applicato qui, dove il valore viene scritto — non lasciato
+   * a ogni lettore, che altrimenti dovrebbe ricordarselo ogni volta.
+   *
+   * Confronta prima di scrivere (evita un giro di persistenza a vuoto a ogni render quando
+   * è già allineato).
    */
+  const generalBalance = savingsEntries.reduce((s, e) => s + e.amount, 0);
   useEffect(() => {
     items.forEach((item) => {
-      if (!item.linkedSavingsGoalId) return;
-      const goal = savingsGoals.find((g) => g.id === item.linkedSavingsGoalId);
-      if (goal && goal.currentAmount !== item.savedAmount) setSavedAmount(item.id, goal.currentAmount);
+      const linkedTo = item.linkedTo;
+      if (!linkedTo || isFulfilled(item)) return;
+      const balance = linkedTo.kind === "general" ? generalBalance : savingsGoals.find((g) => g.id === linkedTo.goalId)?.currentAmount;
+      if (balance === undefined) return;
+      const capped = item.price && item.price > 0 ? Math.min(balance, item.price) : balance;
+      if (capped !== item.savedAmount) setSavedAmount(item.id, capped);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, savingsGoals]);
+  }, [items, savingsGoals, generalBalance]);
 
   const openItem = items.find((i) => i.id === openItemId) ?? null;
   const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));

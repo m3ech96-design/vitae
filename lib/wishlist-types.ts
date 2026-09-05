@@ -28,51 +28,61 @@ export interface WishlistItem {
    * ("a Natale", "tra 2-3 mesi", "quando esce il nuovo modello"). */
   estimatedPeriod?: string;
 
-  /** Fondi accantonati finora — il tetto è sempre il prezzo, mai un obiettivo impostato a
-   * parte, come richiesto esplicitamente. Significato diverso a seconda di
-   * `linkedSavingsGoalId` qui sotto:
-   * - NON collegato a un obiettivo: questo È il dato vero, un contatore proprio
-   *   dell'articolo (come è sempre stato) — ma ogni versamento/prelievo qui genera anche
-   *   una voce reale nel salvadanaio generale delle Finanze (`savingsEntries`), così le due
-   *   contabilità non divergono mai (vedi wishlist-context.tsx, `addFunds`/`removeFunds`
-   *   restano invariate; il movimento gemellato lo genera chi chiama, nei componenti che
-   *   vedono sia Wishlist che Finanze — i due contesti non si vedono a vicenda, vedi
-   *   app/layout.tsx).
-   * - Collegato: questo campo diventa sola lettura, tenuto allineato per compatibilità con
-   *   ciò che già lo legge (savingsPct, SavingsRing) ma mai più scritto direttamente da
-   *   `addFunds`/`removeFunds` — la cifra vera vive in `SavingsGoal.currentAmount` (vedi
-   *   lib/types.ts), l'unica in quel momento, non una copia mantenuta in sincrono a mano.
+  /**
+   * Corretto secondo le istruzioni: il flusso NON è bilaterale. Prima un versamento fatto
+   * QUI sull'articolo si specchiava anche verso Finanze (per un articolo non collegato a un
+   * obiettivo) — sbagliato. Il flusso vero va sempre e solo Finanze → Wishlist, mai il
+   * contrario: versare o prelevare accade in Finanze (dal salvadanaio generale con
+   * `addSavingsEntry`, o da un obiettivo con `contributeSavingsGoal`), e la quota mostrata
+   * qui è un puro riflesso di quel movimento, MAI un'azione propria dell'articolo. Per
+   * questo l'articolo non ha più pulsanti +/- manuali una volta collegato: la sua quota si
+   * muove SOLO seguendo la destinazione scelta in `linkedTo` qui sotto.
+   *
+   * Resta comunque un campo scritto (non calcolato al volo) — sola lettura dal punto di
+   * vista dell'utente, ma sincronizzato da chi vede entrambi i contesti (vedi
+   * app/wishlist/page.tsx, che tiene questo valore allineato alla destinazione ogni volta
+   * che quest'ultima cambia). 0 per un articolo senza alcuna destinazione collegata.
    */
   savedAmount: number;
 
-  /** Se presente, questo articolo non ha una propria quota di risparmio: la quota è quella
-   * (sempre aggiornata, mai una copia) del SavingsGoal con questo id nella scheda Finanze
-   * (vedi lib/finance-context.tsx). Assente = comportamento di sempre, la quota fa capo ai
-   * risparmi generali (vedi il commento su `savedAmount` sopra). Impostato/rimosso da
-   * `linkToSavingsGoal`/`unlinkFromSavingsGoal` nei componenti (mai da wishlist-context.tsx
-   * da solo: serve anche FinanceContext per spostare i fondi, che Wishlist non vede — stesso
-   * motivo per cui questo file resta ignorante di SavingsGoal, solo l'id come riferimento).
+  /**
+   * La destinazione a cui questo articolo è collegato — se assente, l'articolo non ha
+   * ancora una quota attiva (`savedAmount` resta 0 finché non se ne sceglie una, vedi
+   * WishlistItemSheet). Due forme, sullo stesso piano, mai un default automatico dell'una
+   * sull'altra:
+   * - `{ kind: "general" }`: il salvadanaio generale delle Finanze (`savingsEntries` in
+   *   lib/finance-context.tsx) — la quota riflette il suo saldo totale.
+   * - `{ kind: "goal", goalId }`: un SavingsGoal specifico (vedi lib/types.ts) — la quota
+   *   riflette il suo `currentAmount`.
+   * Impostato/rimosso da `setLinkedTo` in wishlist-context.tsx (solo il riferimento: questo
+   * contesto non vede FinanceContext, vedi app/layout.tsx — Wishlist è più esterno).
    */
-  linkedSavingsGoalId?: string;
+  linkedTo?: { kind: "general" } | { kind: "goal"; goalId: string };
+
+  /** "Esaudisci" — l'articolo è stato acquistato: i soldi accantonati per lui sono usciti
+   * per sempre dalla destinazione collegata (un prelievo vero, con la sua voce in
+   * cronologia — vedi WishlistItemSheet), e da qui in poi la quota resta ferma a questo
+   * importo, sganciata dalla destinazione (che nel frattempo può continuare a muoversi per
+   * altri motivi, senza più riflettersi su un articolo già esaudito). Assente = non ancora
+   * esaudito, il comportamento di sempre. */
+  fulfilledAmount?: number;
+  fulfilledAt?: string;
 
   createdAt: string;
 }
 
-/** La percentuale mostrata nell'anello — SEMPRE calcolata su `savedAmount`, che per un
- * articolo collegato a un obiettivo (vedi `linkedSavingsGoalId`) è tenuto allineato al
- * `currentAmount` dell'obiettivo da chi gestisce il collegamento, non ricalcolato qui: questa
- * funzione non ha bisogno di conoscere SavingsGoal, resta valida in entrambi i casi. */
-export function savingsPct(item: WishlistItem): number {
-  if (!item.price || item.price <= 0) return 0;
-  return Math.min(1, item.savedAmount / item.price);
+/** Un articolo esaudito resta tale per sempre — comodo da controllare in un solo punto
+ * invece di ripetere `item.fulfilledAt !== undefined` ovunque serve. */
+export function isFulfilled(item: WishlistItem): boolean {
+  return item.fulfilledAt !== undefined;
 }
 
-/** Applica una variazione di fondi rispettando il tetto: mai sotto zero, mai sopra il
- * prezzo (se impostato). Estratta come funzione pura, non scritta due volte, per essere
- * verificabile con un test diretto. Usata sia per un articolo non collegato (il caso
- * normale) sia per tenere `savedAmount` allineato quando l'obiettivo collegato cambia
- * `currentAmount` altrove (vedi i componenti che leggono entrambi i contesti). */
-export function applyFundsDelta(item: WishlistItem, delta: number): WishlistItem {
-  const cap = item.price ?? Infinity;
-  return { ...item, savedAmount: Math.min(cap, Math.max(0, item.savedAmount + delta)) };
+/** La percentuale mostrata nell'anello — calcolata su `fulfilledAmount` se l'articolo è
+ * stato esaudito (un dato ormai fermo), altrimenti su `savedAmount` (il riflesso vivo della
+ * destinazione collegata, o 0 se non è collegato a nessuna). */
+export function savingsPct(item: WishlistItem): number {
+  if (!item.price || item.price <= 0) return 0;
+  const amount = isFulfilled(item) ? item.fulfilledAmount! : item.savedAmount;
+  return Math.min(1, amount / item.price);
 }
+

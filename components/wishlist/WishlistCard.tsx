@@ -1,6 +1,6 @@
 "use client";
-import { MapPin } from "lucide-react";
-import { WishlistItem, savingsPct } from "@/lib/wishlist-types";
+import { MapPin, PartyPopper } from "lucide-react";
+import { WishlistItem, savingsPct, isFulfilled } from "@/lib/wishlist-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { GlassCard } from "../ui/GlassCard";
 
@@ -19,10 +19,18 @@ function CardPhoto({ photoKey }: { photoKey?: string }) {
 
 export function WishlistCard({ item, onOpen }: { item: WishlistItem; onOpen: () => void }) {
   const pct = savingsPct(item);
+  const fulfilled = isFulfilled(item);
   return (
     <button onClick={onOpen} className="text-left">
-      <GlassCard className="overflow-hidden p-2.5 transition hover:border-white/20">
-        <CardPhoto photoKey={item.photoKey} />
+      <GlassCard className={`overflow-hidden p-2.5 transition hover:border-white/20 ${fulfilled ? "opacity-70" : ""}`}>
+        <div className="relative">
+          <CardPhoto photoKey={item.photoKey} />
+          {fulfilled && (
+            <span className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-aura-emerald/90 px-2 py-0.5 text-[10px] text-void-950">
+              <PartyPopper size={10} /> Esaudito
+            </span>
+          )}
+        </div>
         <p className="mt-2 truncate font-display text-sm text-ink-100">{item.name}</p>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-xs text-ink-600">{item.price !== null ? `${item.price.toLocaleString("it-IT")}€` : "—"}</span>

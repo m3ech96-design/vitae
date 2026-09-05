@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { newId } from "./id";
-import { WishlistItem, applyFundsDelta } from "./wishlist-types";
+import { WishlistItem } from "./wishlist-types";
 import { deleteImage, isDataUrl } from "./image-store";
 
 const ITEMS_KEY = "vitae:wishlist-items";
@@ -12,22 +12,31 @@ interface WishlistContextValue {
   addItem: (input: Omit<WishlistItem, "id" | "createdAt" | "savedAmount">) => WishlistItem;
   updateItem: (id: string, patch: Partial<Omit<WishlistItem, "id" | "createdAt">>) => void;
   removeItem: (id: string) => void;
-  addFunds: (id: string, amount: number) => void;
-  removeFunds: (id: string, amount: number) => void;
-  /** Imposta/rimuove SOLO il riferimento (`linkedSavingsGoalId`) — mai i fondi: questo
-   * contesto non vede FinanceContext (vedi app/layout.tsx, Wishlist è più esterno), quindi
-   * non può lui stesso spostare `savedAmount` dentro/fuori da un SavingsGoal. Chi collega o
-   * scollega un obiettivo (nei componenti, che vedono entrambi i contesti) chiama prima
-   * questa funzione per il riferimento, poi muove i fondi lui stesso con `setSavedAmount`
-   * qui sotto e la propria chiamata a `contributeSavingsGoal`/analoga in Finanze. */
-  setLinkedSavingsGoal: (id: string, goalId: string | undefined) => void;
-  /** Scrittura diretta di `savedAmount`, senza clamp su `price` (a differenza di
-   * `addFunds`/`removeFunds`, pensate per un delta manuale dall'utente) — serve a tenere
-   * l'articolo allineato al `currentAmount` reale di un SavingsGoal collegato, che può
-   * legittimamente superare il prezzo dell'articolo (l'obiettivo in Finanze non conosce
-   * quel tetto, ed è giusto che non lo perda per un vincolo che riguarda solo la vista
-   * wishlist). Usata SOLO per un articolo collegato — vedi i componenti chiamanti. */
+  /**
+   * Corretto secondo le istruzioni: il flusso versa/preleva NON è più bilaterale — un
+   * articolo non ha più pulsanti +/- propri (rimossi `addFunds`/`removeFunds`), perché
+   * versare o prelevare accade sempre in Finanze (salvadanaio generale o un obiettivo), mai
+   * sull'articolo. Imposta/rimuove SOLO il riferimento alla destinazione: questo contesto
+   * non vede FinanceContext (vedi app/layout.tsx, Wishlist è più esterno), quindi non può
+   * lui stesso verificare che un obiettivo esista o spostare fondi. Chi collega/scollega
+   * (nei componenti, che vedono entrambi i contesti) chiama questa funzione per il
+   * riferimento, poi tiene `savedAmount` allineato con `setSavedAmount` qui sotto.
+   */
+  setLinkedTo: (id: string, linkedTo: WishlistItem["linkedTo"]) => void;
+  /** Scrittura diretta di `savedAmount`, senza clamp su `price` — serve a tenere l'articolo
+   * allineato al saldo reale della destinazione collegata (salvadanaio generale o un
+   * obiettivo), che può legittimamente superare il prezzo dell'articolo: quel tetto riguarda
+   * solo la vista wishlist, mai il dato vero in Finanze. Usata SOLO per un articolo
+   * collegato e non ancora esaudito — vedi i componenti chiamanti. */
   setSavedAmount: (id: string, amount: number) => void;
+  /** "Esaudisci" — l'articolo è stato acquistato. `amount` è quanto viene fissato per
+   * sempre come `fulfilledAmount` (il prelievo vero dalla destinazione, con la sua voce in
+   * cronologia, lo fa chi chiama — vedi WishlistItemSheet): da qui in poi la quota
+   * dell'articolo resta ferma a questo importo, sganciata dalla destinazione. */
+  fulfillItem: (id: string, amount: number) => void;
+  /** Riapre un articolo già esaudito — resta collegato a quello che era prima
+   * (`linkedTo` non cambia), ma la sua quota torna a seguire dal vivo la destinazione. */
+  unfulfillItem: (id: string) => void;
 }
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
@@ -85,20 +94,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     [persistItems, items]
   );
 
-  // Aggiungere/togliere fondi in due scritture di fila (es. "correggo un importo sbagliato
-  // appena inserito") deve leggere sempre lo stato più aggiornato — la stessa causa di bug
-  // già vista e corretta più volte in questo progetto, evitata qui fin da subito.
-  const addFunds = useCallback(
-    (id: string, amount: number) =>
-      persistItems((prev) => prev.map((it) => (it.id === id ? applyFundsDelta(it, amount) : it))),
-    [persistItems]
-  );
-
-  const removeFunds = useCallback((id: string, amount: number) => addFunds(id, -amount), [addFunds]);
-
-  const setLinkedSavingsGoal = useCallback(
-    (id: string, goalId: string | undefined) =>
-      persistItems((prev) => prev.map((it) => (it.id === id ? { ...it, linkedSavingsGoalId: goalId } : it))),
+  const setLinkedTo = useCallback(
+    (id: string, linkedTo: WishlistItem["linkedTo"]) =>
+      persistItems((prev) => prev.map((it) => (it.id === id ? { ...it, linkedTo } : it))),
     [persistItems]
   );
 
@@ -108,9 +106,23 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     [persistItems]
   );
 
+  const fulfillItem = useCallback(
+    (id: string, amount: number) =>
+      persistItems((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, fulfilledAmount: Math.max(0, amount), fulfilledAt: new Date().toISOString() } : it))
+      ),
+    [persistItems]
+  );
+
+  const unfulfillItem = useCallback(
+    (id: string) =>
+      persistItems((prev) => prev.map((it) => (it.id === id ? { ...it, fulfilledAmount: undefined, fulfilledAt: undefined } : it))),
+    [persistItems]
+  );
+
   const value = useMemo(
-    () => ({ hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount }),
-    [hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount]
+    () => ({ hydrated, items, addItem, updateItem, removeItem, setLinkedTo, setSavedAmount, fulfillItem, unfulfillItem }),
+    [hydrated, items, addItem, updateItem, removeItem, setLinkedTo, setSavedAmount, fulfillItem, unfulfillItem]
   );
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
