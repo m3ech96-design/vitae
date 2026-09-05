@@ -65,37 +65,53 @@ export async function deleteImage(key: string): Promise<void> {
   }
 }
 
-/** Tutte le coppie chiave/immagine — usato solo per l'esportazione di backup. */
+/**
+ * Tutte le coppie chiave/immagine — usato solo per l'esportazione di backup.
+ *
+ * Corretto secondo le istruzioni: prima questa funzione inghiottiva QUALUNQUE errore (anche
+ * un guasto momentaneo di IndexedDB, non solo "il database non esiste") e restituiva un
+ * oggetto vuoto — indistinguibile da "l'utente non ha nessuna foto". Un backup poteva quindi
+ * dichiararsi riuscito (la spunta verde in BackupSection.tsx) pur non contenendo nessuna
+ * immagine, senza alcun avviso. Ora l'errore risale al chiamante (`exportBackup`, che lo fa
+ * fallire visibilmente) invece di sparire qui dentro.
+ */
 export async function getAllImages(): Promise<Record<string, string>> {
-  try {
-    const db = await openDb();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const store = tx.objectStore(STORE_NAME);
-      const result: Record<string, string> = {};
-      const cursorReq = store.openCursor();
-      cursorReq.onsuccess = () => {
-        const cursor = cursorReq.result;
-        if (cursor) {
-          result[String(cursor.key)] = cursor.value as string;
-          cursor.continue();
-        } else {
-          resolve(result);
-        }
-      };
-      cursorReq.onerror = () => reject(cursorReq.error);
-    });
-  } catch {
-    return {};
-  }
+  const db = await openDb();
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const result: Record<string, string> = {};
+    const cursorReq = store.openCursor();
+    cursorReq.onsuccess = () => {
+      const cursor = cursorReq.result;
+      if (cursor) {
+        result[String(cursor.key)] = cursor.value as string;
+        cursor.continue();
+      } else {
+        resolve(result);
+      }
+    };
+    cursorReq.onerror = () => reject(cursorReq.error);
+  });
 }
 
-/** Ripristina una mappa chiave/immagine — usato solo dall'importazione di backup. */
+/**
+ * Ripristina una mappa chiave/immagine — usato solo dall'importazione di backup.
+ *
+ * Corretto secondo le istruzioni: prima scriveva solo le chiavi presenti in `images` (via
+ * `store.put`), senza mai svuotare lo store — un'immagine aggiunta dopo l'export di un
+ * backup restava sul dispositivo anche importando quel backup più vecchio, mescolata con i
+ * dati ripristinati invece di sparire come dovrebbe un ripristino fedele. Ora lo store viene
+ * svuotato con `clear()` nella STESSA transazione delle scritture (mai una transazione a
+ * parte prima): se l'operazione fallisse a metà, IndexedDB la annulla per intero, mai uno
+ * store svuotato ma non ancora ripopolato.
+ */
 export async function restoreAllImages(images: Record<string, string>): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
+    store.clear();
     Object.entries(images).forEach(([key, value]) => store.put(value, key));
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);

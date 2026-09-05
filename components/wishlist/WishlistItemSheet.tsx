@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";
+import { useFinance } from "@/lib/finance-context";
 import { WishlistItem } from "@/lib/wishlist-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
@@ -18,19 +19,60 @@ function DetailPhoto({ photoKey }: { photoKey?: string }) {
   return <img src={url} alt="" className="mb-4 aspect-video w-full rounded-xl2 object-cover" />;
 }
 
+/**
+ * Il ponte tra Wishlist e Finanze — vive qui, non in nessuno dei due contesti, perché
+ * `WishlistProvider` è più esterno di `FinanceProvider` nell'albero (vedi app/layout.tsx) e
+ * quindi non può vedere `useFinance()` da solo; questo componente sì, essendo dentro
+ * entrambi. Vedi il commento su `linkedSavingsGoalId` in lib/wishlist-types.ts per il
+ * significato dei due stati.
+ */
 export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClose: () => void }) {
-  const { removeItem, addFunds, removeFunds } = useWishlist();
+  const { removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount } = useWishlist();
   const { places } = usePlaces();
+  const { savingsGoals, contributeSavingsGoal, addSavingsEntry } = useFinance();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const place = item.linkedPlaceId ? places.find((p) => p.id === item.linkedPlaceId) : undefined;
+  const linkedGoal = item.linkedSavingsGoalId ? savingsGoals.find((g) => g.id === item.linkedSavingsGoalId) : undefined;
   const positionBits = [
     item.row && `Fila ${item.row}`,
     item.aisle && `Corsia ${item.aisle}`,
     item.shelfNumber && `Numero ${item.shelfNumber}`,
     item.shelf && `Scaffale ${item.shelf}`,
   ].filter(Boolean) as string[];
+
+  // Non collegato: un versamento/prelievo manuale resta un contatore proprio dell'articolo
+  // (addFunds/removeFunds di sempre), MA genera anche una voce reale nel salvadanaio
+  // generale (addSavingsEntry) — le due contabilità non divergono mai, invece di essere due
+  // numeri scollegati che l'utente dovrebbe tenere allineati a mano (vedi il commento su
+  // `savedAmount` in wishlist-types.ts).
+  const handleAddFunds = (amount: number) => {
+    addFunds(item.id, amount);
+    addSavingsEntry(amount, `Wishlist — ${item.name}`);
+  };
+  const handleRemoveFunds = (amount: number) => {
+    removeFunds(item.id, amount);
+    addSavingsEntry(-amount, `Wishlist — ${item.name}`);
+  };
+
+  // Collegare: i fondi già accantonati sull'articolo si spostano dentro l'obiettivo (sommati
+  // al suo currentAmount) — altrimenti sparirebbero dalla vista, non più mostrati né qui né
+  // lì. L'articolo passa a "sola lettura" (linkedSavingsGoalId impostato): da qui in poi la
+  // sua quota è quella dell'obiettivo, mai più un numero suo.
+  const handleLink = (goalId: string) => {
+    if (item.savedAmount > 0) contributeSavingsGoal(goalId, item.savedAmount);
+    setLinkedSavingsGoal(item.id, goalId);
+  };
+
+  // Scollegare: il saldo attuale dell'obiettivo torna un contatore proprio dell'articolo —
+  // ma resta nell'obiettivo (scollegare non è un prelievo, solo la fine della sincronia). Un
+  // articolo appena scollegato riparte quindi già dalla stessa cifra che mostrava un attimo
+  // prima, non da zero.
+  const handleUnlink = () => {
+    if (linkedGoal) setSavedAmount(item.id, linkedGoal.currentAmount);
+    setLinkedSavingsGoal(item.id, undefined);
+  };
 
   return (
     <PersonalCardSheet
@@ -47,7 +89,15 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
       <DetailPhoto photoKey={item.photoKey} />
 
       <div className="space-y-5">
-        <SavingsRing item={item} onAddFunds={(a) => addFunds(item.id, a)} onRemoveFunds={(a) => removeFunds(item.id, a)} />
+        <SavingsRing
+          item={item}
+          linkedGoal={linkedGoal}
+          allGoals={savingsGoals}
+          onAddFunds={handleAddFunds}
+          onRemoveFunds={handleRemoveFunds}
+          onLink={handleLink}
+          onUnlink={handleUnlink}
+        />
 
         {(item.siteName || item.siteUrl) && (
           <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-3">

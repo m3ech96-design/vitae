@@ -14,6 +14,20 @@ interface WishlistContextValue {
   removeItem: (id: string) => void;
   addFunds: (id: string, amount: number) => void;
   removeFunds: (id: string, amount: number) => void;
+  /** Imposta/rimuove SOLO il riferimento (`linkedSavingsGoalId`) — mai i fondi: questo
+   * contesto non vede FinanceContext (vedi app/layout.tsx, Wishlist è più esterno), quindi
+   * non può lui stesso spostare `savedAmount` dentro/fuori da un SavingsGoal. Chi collega o
+   * scollega un obiettivo (nei componenti, che vedono entrambi i contesti) chiama prima
+   * questa funzione per il riferimento, poi muove i fondi lui stesso con `setSavedAmount`
+   * qui sotto e la propria chiamata a `contributeSavingsGoal`/analoga in Finanze. */
+  setLinkedSavingsGoal: (id: string, goalId: string | undefined) => void;
+  /** Scrittura diretta di `savedAmount`, senza clamp su `price` (a differenza di
+   * `addFunds`/`removeFunds`, pensate per un delta manuale dall'utente) — serve a tenere
+   * l'articolo allineato al `currentAmount` reale di un SavingsGoal collegato, che può
+   * legittimamente superare il prezzo dell'articolo (l'obiettivo in Finanze non conosce
+   * quel tetto, ed è giusto che non lo perda per un vincolo che riguarda solo la vista
+   * wishlist). Usata SOLO per un articolo collegato — vedi i componenti chiamanti. */
+  setSavedAmount: (id: string, amount: number) => void;
 }
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
@@ -82,9 +96,21 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const removeFunds = useCallback((id: string, amount: number) => addFunds(id, -amount), [addFunds]);
 
+  const setLinkedSavingsGoal = useCallback(
+    (id: string, goalId: string | undefined) =>
+      persistItems((prev) => prev.map((it) => (it.id === id ? { ...it, linkedSavingsGoalId: goalId } : it))),
+    [persistItems]
+  );
+
+  const setSavedAmount = useCallback(
+    (id: string, amount: number) =>
+      persistItems((prev) => prev.map((it) => (it.id === id ? { ...it, savedAmount: Math.max(0, amount) } : it))),
+    [persistItems]
+  );
+
   const value = useMemo(
-    () => ({ hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds }),
-    [hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds]
+    () => ({ hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount }),
+    [hydrated, items, addItem, updateItem, removeItem, addFunds, removeFunds, setLinkedSavingsGoal, setSavedAmount]
   );
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;

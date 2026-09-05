@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, LayoutGrid, GalleryVertical } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
+import { useFinance } from "@/lib/finance-context";
 import { WishlistCard } from "@/components/wishlist/WishlistCard";
 import { WishlistShortView } from "@/components/wishlist/WishlistShortView";
 import { WishlistItemSheet } from "@/components/wishlist/WishlistItemSheet";
@@ -10,10 +11,31 @@ import { AddWishlistItemModal } from "@/components/wishlist/AddWishlistItemModal
 type ViewMode = "griglia" | "verticale";
 
 export default function WishlistPage() {
-  const { hydrated, items } = useWishlist();
+  const { hydrated, items, setSavedAmount } = useWishlist();
+  const { savingsGoals } = useFinance();
   const [view, setView] = useState<ViewMode>("griglia");
   const [addOpen, setAddOpen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
+
+  /**
+   * Tenere `item.savedAmount` allineato al `currentAmount` dell'obiettivo collegato — non
+   * solo quando si apre il dettaglio (WishlistItemSheet), ma ovunque un articolo sia
+   * visibile: la card in griglia e la vista verticale leggono entrambe `savingsPct(item)`,
+   * quindi `item.savedAmount`, non l'obiettivo direttamente (vedi wishlist-types.ts — quella
+   * funzione resta apposta ignorante di SavingsGoal). Un contributo fatto dalla scheda
+   * Finanze (`contributeSavingsGoal`, in SavingsSection.tsx) altrimenti non si vedrebbe qui
+   * finché l'utente non riapre il dettaglio dell'articolo — non "sempre aggiornata" come
+   * richiesto. Confronta prima di scrivere (evita un giro di persistenza a vuoto a ogni
+   * render quando è già allineato).
+   */
+  useEffect(() => {
+    items.forEach((item) => {
+      if (!item.linkedSavingsGoalId) return;
+      const goal = savingsGoals.find((g) => g.id === item.linkedSavingsGoalId);
+      if (goal && goal.currentAmount !== item.savedAmount) setSavedAmount(item.id, goal.currentAmount);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, savingsGoals]);
 
   const openItem = items.find((i) => i.id === openItemId) ?? null;
   const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
