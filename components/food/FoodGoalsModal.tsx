@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
-import { rebalanceMacroPercents } from "@/lib/food-types";
+import { macroGramGoals } from "@/lib/food-types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { SwitchVisual } from "../ui/Switch";
@@ -15,25 +15,31 @@ function toNullableInt(v: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Uno slider percentuale della suddivisione macro — muoversi qui ribilancia sempre le
- * altre due tramite `rebalanceMacroPercents` (vedi lib/food-types.ts), così la somma resta
- * fissa a 100 senza che l'utente debba mai farla tornare a mano. */
+/** Uno slider percentuale della suddivisione macro — muoversi qui cambia solo questo valore:
+ * le altre due percentuali restano quelle che erano, ed è la somma delle tre (mostrata sotto
+ * ai tre slider) a segnalare se si è arrivati a 100 oppure no, senza alcun ribilanciamento
+ * automatico. `grams`, se presente (serve un obiettivo di Calorie giornaliere), mostra a
+ * quanti grammi corrisponde la percentuale corrente accanto alla barra. */
 function MacroPercentSlider({
   label,
   color,
   value,
+  grams,
   onChange,
 }: {
   label: string;
   color: string;
   value: number;
+  grams: number | null;
   onChange: (v: number) => void;
 }) {
   return (
     <div>
       <div className="flex items-center justify-between text-xs">
         <span className="text-ink-200">{label}</span>
-        <span className="font-display text-ink-100">{value}%</span>
+        <span className="font-display text-ink-100">
+          {value}% {grams !== null && <span className="text-ink-600">· {Math.round(grams)} g</span>}
+        </span>
       </div>
       <input
         type="range"
@@ -60,10 +66,31 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
   const [netCarbsEnabled, setNetCarbsEnabled] = useState(goals.netCarbsEnabled);
 
   const changePercent = (key: "carbs" | "protein" | "fat", value: number) => {
-    setPercents((prev) => rebalanceMacroPercents(prev, key, value));
+    // Cambia solo il valore toccato — le altre due percentuali non si muovono. Il totale
+    // (mostrato sotto ai tre slider) segnala se serve ancora un aggiustamento manuale.
+    setPercents((prev) => ({ ...prev, [key]: value }));
   };
 
   const hasDailyKcalGoal = toNullableInt(dailyMax) !== null || toNullableInt(dailyMin) !== null;
+  const macroTotal = percents.carbs + percents.protein + percents.fat;
+  const macroTotalOk = macroTotal === 100;
+
+  // Grammi corrispondenti alle percentuali scritte ORA nel form (non ancora salvate),
+  // così lo slider riflette subito "quanti grammi sono" mentre si scrive l'obiettivo
+  // calorico — usa il Massimo se presente, altrimenti il Minimo, stessa logica di
+  // `macroGramGoals` in lib/food-types.ts.
+  const kcalGoalForGrams = toNullableInt(dailyMax) ?? toNullableInt(dailyMin);
+  const macroGrams = kcalGoalForGrams
+    ? macroGramGoals({
+        ...goals,
+        macroSplitEnabled: true,
+        dailyKcalMax: kcalGoalForGrams,
+        dailyKcalMin: null,
+        carbsPercent: percents.carbs,
+        proteinPercent: percents.protein,
+        fatPercent: percents.fat,
+      })
+    : null;
 
   const submit = () => {
     setGoals({
@@ -120,12 +147,13 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
 
           <TextField label="Obiettivo acqua giornaliero (L)" type="number" inputMode="decimal" value={water} onChange={(e) => setWaterGoal(e.target.value)} />
 
-          {/* Suddivisione macro — come nelle diete Low Carb, Keto, Low Fat, High Protein: le
-             tre percentuali restano sempre complementari a 100 (vedi MacroPercentSlider),
-             e da qui derivano i grammi-obiettivo di Carboidrati/Proteine/Grassi che, se
-             superati nella giornata, vengono segnati in rosso nel menù (vedi
-             DailyTotalsCard). Serve un obiettivo di Calorie giornaliere sopra: senza un
-             totale da suddividere, le percentuali restano impostate ma inattive. */}
+          {/* Suddivisione macro — come nelle diete Low Carb, Keto, Low Fat, High Protein.
+             Ogni slider cambia solo la propria percentuale (vedi MacroPercentSlider): il
+             totale deve arrivare a 100 a mano, non c'è ribilanciamento automatico delle
+             altre due, e finché non ci arriva "Salva obiettivi" resta disabilitato. Da qui
+             derivano i grammi-obiettivo di Carboidrati/Proteine/Grassi (mostrati accanto a
+             ogni barra quando c'è già un obiettivo di Calorie giornaliere) che, se superati
+             nella giornata, vengono segnati in rosso nel menù (vedi DailyTotalsCard). */}
           <div className="border-t border-white/[0.06] pt-5">
             <button
               type="button"
@@ -146,11 +174,30 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
                     suddividere.
                   </p>
                 )}
-                <MacroPercentSlider label="Carboidrati" color="#00E5C7" value={percents.carbs} onChange={(v) => changePercent("carbs", v)} />
-                <MacroPercentSlider label="Proteine" color="#7C5CFF" value={percents.protein} onChange={(v) => changePercent("protein", v)} />
-                <MacroPercentSlider label="Grassi" color="#FFB454" value={percents.fat} onChange={(v) => changePercent("fat", v)} />
-                <p className="text-[11px] text-ink-800">
-                  {percents.carbs}% + {percents.protein}% + {percents.fat}% = 100%
+                <MacroPercentSlider
+                  label="Carboidrati"
+                  color="#00E5C7"
+                  value={percents.carbs}
+                  grams={macroGrams?.carbs ?? null}
+                  onChange={(v) => changePercent("carbs", v)}
+                />
+                <MacroPercentSlider
+                  label="Proteine"
+                  color="#7C5CFF"
+                  value={percents.protein}
+                  grams={macroGrams?.protein ?? null}
+                  onChange={(v) => changePercent("protein", v)}
+                />
+                <MacroPercentSlider
+                  label="Grassi"
+                  color="#FFB454"
+                  value={percents.fat}
+                  grams={macroGrams?.fat ?? null}
+                  onChange={(v) => changePercent("fat", v)}
+                />
+                <p className={`text-[11px] ${macroTotalOk ? "text-ink-800" : "text-aura-pink"}`}>
+                  {percents.carbs}% + {percents.protein}% + {percents.fat}% = {macroTotal}%
+                  {!macroTotalOk && " — deve fare 100%"}
                 </p>
               </div>
             )}
@@ -177,7 +224,7 @@ export function FoodGoalsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">
-          <Button className="w-full justify-center" onClick={submit}>
+          <Button className="w-full justify-center" onClick={submit} disabled={macroSplitEnabled && !macroTotalOk}>
             Salva obiettivi
           </Button>
         </div>

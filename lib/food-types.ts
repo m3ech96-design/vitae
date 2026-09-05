@@ -175,10 +175,11 @@ export function netCarbs(carbs: number, fiber: number): number {
 
 /**
  * Ribilancia le tre percentuali complementari (Carboidrati/Proteine/Grassi) quando una di
- * esse cambia — la stessa meccanica delle diete Low Carb/Keto/Low Fat/High Protein (vedi
- * `rebalanceThreeWaySplit`, la versione generica condivisa anche col calcolatore stipendio):
- * la percentuale toccata prende il valore scelto, le altre due si dividono ciò che resta
- * fino a 100 mantenendo tra loro la stessa proporzione che avevano prima. */
+ * esse cambia: la percentuale toccata prende il valore scelto, le altre due si dividono
+ * ciò che resta fino a 100 mantenendo tra loro la stessa proporzione che avevano prima.
+ * Non più usata da FoodGoalsModal (che ora lascia ogni percentuale indipendente e si
+ * limita a segnalare se il totale arriva a 100), tenuta come utility per chi la volesse
+ * riusare altrove con questa meccanica. */
 export function rebalanceMacroPercents(
   current: { carbs: number; protein: number; fat: number },
   changed: "carbs" | "protein" | "fat",

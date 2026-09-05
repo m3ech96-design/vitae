@@ -3,12 +3,10 @@ import { useState } from "react";
 import { PiggyBank, Wallet, Coffee, Home as HomeIcon, ArrowLeftRight } from "lucide-react";
 import { useFinance } from "@/lib/finance-context";
 import { useMood } from "@/lib/mood-context";
-import { rebalanceThreeWaySplit } from "@/lib/split3";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 
 type SplitKey = "speseFisse" | "tempoLibero" | "risparmi";
-const SPLIT_KEYS: [SplitKey, SplitKey, SplitKey] = ["speseFisse", "tempoLibero", "risparmi"];
 
 /**
  * "Dato un numero n di retribuzione, permetti all'utente di trarre da quel numero: n% spese
@@ -17,11 +15,14 @@ const SPLIT_KEYS: [SplitKey, SplitKey, SplitKey] = ["speseFisse", "tempoLibero",
  * non tre campi che ripartono da 50/30/20 ogni volta.
  *
  * Il calcolo può andare anche al contrario: in modalità "Importi", scrivere direttamente
- * quanti euro vanno a una delle tre categorie ricalcola la sua percentuale sull'intero (vedi
- * `rebalanceThreeWaySplit`, la stessa meccanica di ribilanciamento complementare già usata
- * per le percentuali dei macronutrienti in Alimentazione) e distribuisce il resto tra le
- * altre due mantenendo tra loro la proporzione che avevano — non serve fare i conti a mano
- * per capire "che percentuale è 800€ su 1600€", li fa l'app.
+ * quanti euro vanno a una delle tre categorie ricalcola solo la sua percentuale sull'intero
+ * (arrotondata) — le altre due caselle, sia come importo scritto sia come percentuale
+ * persistita, restano quelle che erano. Non c'è ribilanciamento automatico: è la somma dei
+ * tre importi, mostrata sotto ai campi, a dire se si è arrivati o no alla retribuzione
+ * (l'"intero" da raggiungere qui è l'euro, non il 100% — stesso principio del controllo
+ * percentuale, applicato all'importo assoluto). "Applica" usa gli importi scritti così
+ * come sono, non quelli ricostruiti dalla percentuale arrotondata, per evitare che due
+ * arrotondamenti indipendenti facciano perdere centesimi.
  *
  * "L'esito dei risparmi va direttamente nei risparmi con meccaniche come se lo avessi fatto
  * manualmente (cronologia, eccetera)": `addSavingsEntry` è la stessa funzione che usa il resto
@@ -39,6 +40,12 @@ const SPLIT_KEYS: [SplitKey, SplitKey, SplitKey] = ["speseFisse", "tempoLibero",
  * (può restare vuoto mentre si scrive, come già fanno tutti gli altri campi numerici
  * dell'app): il numero persistito si aggiorna solo quando il testo è già una cifra valida, e
  * resta quello di prima finché il campo è vuoto o a metà — mai forzato a 0 nel frattempo.
+ *
+ * Corretto secondo ulteriori istruzioni: sia in modalità Percentuali sia in modalità Importi,
+ * toccare un campo NON tocca più gli altri due — prima, in modalità Importi, cambiava anche le
+ * percentuali (e gli importi mostrati) delle altre due categorie per tenerle a somma fissa.
+ * Ora ogni campo è indipendente in entrambe le modalità, e resta solo il controllo del totale
+ * (100% o, in Importi, la retribuzione intera) a segnalare se serve un aggiustamento manuale.
  */
 export function SalarySplitCalculator() {
   const { salarySplit, setSalarySplit, setMonthlyBudget, addSavingsEntry } = useFinance();
@@ -70,6 +77,21 @@ export function SalarySplitCalculator() {
   const tempoLiberoAmount = validSalary ? (n * tempoLiberoPct) / 100 : 0;
   const risparmiAmount = validSalary ? (n * risparmiPct) / 100 : 0;
 
+  // Stesso controllo del totale, ma per la modalità Importi: qui l'"intero" da raggiungere
+  // è la retribuzione in euro, non 100%. Un campo vuoto conta come 0€, solo per questo
+  // conteggio — mai scritto nel campo (stessa convenzione delle percentuali qui sopra).
+  const parseAmount = (text: string) => {
+    if (text.trim() === "") return 0;
+    const v = parseFloat(text.replace(",", "."));
+    return Number.isNaN(v) ? 0 : v;
+  };
+  const speseFisseAmountText = parseAmount(amountText.speseFisse);
+  const tempoLiberoAmountText = parseAmount(amountText.tempoLibero);
+  const risparmiAmountText = parseAmount(amountText.risparmi);
+  const totalAmount = speseFisseAmountText + tempoLiberoAmountText + risparmiAmountText;
+  // Tolleranza di un centesimo per via degli arrotondamenti a due decimali.
+  const amountOk = validSalary && Math.abs(totalAmount - n) < 0.01;
+
   const setPercentText = (key: SplitKey, text: string) => {
     // Solo cifre (o vuoto) — un numero incompleto o vuoto resta locale, non tocca mai
     // l'impostazione persistita finché non torna un valore leggibile.
@@ -82,35 +104,39 @@ export function SalarySplitCalculator() {
     setSalarySplit({ ...salarySplit, [key]: clamped });
   };
 
-  // Calcolo al contrario: scrivere un importo in euro per una categoria ricalcola la sua
-  // percentuale sull'intero (arrotondata) e ribilancia le altre due — richiede una
-  // retribuzione già valida, altrimenti "che percentuale è questo importo" non ha senso.
-  // Gli importi mostrati nelle ALTRE due categorie si aggiornano di conseguenza (non solo
-  // le percentuali): altrimenti un vecchio testo scritto lì in precedenza resterebbe visibile
-  // anche dopo che il ribilanciamento lo ha reso non più corrispondente alla percentuale
-  // corrente.
+  // Scrivere un importo in euro per una categoria aggiorna solo quella percentuale
+  // (arrotondata sull'intero) — le altre due caselle restano quelle che erano, sia come
+  // importo scritto sia come percentuale persistita. Non c'è più ribilanciamento
+  // automatico: è la somma dei tre importi, mostrata sotto, a segnalare se si è arrivati
+  // o no all'intero (la retribuzione) — la stessa logica del totale percentuale qui sopra,
+  // applicata all'euro invece che al 100%.
   const setAmountForKey = (key: SplitKey, text: string) => {
     setAmountText((prev) => ({ ...prev, [key]: text }));
     if (!validSalary || text.trim() === "") return;
     const amount = parseFloat(text.replace(",", "."));
     if (Number.isNaN(amount) || amount < 0) return;
-    const pct = (amount / n) * 100;
-    const nextSplit = rebalanceThreeWaySplit(salarySplit, SPLIT_KEYS, key, pct);
-    setSalarySplit(nextSplit);
-    setSpeseFisseText(String(nextSplit.speseFisse));
-    setTempoLiberoText(String(nextSplit.tempoLibero));
-    setRisparmiText(String(nextSplit.risparmi));
-    setAmountText({
-      speseFisse: key === "speseFisse" ? text : ((n * nextSplit.speseFisse) / 100).toFixed(2),
-      tempoLibero: key === "tempoLibero" ? text : ((n * nextSplit.tempoLibero) / 100).toFixed(2),
-      risparmi: key === "risparmi" ? text : ((n * nextSplit.risparmi) / 100).toFixed(2),
-    });
+    const pct = Math.round((amount / n) * 100);
+    setSalarySplit({ ...salarySplit, [key]: Math.max(0, Math.min(100, pct)) });
+    if (key === "speseFisse") setSpeseFisseText(String(pct));
+    if (key === "tempoLibero") setTempoLiberoText(String(pct));
+    if (key === "risparmi") setRisparmiText(String(pct));
   };
 
   const apply = () => {
-    if (!validSalary || !percentOk) return;
-    addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${risparmiPct}% di ${n.toLocaleString("it-IT")}€)`);
-    setMonthlyBudget(speseFisseAmount + tempoLiberoAmount);
+    if (!validSalary) return;
+    // In modalità Importi il vincolo che conta è sull'euro scritto nei campi (amountOk),
+    // non sulle percentuali arrotondate — due arrotondamenti indipendenti possono sommare
+    // a 100€... ma non esattamente a 100% e viceversa. Si applicano quindi gli importi
+    // scritti così come sono, non quelli ricostruiti dalla percentuale arrotondata.
+    if (mode === "percentuali") {
+      if (!percentOk) return;
+      addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${risparmiPct}% di ${n.toLocaleString("it-IT")}€)`);
+      setMonthlyBudget(speseFisseAmount + tempoLiberoAmount);
+    } else {
+      if (!amountOk) return;
+      addSavingsEntry(risparmiAmountText, `Suddivisione stipendio (${Math.round(risparmiAmountText).toLocaleString("it-IT")}€ di ${n.toLocaleString("it-IT")}€)`);
+      setMonthlyBudget(speseFisseAmountText + tempoLiberoAmountText);
+    }
     fireTrigger("finanze:stipendio-diviso");
     setSalary("");
     setAmountText({ speseFisse: "", tempoLibero: "", risparmi: "" });
@@ -134,7 +160,7 @@ export function SalarySplitCalculator() {
       <p className="mb-3 text-xs text-ink-600">
         {mode === "percentuali"
           ? "Da una retribuzione, decidi quanto va a spese fisse, tempo libero e risparmi — i risparmi vanno subito da parte, il resto diventa il budget del ciclo."
-          : "Scrivi direttamente quanti euro vuoi destinare a una categoria: la percentuale sull'intero si calcola da sola, e le altre due si ribilanciano di conseguenza."}
+          : "Scrivi direttamente quanti euro vuoi destinare a una categoria: la percentuale sull'intero si calcola da sola, le altre due caselle restano come sono."}
       </p>
 
       <TextField
@@ -152,13 +178,16 @@ export function SalarySplitCalculator() {
           </div>
           {mode === "percentuali" ? (
             <>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={speseFisseText}
-                onChange={(e) => setPercentText("speseFisse", e.target.value)}
-                className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={speseFisseText}
+                  onChange={(e) => setPercentText("speseFisse", e.target.value)}
+                  className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 pr-6 text-sm text-ink-100"
+                />
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-600">%</span>
+              </div>
               <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(speseFisseAmount).toLocaleString("it-IT")}€</p>
             </>
           ) : (
@@ -182,13 +211,16 @@ export function SalarySplitCalculator() {
           </div>
           {mode === "percentuali" ? (
             <>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={tempoLiberoText}
-                onChange={(e) => setPercentText("tempoLibero", e.target.value)}
-                className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={tempoLiberoText}
+                  onChange={(e) => setPercentText("tempoLibero", e.target.value)}
+                  className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 pr-6 text-sm text-ink-100"
+                />
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-600">%</span>
+              </div>
               <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(tempoLiberoAmount).toLocaleString("it-IT")}€</p>
             </>
           ) : (
@@ -212,13 +244,16 @@ export function SalarySplitCalculator() {
           </div>
           {mode === "percentuali" ? (
             <>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={risparmiText}
-                onChange={(e) => setPercentText("risparmi", e.target.value)}
-                className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-sm text-ink-100"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={risparmiText}
+                  onChange={(e) => setPercentText("risparmi", e.target.value)}
+                  className="focus-ring w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 pr-6 text-sm text-ink-100"
+                />
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-600">%</span>
+              </div>
               <p className="mt-1.5 text-[11px] text-ink-800">{Math.round(risparmiAmount).toLocaleString("it-IT")}€</p>
             </>
           ) : (
@@ -242,19 +277,30 @@ export function SalarySplitCalculator() {
         <p className="mt-2 text-[11px] text-aura-amber">Scrivi prima una retribuzione: senza un intero, un importo non ha una percentuale.</p>
       )}
 
-      <p className={`mt-2 text-[11px] ${percentOk ? "text-ink-800" : "text-aura-pink"}`}>
-        {percentOk ? "Totale: 100%" : `Totale: ${totalPercent}% — deve fare 100% per poter applicare`}
-      </p>
+      {mode === "percentuali" ? (
+        <p className={`mt-2 text-[11px] ${percentOk ? "text-ink-800" : "text-aura-pink"}`}>
+          {percentOk ? "Totale: 100%" : `Totale: ${totalPercent}% — deve fare 100% per poter applicare`}
+        </p>
+      ) : (
+        validSalary && (
+          <p className={`mt-2 text-[11px] ${amountOk ? "text-ink-800" : "text-aura-pink"}`}>
+            {amountOk
+              ? `Totale: ${Math.round(totalAmount).toLocaleString("it-IT")}€`
+              : `Totale: ${Math.round(totalAmount).toLocaleString("it-IT")}€ — deve fare ${Math.round(n).toLocaleString("it-IT")}€ per poter applicare`}
+          </p>
+        )
+      )}
 
-      <Button className="mt-3 w-full justify-center" onClick={apply} disabled={!validSalary || !percentOk}>
+      <Button className="mt-3 w-full justify-center" onClick={apply} disabled={!validSalary || (mode === "percentuali" ? !percentOk : !amountOk)}>
         <Wallet size={14} />
         {justApplied ? "Applicato!" : "Applica alla scheda Finanze"}
       </Button>
 
-      {validSalary && percentOk && (
+      {validSalary && (mode === "percentuali" ? percentOk : amountOk) && (
         <p className="mt-2 text-[11px] text-ink-800">
-          {Math.round(risparmiAmount).toLocaleString("it-IT")}€ ai Risparmi (con cronologia), budget del ciclo
-          impostato a {Math.round(speseFisseAmount + tempoLiberoAmount).toLocaleString("it-IT")}€.
+          {mode === "percentuali"
+            ? `${Math.round(risparmiAmount).toLocaleString("it-IT")}€ ai Risparmi (con cronologia), budget del ciclo impostato a ${Math.round(speseFisseAmount + tempoLiberoAmount).toLocaleString("it-IT")}€.`
+            : `${Math.round(risparmiAmountText).toLocaleString("it-IT")}€ ai Risparmi (con cronologia), budget del ciclo impostato a ${Math.round(speseFisseAmountText + tempoLiberoAmountText).toLocaleString("it-IT")}€.`}
         </p>
       )}
     </div>

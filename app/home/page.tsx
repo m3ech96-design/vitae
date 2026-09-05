@@ -29,6 +29,7 @@ import { HouseholdMessagesFeed } from "@/components/home/HouseholdMessagesFeed";
 import { HouseholdMessageBar } from "@/components/home/HouseholdMessageBar";
 import { HomeWidgetsGrid } from "@/components/widgets/HomeWidgetsGrid";
 import { AddWidgetSheet } from "@/components/widgets/AddWidgetSheet";
+import { BackupSection } from "@/components/home/BackupSection";
 import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
 import { RapportNudgeCard } from "@/components/home/RapportNudgeCard";
@@ -326,6 +327,15 @@ export default function HomePage() {
 
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
       {addWidgetOpen && <AddWidgetSheet onClose={() => setAddWidgetOpen(false)} />}
+
+      {/* Il componente esisteva già pronto (lib/backup.ts + questa stessa UI, vedi
+         components/home/BackupSection.tsx) ma non era mai importato da nessuna pagina — di
+         fatto invisibile, nessun pulsante esporta/importa raggiungibile nell'app nonostante
+         la logica fosse già scritta e funzionante. In fondo alla Home, dopo tutto il resto:
+         è una sezione di servizio sui propri dati, non qualcosa da vedere per prima cosa. */}
+      <Reveal delay={0.28} className="mt-9">
+        <BackupSection />
+      </Reveal>
     </div>
   );
 }
