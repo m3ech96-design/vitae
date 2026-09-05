@@ -22,6 +22,18 @@ interface FoodContextValue {
   removeEntry: (id: string) => void;
   setWater: (date: string, liters: number) => void;
   setGoals: (patch: Partial<FoodGoals>) => void;
+  /** Menù copiato (voci di un intero giorno), pronto per essere incollato su un altro
+   * giorno — vive solo in memoria per la sessione corrente, non su localStorage: è un
+   * appunto "in mano" tra un copia e un incolla nella stessa visita, non qualcosa da
+   * ritrovare riaprendo l'app un altro giorno. */
+  copiedMenu: { sourceDate: string; entries: Pick<FoodEntry, "slot" | "ingredientId" | "quantity" | "time">[] } | null;
+  copyMenu: (date: string) => void;
+  /** Incolla il menù copiato sul giorno indicato, aggiungendosi alle voci già presenti
+   * quel giorno (non le sostituisce): ogni voce copiata diventa una nuova voce con id
+   * proprio, così modificarla o eliminarla dopo non tocca in alcun modo il giorno di
+   * origine da cui è stata copiata. */
+  pasteMenu: (targetDate: string) => void;
+  clearCopiedMenu: () => void;
 }
 
 const FoodContext = createContext<FoodContextValue | null>(null);
@@ -32,6 +44,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   const [waterLog, setWaterLogState] = useState<WaterLog>({});
   const [goals, setGoalsState] = useState<FoodGoals>(DEFAULT_FOOD_GOALS);
   const [hydrated, setHydrated] = useState(false);
+  const [copiedMenu, setCopiedMenu] = useState<FoodContextValue["copiedMenu"]>(null);
 
   useEffect(() => {
     try {
@@ -158,6 +171,36 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const copyMenu = useCallback(
+    (date: string) => {
+      const dayEntries = entries.filter((e) => e.date === date);
+      setCopiedMenu({
+        sourceDate: date,
+        entries: dayEntries.map((e) => ({ slot: e.slot, ingredientId: e.ingredientId, quantity: e.quantity, time: e.time })),
+      });
+    },
+    [entries]
+  );
+
+  const pasteMenu = useCallback(
+    (targetDate: string) => {
+      setCopiedMenu((menu) => {
+        if (!menu) return menu;
+        const newEntries: FoodEntry[] = menu.entries.map((line) => ({
+          ...line,
+          date: targetDate,
+          id: newId(),
+          createdAt: new Date().toISOString(),
+        }));
+        persistEntries((prev) => [...prev, ...newEntries]);
+        return menu;
+      });
+    },
+    [persistEntries]
+  );
+
+  const clearCopiedMenu = useCallback(() => setCopiedMenu(null), []);
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -173,8 +216,30 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       removeEntry,
       setWater,
       setGoals,
+      copiedMenu,
+      copyMenu,
+      pasteMenu,
+      clearCopiedMenu,
     }),
-    [hydrated, ingredients, entries, waterLog, goals, addIngredient, updateIngredient, removeIngredient, addEntry, updateEntry, removeEntry, setWater, setGoals]
+    [
+      hydrated,
+      ingredients,
+      entries,
+      waterLog,
+      goals,
+      addIngredient,
+      updateIngredient,
+      removeIngredient,
+      addEntry,
+      updateEntry,
+      removeEntry,
+      setWater,
+      setGoals,
+      copiedMenu,
+      copyMenu,
+      pasteMenu,
+      clearCopiedMenu,
+    ]
   );
 
   return <FoodContext.Provider value={value}>{children}</FoodContext.Provider>;
