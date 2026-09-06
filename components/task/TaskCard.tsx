@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MapPin, Flame, Clock, AlertTriangle } from "lucide-react";
+import { Check, MapPin, Flame, Clock, AlertTriangle, ListTodo } from "lucide-react";
 import { Task, PRIORITY_TINT, TASK_TYPE_LABEL, taskGroup } from "@/lib/types";
 import { formatDateTime } from "@/lib/date-format";
 import { taskCategory } from "@/lib/task-status";
@@ -56,6 +56,12 @@ export function TaskCard({
       : group === "scadenza" && task.dueDate
       ? `Scade ${formatDateTime(task.dueDate, task.dueTime)}`
       : formatDateTime(task.date, task.time);
+
+  // Riepilogo sub-task per la card compatta: solo conteggio + prossima da fare, mai l'elenco
+  // intero — quello resta nel dettaglio (TaskWindow), dove si vedono e si spuntano tutte.
+  const subtaskTotal = task.subtasks.length;
+  const subtaskDone = task.subtasks.filter((s) => s.done).length;
+  const nextSubtask = task.subtasks.find((s) => !s.done);
 
   return (
     <button
@@ -130,6 +136,21 @@ export function TaskCard({
             TASK_TYPE_LABEL[task.type]
           )}
         </p>
+        {subtaskTotal > 0 && (
+          <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+            <ListTodo size={11} className="shrink-0 text-ink-800" />
+            <div className="h-1 w-10 shrink-0 overflow-hidden rounded-full bg-white/[0.06]">
+              <div
+                className="h-full rounded-full bg-aura-cyan/70"
+                style={{ width: `${(subtaskDone / subtaskTotal) * 100}%` }}
+              />
+            </div>
+            <span className="min-w-0 truncate text-[11px] text-ink-800">
+              {subtaskDone}/{subtaskTotal}
+              {nextSubtask ? ` · ${nextSubtask.title}` : ""}
+            </span>
+          </div>
+        )}
       </div>
 
       {checkable ? (

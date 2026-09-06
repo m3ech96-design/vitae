@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Clock, Flame, Zap, Scale, CalendarClock, Trophy, BarChart3, Ruler, Camera } from "lucide-react";
 import { useHealth } from "@/lib/health-context";
 import { Workout } from "@/lib/types";
@@ -20,6 +20,8 @@ import { BmiBadge } from "@/components/health/BmiBadge";
 import { ScheduleWorkoutModal } from "@/components/health/ScheduleWorkoutModal";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
+import Link from "next/link";
+import { History } from "lucide-react";
 
 function activeDayStreak(dates: string[]): number {
   const uniqueDays = [...new Set(dates.map((d) => d.slice(0, 10)))].sort();
@@ -51,10 +53,24 @@ export default function AttivitaPesoPage() {
   const weekCalories = weekWorkouts.reduce((s, w) => s + w.calories, 0);
   const streak = useMemo(() => activeDayStreak(workouts.map((w) => w.date)), [workouts]);
 
-  const recentWorkouts = useMemo(
-    () => [...workouts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 18),
-    [workouts]
-  );
+  // "Il tuo campo energetico" mostra solo le attività registrate nelle ultime 24 ore da
+  // ADESSO (finestra mobile su `createdAt`, il momento vero in cui l'attività è stata
+  // salvata — non su `date`, che l'utente può impostare anche nel passato per un'attività
+  // dimenticata: quella va comunque vista nel campo appena la si registra). Il tick al
+  // minuto è necessario perché la finestra deve svuotarsi anche senza che l'utente tocchi
+  // nulla, semplicemente perché passa il tempo — un useMemo dipendente solo da `workouts`
+  // non si aggiornerebbe mai da solo.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const energyFieldWorkouts = useMemo(() => {
+    const cutoff = now - 24 * 60 * 60 * 1000;
+    return [...workouts]
+      .filter((w) => new Date(w.createdAt).getTime() >= cutoff)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [workouts, now]);
 
   const openWorkout: Workout | undefined = workouts.find((w) => w.id === openWorkoutId);
   const editWeightEntry = weightEntries.find((w) => w.id === editWeightId);
@@ -104,6 +120,13 @@ export default function AttivitaPesoPage() {
         <div className="mb-3 flex items-center justify-between">
           <p className="font-display text-sm text-ink-100">Il tuo campo energetico</p>
           <div className="flex items-center gap-1.5">
+            <Link
+              href="/attivita-peso/cronologia"
+              className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-violet/50"
+              aria-label="Cronologia attività"
+            >
+              <History size={13} />
+            </Link>
             <button
               onClick={() => setScheduleOpen(true)}
               className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-violet/50"
@@ -119,14 +142,23 @@ export default function AttivitaPesoPage() {
             </button>
           </div>
         </div>
-        {recentWorkouts.length === 0 ? (
+        {energyFieldWorkouts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl2 border border-dashed border-white/10 py-14 text-center">
             <Zap size={20} className="text-ink-800" />
-            <p className="text-sm text-ink-600">Il Campo è ancora spento. Registra la prima attività.</p>
+            <p className="text-sm text-ink-600">
+              {workouts.length === 0
+                ? "Il Campo è ancora spento. Registra la prima attività."
+                : "Nessuna attività nelle ultime 24 ore."}
+            </p>
+            {workouts.length > 0 && (
+              <Link href="/attivita-peso/cronologia" className="focus-ring text-xs text-aura-violet">
+                Vedi la cronologia completa
+              </Link>
+            )}
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-4 rounded-xl3 border border-white/[0.06] bg-white/[0.015] px-5 py-8">
-            {recentWorkouts.map((w) => (
+            {energyFieldWorkouts.map((w) => (
               <ActivityOrb key={w.id} workout={w} onOpen={() => setOpenWorkoutId(w.id)} />
             ))}
           </div>

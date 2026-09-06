@@ -106,6 +106,7 @@ export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSa
     const created = addIngredient({
       name: name.trim(),
       unit,
+      kcal: Math.round(computed.kcal),
       fat: computed.fat,
       saturatedFat: computed.saturatedFat,
       carbs: computed.carbs,

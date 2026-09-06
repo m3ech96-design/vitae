@@ -57,7 +57,24 @@ export function AddIngredientModal({
     protein: num(protein),
     salt: num(salt),
   };
-  const previewKcal = useMemo(() => computeKcal(macros.fat, macros.carbs, macros.protein), [macros.fat, macros.carbs, macros.protein]);
+  const autoKcal = useMemo(() => computeKcal(macros.fat, macros.carbs, macros.protein), [macros.fat, macros.carbs, macros.protein]);
+
+  // Le kcal partono sempre dal calcolo automatico (Atwater), ma restano un campo modificabile
+  // a mano: `kcalTouched` ricorda se l'utente le ha già corrette una volta. Finché non lo fa,
+  // il campo segue in automatico ogni modifica ai macro (comodità per il caso comune). Dal
+  // momento in cui l'utente scrive un valore proprio, quello resta fisso: cambiare un
+  // macronutriente dopo NON lo sovrascrive più, ed è quello il punto — l'utente può correggere
+  // le kcal (es. per allinearle a un'etichetta reale) senza che i grassi/carboidrati/proteine
+  // vengano "ribilanciati" all'indietro per tornare a tornare con quel numero.
+  const [kcalTouched, setKcalTouched] = useState(false);
+  const [kcalInput, setKcalInput] = useState(initial ? String(initial.kcal) : String(autoKcal));
+
+  useEffect(() => {
+    if (!kcalTouched) setKcalInput(String(autoKcal));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoKcal]);
+
+  const previewKcal = Math.round(num(kcalInput));
 
   const unitWeight = num(gramsPerUnit);
   const hasUnitWeight = unit === "altro" && unitWeight > 0;
@@ -84,11 +101,12 @@ export function AddIngredientModal({
       gramsPerUnit: unit === "altro" ? unitWeight : undefined,
       ...macros,
     };
+    const payloadWithKcal = { ...payload, kcal: previewKcal };
     if (initial) {
-      updateIngredient(initial.id, payload);
-      onSaved?.({ ...initial, ...payload, kcal: previewKcal });
+      updateIngredient(initial.id, payloadWithKcal);
+      onSaved?.({ ...initial, ...payloadWithKcal });
     } else {
-      const created = addIngredient(payload);
+      const created = addIngredient(payloadWithKcal);
       onSaved?.(created);
     }
     onClose();
@@ -193,8 +211,40 @@ export function AddIngredientModal({
           </div>
 
           <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-ink-600">Calorie calcolate</p>
-            <p className="font-display text-xl text-ink-100">{previewKcal} kcal {baseLabel}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-ink-600">
+                Calorie {kcalTouched ? "(modificate a mano)" : "calcolate"}
+              </p>
+              {kcalTouched && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKcalTouched(false);
+                    setKcalInput(String(autoKcal));
+                  }}
+                  className="focus-ring text-[11px] text-aura-emerald hover:underline"
+                >
+                  Ricalcola
+                </button>
+              )}
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={kcalInput}
+                onChange={(e) => {
+                  setKcalTouched(true);
+                  setKcalInput(e.target.value);
+                }}
+                className="focus-ring w-24 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 font-display text-xl text-ink-100"
+              />
+              <span className="font-display text-xl text-ink-100">kcal {baseLabel}</span>
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-ink-800">
+              Puoi correggerle a mano — es. per allinearle a un'etichetta reale — senza che
+              grassi, carboidrati o proteine cambino di conseguenza.
+            </p>
           </div>
 
           {unit === "altro" && (

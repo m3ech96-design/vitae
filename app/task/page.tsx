@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ListChecks, CalendarDays, Flame, Check } from "lucide-react";
+import { Plus, ListChecks, CalendarDays, Flame, Check, ListTodo } from "lucide-react";
 import { useTasks } from "@/lib/tasks-context";
 import { Task, TaskType, TASK_TYPE_LABEL } from "@/lib/types";
 import { taskOccursOnDate } from "@/lib/recurrence";
@@ -104,10 +104,21 @@ export default function TaskPage() {
                 {dailyActivities.map((t) => {
                   const streak = streakFor(t);
                   const doneToday = t.completionLog.some((d) => d.slice(0, 10) === todayIso());
+                  const subtaskTotal = t.subtasks.length;
+                  const subtaskDone = t.subtasks.filter((s) => s.done).length;
+                  const hasSubtasks = subtaskTotal > 0;
                   return (
                     <button
                       key={t.id}
                       onClick={() => {
+                        // Con sub-task, il tap apre il dettaglio invece di completare subito:
+                        // lì si vedono, si spuntano una per una, e si può comunque segnare
+                        // l'intera attività come fatta — evita di chiudere per errore
+                        // un'attività composta da più passaggi con un tap solo.
+                        if (hasSubtasks) {
+                          setOpenTaskId(t.id);
+                          return;
+                        }
                         if (doneToday) uncompleteTask(t.id);
                         else {
                           const result = completeTask(t.id);
@@ -139,6 +150,20 @@ export default function TaskPage() {
                         )}
                       </div>
                       <p className="text-sm text-ink-100">{t.title}</p>
+                      {hasSubtasks && (
+                        <div className="flex w-full items-center gap-1.5">
+                          <ListTodo size={11} className="shrink-0 text-ink-800" />
+                          <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                            <div
+                              className="h-full rounded-full bg-aura-cyan/70"
+                              style={{ width: `${(subtaskDone / subtaskTotal) * 100}%` }}
+                            />
+                          </div>
+                          <span className="shrink-0 text-[11px] text-ink-800">
+                            {subtaskDone}/{subtaskTotal}
+                          </span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}

@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { newId } from "./id";
-import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, computeKcal } from "./food-types";
+import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog } from "./food-types";
 
 const INGREDIENTS_KEY = "vitae:food-ingredients";
 const ENTRIES_KEY = "vitae:food-entries";
@@ -14,8 +14,8 @@ interface FoodContextValue {
   entries: FoodEntry[];
   waterLog: WaterLog;
   goals: FoodGoals;
-  addIngredient: (input: Omit<Ingredient, "id" | "createdAt" | "kcal">) => Ingredient;
-  updateIngredient: (id: string, patch: Partial<Omit<Ingredient, "id" | "createdAt" | "kcal">>) => void;
+  addIngredient: (input: Omit<Ingredient, "id" | "createdAt">) => Ingredient;
+  updateIngredient: (id: string, patch: Partial<Omit<Ingredient, "id" | "createdAt">>) => void;
   removeIngredient: (id: string) => void;
   addEntry: (input: Omit<FoodEntry, "id" | "createdAt">) => FoodEntry;
   updateEntry: (id: string, patch: Partial<Omit<FoodEntry, "id" | "createdAt">>) => void;
@@ -103,13 +103,16 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Le kcal arrivano già decise dal chiamante (di norma il wizard, che le calcola con
+  // Atwater ma permette di sovrascriverle a mano): il context non le ricalcola più da
+  // fat/carbs/protein, altrimenti un valore kcal inserito manualmente verrebbe silenziosamente
+  // buttato via ad ogni add/update.
   const addIngredient = useCallback(
-    (input: Omit<Ingredient, "id" | "createdAt" | "kcal">) => {
+    (input: Omit<Ingredient, "id" | "createdAt">) => {
       const ingredient: Ingredient = {
         ...input,
         id: newId(),
         createdAt: new Date().toISOString(),
-        kcal: computeKcal(input.fat, input.carbs, input.protein),
       };
       persistIngredients((prev) => [...prev, ingredient]);
       return ingredient;
@@ -118,12 +121,11 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateIngredient = useCallback(
-    (id: string, patch: Partial<Omit<Ingredient, "id" | "createdAt" | "kcal">>) =>
+    (id: string, patch: Partial<Omit<Ingredient, "id" | "createdAt">>) =>
       persistIngredients((prev) =>
         prev.map((ing) => {
           if (ing.id !== id) return ing;
-          const merged = { ...ing, ...patch };
-          return { ...merged, kcal: computeKcal(merged.fat, merged.carbs, merged.protein) };
+          return { ...ing, ...patch };
         })
       ),
     [persistIngredients]
