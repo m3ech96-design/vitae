@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ListChecks, CalendarDays, Flame, Check, ListTodo } from "lucide-react";
+import { Plus, ListChecks, CalendarDays, Flame, Check, ListTodo, MoreHorizontal } from "lucide-react";
 import { useTasks } from "@/lib/tasks-context";
 import { Task, TaskType, TASK_TYPE_LABEL } from "@/lib/types";
 import { taskOccursOnDate } from "@/lib/recurrence";
@@ -108,8 +108,10 @@ export default function TaskPage() {
                   const subtaskDone = t.subtasks.filter((s) => s.done).length;
                   const hasSubtasks = subtaskTotal > 0;
                   return (
-                    <button
+                    <div
                       key={t.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         // Con sub-task, il tap apre il dettaglio invece di completare subito:
                         // lì si vedono, si spuntano una per una, e si può comunque segnare
@@ -127,13 +129,43 @@ export default function TaskPage() {
                           if (STREAK_MILESTONES.includes(result.streak)) fireTrigger("task:streak");
                         }
                       }}
-                      className="flex shrink-0 flex-col items-start gap-2 rounded-xl2 border p-3.5 text-left transition-all"
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        if (hasSubtasks) {
+                          setOpenTaskId(t.id);
+                          return;
+                        }
+                        if (doneToday) uncompleteTask(t.id);
+                        else {
+                          const result = completeTask(t.id);
+                          if (result.askSpent) setSpentPromptId(t.id);
+                          fireTrigger("task:quotidiana");
+                          if (STREAK_MILESTONES.includes(result.streak)) fireTrigger("task:streak");
+                        }
+                      }}
+                      className="focus-ring relative flex shrink-0 cursor-pointer flex-col items-start gap-2 rounded-xl2 border py-3.5 pl-3.5 pr-8 text-left transition-all"
                       style={{
                         borderColor: doneToday ? `${t.color}88` : "rgba(255,255,255,0.08)",
                         background: doneToday ? `${t.color}1a` : "rgba(255,255,255,0.02)",
                         minWidth: 140,
                       }}
                     >
+                      {/* Unica via, per le quotidiane senza sub-task, per raggiungere il
+                         dettaglio (modifica ed eliminazione inclusi): il tap sulla pillola
+                         resta dedicato al completamento rapido, quindi elimina/modifica
+                         hanno bisogno di un secondo punto d'ingresso sempre visibile. */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenTaskId(t.id);
+                        }}
+                        className="focus-ring absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-ink-800 hover:text-ink-200"
+                        aria-label="Apri dettaglio attività"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
                       <div className="flex w-full items-center justify-between">
                         <span
                           className={`flex h-5 w-5 items-center justify-center rounded-full border ${
@@ -164,7 +196,7 @@ export default function TaskPage() {
                           </span>
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

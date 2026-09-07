@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Plus, LayoutGrid, GalleryVertical } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
-import { isFulfilled } from "@/lib/wishlist-types";
+import { isFulfilled, unlockThreshold } from "@/lib/wishlist-types";
 import { useFinance } from "@/lib/finance-context";
 import { WishlistCard } from "@/components/wishlist/WishlistCard";
 import { WishlistShortView } from "@/components/wishlist/WishlistShortView";
@@ -33,8 +33,9 @@ export default function WishlistPage() {
    * errore.
    *
    * Corretto secondo le istruzioni: più articoli possono condividere la stessa
-   * destinazione, ciascuno mostra semplicemente il suo saldo — MAI oltre il proprio prezzo
-   * (mai un riparto tra loro, vedi il commento in SavingsRing.tsx). Prima questo effect
+   * destinazione, ciascuno mostra semplicemente il suo saldo — MAI oltre la propria soglia
+   * di sblocco (prezzo + margine fisso di 1000€, vedi `unlockThreshold` — mai un riparto tra
+   * loro, vedi il commento in SavingsRing.tsx). Prima questo effect
    * scriveva il saldo intero della destinazione dentro `savedAmount` senza applicare
    * questo tetto: un articolo da 200€ collegato a un salvadanaio con 600€ dentro si
    * ritrovava `savedAmount = 600`, non 200 — un numero mostrato sbagliato (la sola barra
@@ -53,7 +54,8 @@ export default function WishlistPage() {
       if (!linkedTo || isFulfilled(item)) return;
       const balance = linkedTo.kind === "general" ? generalBalance : savingsGoals.find((g) => g.id === linkedTo.goalId)?.currentAmount;
       if (balance === undefined) return;
-      const capped = item.price && item.price > 0 ? Math.min(balance, item.price) : balance;
+      const threshold = unlockThreshold(item);
+      const capped = threshold !== null ? Math.min(balance, threshold) : balance;
       if (capped !== item.savedAmount) setSavedAmount(item.id, capped);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

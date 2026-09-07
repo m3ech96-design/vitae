@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Target, PiggyBank, Link2, Unlink, PartyPopper, RotateCcw } from "lucide-react";
-import { WishlistItem, savingsPct, isFulfilled } from "@/lib/wishlist-types";
+import { WishlistItem, savingsPct, isFulfilled, unlockThreshold } from "@/lib/wishlist-types";
 import { SavingsGoal } from "@/lib/types";
 import { useCountUp } from "@/lib/use-count-up";
 import { Button } from "../ui/Button";
@@ -24,8 +24,13 @@ import { LinkSavingsGoalSheet } from "./LinkSavingsGoalSheet";
  * `displayedAmount > 0`): un articolo sotto il pieno non può essere esaudito. Questo è ciò
  * che rende sempre corretto prelevare `item.savedAmount` alla conferma (vedi
  * WishlistItemSheet) anche quando più articoli condividono la destinazione — un articolo
- * al 100% ha `savedAmount === price` per costruzione, mai più del proprio prezzo, quindi
- * esaudirlo non tocca mai più di quanto gli spettasse davvero.
+ * al 100% ha `savedAmount === unlockThreshold(item)` per costruzione, mai più della propria
+ * soglia, quindi esaudirlo non tocca mai più di quanto gli spettasse davvero.
+ *
+ * La soglia da raggiungere per il 100% è il prezzo PIÙ un margine fisso di 1000€ (vedi
+ * `unlockThreshold` in wishlist-types.ts) — non il prezzo da solo. L'etichetta sotto
+ * l'anello mostra quindi questa soglia, non il prezzo nudo: altrimenti l'anello segnerebbe
+ * 100% con l'articolo ancora irraggiungibile (mancano 1000€ veri).
  *
  * Tre stati, mai insieme:
  * - Non collegato a nulla: quota ferma a 0, invito a collegare una destinazione.
@@ -63,13 +68,14 @@ export function SavingsRing({
   const fulfilled = isFulfilled(item);
   const displayedAmount = fulfilled ? item.fulfilledAmount! : item.savedAmount;
   const pct = savingsPct(item);
+  const threshold = unlockThreshold(item);
   const dash = circumference * pct;
   const color = fulfilled ? "#34D399" : pct >= 1 ? "#34D399" : pct >= 0.5 ? "#00E5C7" : "#7C5CFF";
   const savedAnimated = useCountUp(Math.round(displayedAmount));
 
   const [linking, setLinking] = useState(false);
 
-  if (!item.price || item.price <= 0) {
+  if (threshold === null) {
     return <p className="text-xs text-ink-800">Imposta un prezzo per attivare l&apos;obiettivo di risparmio.</p>;
   }
 
@@ -94,12 +100,17 @@ export function SavingsRing({
           <span className="font-display text-xl text-ink-100">
             {savedAnimated.toLocaleString("it-IT", { maximumFractionDigits: 0 })}€
           </span>
-          <span className="text-xs text-ink-600">su {item.price.toLocaleString("it-IT")}€</span>
+          <span className="text-xs text-ink-600">su {threshold.toLocaleString("it-IT")}€</span>
           <span className="mt-1 text-[11px]" style={{ color }}>
             {Math.round(pct * 100)}%
           </span>
         </div>
       </div>
+      {!fulfilled && (
+        <p className="text-center text-[11px] text-ink-800">
+          Prezzo {item.price!.toLocaleString("it-IT")}€ + margine di 1.000€ per poter esaudire
+        </p>
+      )}
 
       {fulfilled ? (
         <div className="flex w-full flex-col items-center gap-2">

@@ -77,12 +77,28 @@ export function isFulfilled(item: WishlistItem): boolean {
   return item.fulfilledAt !== undefined;
 }
 
+/** La soglia REALE da raggiungere per poter esaudire l'articolo — non il suo prezzo, ma
+ * il prezzo più un margine fisso di sicurezza (1000€): un articolo da 500€ richiede 1500€
+ * accantonati prima di sbloccare "Esaudisci", non 500€. Il prezzo "nudo" (`item.price`)
+ * resta il prezzo di listino mostrato com'è (etichetta articolo, form di modifica): è
+ * SOLO la quota di risparmio — anello, percentuale, tetto di accantonamento — a doversi
+ * riempire rispetto a questa soglia più alta, mai rispetto al prezzo da solo.
+ * `null` se l'articolo non ha ancora un prezzo impostato (stesso caso già gestito da chi
+ * chiama, vedi `savingsPct`). */
+export function unlockThreshold(item: WishlistItem): number | null {
+  if (item.price === null || item.price <= 0) return null;
+  return item.price + 1000;
+}
+
 /** La percentuale mostrata nell'anello — calcolata su `fulfilledAmount` se l'articolo è
  * stato esaudito (un dato ormai fermo), altrimenti su `savedAmount` (il riflesso vivo della
- * destinazione collegata, o 0 se non è collegato a nessuna). */
+ * destinazione collegata, o 0 se non è collegato a nessuna). Il denominatore è
+ * `unlockThreshold`, non `item.price`: raggiungere il 100% richiede il margine di 1000€
+ * oltre al prezzo, vedi `unlockThreshold`. */
 export function savingsPct(item: WishlistItem): number {
-  if (!item.price || item.price <= 0) return 0;
+  const threshold = unlockThreshold(item);
+  if (threshold === null) return 0;
   const amount = isFulfilled(item) ? item.fulfilledAmount! : item.savedAmount;
-  return Math.min(1, amount / item.price);
+  return Math.min(1, amount / threshold);
 }
 

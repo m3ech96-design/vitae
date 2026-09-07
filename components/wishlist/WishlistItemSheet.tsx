@@ -4,7 +4,7 @@ import { ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";
 import { useFinance } from "@/lib/finance-context";
-import { WishlistItem } from "@/lib/wishlist-types";
+import { WishlistItem, unlockThreshold } from "@/lib/wishlist-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
 import { Button } from "../ui/Button";
@@ -70,16 +70,18 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
   // "Esaudisci" — SOLO quando l'articolo è già al 100% (garantito dalla UI, vedi
   // SavingsRing: il pulsante compare solo con `pct >= 1`; la guardia qui sotto è una difesa
   // in profondità, non un doppione decorativo). Essendo saturo, `item.savedAmount` coincide
-  // per costruzione con `item.price` — mai di più, anche quando altri articoli condividono
-  // la stessa destinazione (vedi il commento in SavingsRing.tsx sul perché più articoli
-  // possono mostrare lo stesso saldo senza un riparto tra loro): prelevare esattamente
-  // `item.savedAmount` non tocca mai più di quanto spettava a QUESTO articolo, indipendente
-  // da quanti altri condividono la stessa destinazione. Genera la voce di cronologia
-  // corrispondente, e fissa quell'importo per sempre su `fulfilledAmount` — da qui in poi
-  // la quota dell'articolo non segue più la destinazione, che può continuare a muoversi per
-  // altri motivi senza più riflettersi su un articolo già chiuso.
+  // per costruzione con `unlockThreshold(item)` (prezzo + margine fisso di 1000€) — mai di
+  // più, anche quando altri articoli condividono la stessa destinazione (vedi il commento in
+  // SavingsRing.tsx sul perché più articoli possono mostrare lo stesso saldo senza un
+  // riparto tra loro): prelevare esattamente `item.savedAmount` non tocca mai più di quanto
+  // spettava a QUESTO articolo, indipendente da quanti altri condividono la stessa
+  // destinazione. Genera la voce di cronologia corrispondente, e fissa quell'importo per
+  // sempre su `fulfilledAmount` — da qui in poi la quota dell'articolo non segue più la
+  // destinazione, che può continuare a muoversi per altri motivi senza più riflettersi su un
+  // articolo già chiuso.
   const handleFulfill = () => {
-    if (!item.price || item.price <= 0 || item.savedAmount < item.price) return;
+    const threshold = unlockThreshold(item);
+    if (threshold === null || item.savedAmount < threshold) return;
     const amount = item.savedAmount;
     if (linkedTo?.kind === "general") addSavingsEntry(-amount, `Esaudito: ${item.name}`);
     else if (linkedTo?.kind === "goal") contributeSavingsGoal(linkedTo.goalId, -amount);
