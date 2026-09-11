@@ -86,8 +86,8 @@ export default function WeeklyDetailPage() {
             const color = status === "sopra" ? "#FF6B9D" : status === "sotto" ? "#FFB454" : status === "ok" ? "#34D399" : "#00E5C7";
             const heightPct = Math.max(2, (kcal / maxKcal) * 100);
             return (
-              <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
-                <div className="flex w-full flex-1 items-end">
+              <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5" style={{ height: "100%" }}>
+                <div className="flex w-full flex-1 items-end" style={{ height: "100%" }}>
                   <div className="w-full rounded-t-md transition-all" style={{ height: `${heightPct}%`, background: color }} />
                 </div>
                 <span className="text-[9px] text-ink-800">{weekdayShort(d.date).slice(0, 3)}</span>
