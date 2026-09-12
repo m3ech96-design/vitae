@@ -68,7 +68,7 @@ export function EntryModal({
     return baseQuantity(selected, q);
   }, [selected, quantity]);
 
-  const canSave = Boolean(selected) && parseFloat(quantity) > 0 && time;
+  const canSave = Boolean(selected) && parseFloat(quantity.replace(",", ".")) > 0 && time;
 
   const submit = () => {
     if (!selected || !canSave) return;

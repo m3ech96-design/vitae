@@ -75,13 +75,16 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const persist = useCallback((next: Task[]) => {
-    setTasks(next);
-    try {
-      window.localStorage.setItem(TASKS_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persist = useCallback((updater: Task[] | ((prev: Task[]) => Task[])) => {
+    setTasks((prev) => {
+      const next = typeof updater === "function" ? (updater as (t: Task[]) => Task[])(prev) : updater;
+      try {
+        window.localStorage.setItem(TASKS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
   // Evento e Appuntamento non si spuntano: si completano da soli quando l'orario di fine
@@ -124,17 +127,17 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         completionLog: [],
         createdAt: new Date().toISOString(),
       };
-      persist([...tasks, task]);
+      persist((prev) => [...prev, task]);
       return task;
     },
-    [tasks, persist]
+    [persist]
   );
 
   const updateTask = useCallback(
     (id: string, patch: Partial<Task>) => {
-      persist(tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+      persist((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     },
-    [tasks, persist]
+    [persist]
   );
 
   const removeTask = useCallback(
@@ -145,15 +148,15 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       // (nessuna web app può cancellare da remoto un evento già copiato altrove).
       const removed = tasks.find((t) => t.id === id);
       if (removed && removed.type !== "quotidiana") openTaskCancelInCalendar(removed);
-      persist(tasks.filter((t) => t.id !== id));
+      persist((prev) => prev.filter((t) => t.id !== id));
     },
     [tasks, persist]
   );
 
   const toggleSubtask = useCallback(
     (taskId: string, subtaskId: string) => {
-      persist(
-        tasks.map((t) =>
+      persist((prev) =>
+        prev.map((t) =>
           t.id === taskId
             ? {
                 ...t,
@@ -165,13 +168,13 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         )
       );
     },
-    [tasks, persist]
+    [persist]
   );
 
   const toggleShoppingItem = useCallback(
     (taskId: string, itemId: string) => {
-      persist(
-        tasks.map((t) =>
+      persist((prev) =>
+        prev.map((t) =>
           t.id === taskId
             ? {
                 ...t,
@@ -183,7 +186,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         )
       );
     },
-    [tasks, persist]
+    [persist]
   );
 
   const completeTask = useCallback(
@@ -197,8 +200,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           ? capArray([...task.completionLog, nowIso], 400)
           : task.completionLog;
 
-      persist(
-        tasks.map((t) =>
+      persist((prev) =>
+        prev.map((t) =>
           t.id === id ? { ...t, completed: true, completedAt: nowIso, completionLog: nextLog } : t
         )
       );
@@ -218,8 +221,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const uncompleteTask = useCallback(
     (id: string) => {
       const todayKey = new Date().toISOString().slice(0, 10);
-      persist(
-        tasks.map((t) =>
+      persist((prev) =>
+        prev.map((t) =>
           t.id === id
             ? {
                 ...t,
@@ -235,22 +238,22 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         )
       );
     },
-    [tasks, persist]
+    [persist]
   );
 
   const setSpentAmount = useCallback(
     (id: string, amount: number, chargedToBudget = true) => {
-      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: amount, chargedToBudget } : t)));
+      persist((prev) => prev.map((t) => (t.id === id ? { ...t, spentAmount: amount, chargedToBudget } : t)));
     },
-    [tasks, persist]
+    [persist]
   );
 
   const setSpentBreakdown = useCallback(
     (id: string, breakdown: { category: string; amount: number }[], chargedToBudget = true) => {
       const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
-      persist(tasks.map((t) => (t.id === id ? { ...t, spentAmount: total, spentBreakdown: breakdown, chargedToBudget } : t)));
+      persist((prev) => prev.map((t) => (t.id === id ? { ...t, spentAmount: total, spentBreakdown: breakdown, chargedToBudget } : t)));
     },
-    [tasks, persist]
+    [persist]
   );
 
   const streakFor = useCallback((task: Task) => computeStreak(task.completionLog), []);

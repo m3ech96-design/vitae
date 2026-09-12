@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Clock, Flame, Zap, Scale, CalendarClock, Trophy, BarChart3, Ruler, Camera } from "lucide-react";
+import { Plus, Clock, Flame, Zap, Scale, CalendarClock, Trophy, BarChart3, Ruler, Camera, Dumbbell } from "lucide-react";
 import { useHealth } from "@/lib/health-context";
 import { Workout } from "@/lib/types";
 import { addDaysIso, todayIso, formatDateShort } from "@/lib/date-format";
@@ -165,7 +165,21 @@ export default function AttivitaPesoPage() {
         )}
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-3">
+      <div className="mt-8">
+        <Link href="/attivita-peso/schede-allenamenti">
+          <GlassCard className="flex items-center gap-3 p-4 transition hover:border-white/20">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl2 bg-aura-violet/15">
+              <Dumbbell size={19} className="text-aura-violet" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-sm text-ink-100">Schede allenamenti</p>
+              <p className="mt-0.5 text-xs text-ink-600">Tabelle di esercizi con video, immagini e ripetizioni</p>
+            </div>
+          </GlassCard>
+        </Link>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {statCards.map(({ id, label, icon: Icon, color }) => (
           <button key={id} onClick={() => setSheet(id)} className="text-left">
             <GlassCard className="p-3.5 transition hover:border-white/20">

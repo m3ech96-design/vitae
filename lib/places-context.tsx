@@ -50,13 +50,16 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const persist = useCallback((next: Place[]) => {
-    setPlaces(next);
-    try {
-      window.localStorage.setItem(PLACES_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persist = useCallback((updater: Place[] | ((prev: Place[]) => Place[])) => {
+    setPlaces((prev) => {
+      const next = typeof updater === "function" ? (updater as (p: Place[]) => Place[])(prev) : updater;
+      try {
+        window.localStorage.setItem(PLACES_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
   const addPlace = useCallback(
@@ -76,37 +79,37 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         visitsHistory: [],
         createdAt: new Date().toISOString(),
       };
-      persist([...places, place]);
+      persist((prev) => [...prev, place]);
       return place;
     },
-    [places, persist]
+    [persist]
   );
 
   const updatePlace = useCallback(
     (id: string, patch: Partial<Place>) => {
-      persist(places.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+      persist((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     },
-    [places, persist]
+    [persist]
   );
 
   const removePlace = useCallback(
     (id: string) => {
       const place = places.find((p) => p.id === id);
       if (place?.photoUrl && !isDataUrl(place.photoUrl)) deleteImage(place.photoUrl);
-      persist(places.filter((p) => p.id !== id));
+      persist((prev) => prev.filter((p) => p.id !== id));
     },
     [places, persist]
   );
 
   const checkIn = useCallback(
     (id: string) => {
-      persist(
-        places.map((p) =>
+      persist((prev) =>
+        prev.map((p) =>
           p.id === id ? { ...p, currentVisitStartedAt: new Date().toISOString() } : p
         )
       );
     },
-    [places, persist]
+    [persist]
   );
 
   const checkOut = useCallback(
@@ -121,8 +124,8 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         withPersonIds,
         durationMinutes,
       };
-      persist(
-        places.map((p) =>
+      persist((prev) =>
+        prev.map((p) =>
           p.id === id
             ? {
                 ...p,
@@ -142,15 +145,15 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
 
   const setRating = useCallback(
     (id: string, rating: number) => {
-      persist(places.map((p) => (p.id === id ? { ...p, rating } : p)));
+      persist((prev) => prev.map((p) => (p.id === id ? { ...p, rating } : p)));
     },
-    [places, persist]
+    [persist]
   );
 
   const logTaskVisit = useCallback(
     (id: string, withPersonIds: string[]) => {
-      persist(
-        places.map((p) =>
+      persist((prev) =>
+        prev.map((p) =>
           p.id === id
             ? {
                 ...p,
@@ -163,13 +166,13 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         )
       );
     },
-    [places, persist]
+    [persist]
   );
 
   const setLastVisitSpentAmount = useCallback(
     (id: string, amount: number, chargedToBudget = true) => {
-      persist(
-        places.map((p) => {
+      persist((prev) =>
+        prev.map((p) => {
           if (p.id !== id || p.visitsHistory.length === 0) return p;
           const history = [...p.visitsHistory];
           history[history.length - 1] = { ...history[history.length - 1], spentAmount: amount, chargedToBudget };
@@ -177,14 +180,14 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         })
       );
     },
-    [places, persist]
+    [persist]
   );
 
   const setLastVisitSpentBreakdown = useCallback(
     (id: string, breakdown: { category: string; amount: number }[], chargedToBudget = true) => {
       const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
-      persist(
-        places.map((p) => {
+      persist((prev) =>
+        prev.map((p) => {
           if (p.id !== id || p.visitsHistory.length === 0) return p;
           const history = [...p.visitsHistory];
           history[history.length - 1] = { ...history[history.length - 1], spentAmount: total, spentBreakdown: breakdown, chargedToBudget };
@@ -192,7 +195,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         })
       );
     },
-    [places, persist]
+    [persist]
   );
 
   const value = useMemo(

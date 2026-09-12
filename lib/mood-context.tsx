@@ -115,23 +115,35 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     if (elapsed >= MOOD_DURATION_MS) setActiveMood(null);
   }, [now, activeMood]);
 
-  const persistMoods = useCallback((next: MoodDefinition[]) => {
-    setCustomMoods(next);
-    try {
-      window.localStorage.setItem(MOODS_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persistMoods = useCallback((updater: MoodDefinition[] | ((prev: MoodDefinition[]) => MoodDefinition[])) => {
+    setCustomMoods((prev) => {
+      const next = typeof updater === "function" ? (updater as (v: MoodDefinition[]) => MoodDefinition[])(prev) : updater;
+      try {
+        window.localStorage.setItem(MOODS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
-  const persistMap = useCallback((next: Record<string, string[]>) => {
-    setTriggerMapState(next);
-    try {
-      window.localStorage.setItem(TRIGGER_MAP_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
-  }, []);
+  const persistMap = useCallback(
+    (updater: Record<string, string[]> | ((prev: Record<string, string[]>) => Record<string, string[]>)) => {
+      setTriggerMapState((prev) => {
+        const next =
+          typeof updater === "function"
+            ? (updater as (v: Record<string, string[]>) => Record<string, string[]>)(prev)
+            : updater;
+        try {
+          window.localStorage.setItem(TRIGGER_MAP_KEY, JSON.stringify(next));
+        } catch {
+          // storage non disponibile: continua solo in memoria
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   const persistActive = useCallback((next: ActiveMood | null) => {
     setActiveMood(next);
@@ -147,33 +159,35 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
 
   const setTriggerMoods = useCallback(
     (triggerKey: string, moodIds: string[]) => {
-      persistMap({ ...triggerMap, [triggerKey]: moodIds });
+      persistMap((prev) => ({ ...prev, [triggerKey]: moodIds }));
     },
-    [triggerMap, persistMap]
+    [persistMap]
   );
 
   const addCustomMood = useCallback(
     (label: string) => {
       const id = newId();
       const color = TASK_COLORS[Math.floor(hashToUnit(id) * TASK_COLORS.length) % TASK_COLORS.length];
-      persistMoods([...customMoods, { id, label, color, builtIn: false }]);
+      persistMoods((prev) => [...prev, { id, label, color, builtIn: false }]);
       return id;
     },
-    [customMoods, persistMoods]
+    [persistMoods]
   );
 
   const removeCustomMood = useCallback(
     (id: string) => {
-      persistMoods(customMoods.filter((m) => m.id !== id));
+      persistMoods((prev) => prev.filter((m) => m.id !== id));
       // Nessun innesco deve restare a puntare a uno stato che non esiste più.
-      const nextMap: Record<string, string[]> = {};
-      Object.entries(triggerMap).forEach(([k, ids]) => {
-        nextMap[k] = ids.filter((x) => x !== id);
+      persistMap((prev) => {
+        const nextMap: Record<string, string[]> = {};
+        Object.entries(prev).forEach(([k, ids]) => {
+          nextMap[k] = ids.filter((x) => x !== id);
+        });
+        return nextMap;
       });
-      persistMap(nextMap);
       if (activeMood?.moodId === id) persistActive(null);
     },
-    [customMoods, persistMoods, triggerMap, persistMap, activeMood, persistActive]
+    [persistMoods, persistMap, activeMood, persistActive]
   );
 
   const fireTrigger = useCallback(

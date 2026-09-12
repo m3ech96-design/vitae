@@ -591,3 +591,35 @@ export interface WeightEntry {
   value: number;
   date: string;
 }
+
+/** Un singolo esercizio dentro una scheda allenamento — il video può essere un link YouTube
+ * (solo l'URL, riprodotto incorporato) oppure un video/immagine locale (chiave IndexedDB,
+ * come il resto dei media dell'app): mai entrambi insieme, il campo `mediaType` decide quale
+ * dei due usare. */
+export type WorkoutPlanExerciseMediaType = "youtube" | "video" | "image";
+
+export interface WorkoutPlanExercise {
+  id: string;
+  name: string;
+  reps: string;
+  note?: string;
+  mediaType?: WorkoutPlanExerciseMediaType;
+  /** URL YouTube se mediaType è "youtube", altrimenti chiave IndexedDB (video-store/image-store). */
+  mediaValue?: string;
+}
+
+/** Una tabella rinominabile dentro "Schede allenamenti" (es. "Push day", "Gambe") — una
+ * scheda allenamento può contenerne quante se ne vogliono, ciascuna con la propria lista di
+ * esercizi in ordine libero. */
+export interface WorkoutPlanTable {
+  id: string;
+  name: string;
+  exercises: WorkoutPlanExercise[];
+}
+
+export interface WorkoutPlan {
+  id: string;
+  name: string;
+  tables: WorkoutPlanTable[];
+  createdAt: string;
+}

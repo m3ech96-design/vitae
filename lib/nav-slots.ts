@@ -16,6 +16,7 @@ import {
   Palette,
   PawPrint,
   GitBranch,
+  StickyNote,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -46,6 +47,7 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/albero-genealogico", label: "Albero genealogico", icon: GitBranch },
   { href: "/map", label: "Mappa", icon: MapPinned },
   { href: "/news", label: "News", icon: Newspaper },
+  { href: "/liste-note", label: "Liste e note", icon: StickyNote },
 ];
 
 export const DEFAULT_SLOTS = ["/task", "/vitaecom", "/mondo"];

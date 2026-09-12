@@ -1,6 +1,7 @@
 "use client";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useCallback } from "react";
 import { useCollection } from "./use-collection";
+import { deleteImage, isDataUrl } from "./image-store";
 
 const REPORTS_KEY = "vitae:medical-reports";
 const APPOINTMENTS_KEY = "vitae:medical-appointments";
@@ -204,6 +205,40 @@ export function MedicalProvider({ children }: { children: React.ReactNode }) {
   const contacts = useCollection<MedicalContact>(CONTACTS_KEY);
   const symptoms = useCollection<SymptomEntry>(SYMPTOMS_KEY);
 
+  /**
+   * Corretto secondo le istruzioni: `reports` è l'unica delle dodici collezioni di questo
+   * context ad avere un campo foto (`photoKey`, la foto del referto) — ma passava finora
+   * dall'helper generico `useCollection`, che non sa nulla di quel campo e cancella solo la
+   * voce dall'array. Un referto eliminato lasciava così la sua foto orfana per sempre in
+   * IndexedDB (mai più raggiungibile, mai più liberata) — lo stesso problema già risolto per
+   * hobby, diario, genealogia, wishlist e animali. `updateReport` ripulisce anche la vecchia
+   * foto quando viene sostituita o rimossa dal referto (stesso principio di
+   * diary-context.tsx: letto prima della scrittura, non dentro l'updater funzionale, perché
+   * è un effetto collaterale sullo storage binario e non fa parte del calcolo del nuovo
+   * array).
+   */
+  const updateReport = useCallback(
+    (id: string, patch: Partial<Omit<MedicalReport, "id">>) => {
+      if ("photoKey" in patch) {
+        const current = reports.items.find((r) => r.id === id);
+        if (current?.photoKey && current.photoKey !== patch.photoKey && !isDataUrl(current.photoKey)) {
+          deleteImage(current.photoKey);
+        }
+      }
+      reports.update(id, patch);
+    },
+    [reports]
+  );
+
+  const removeReport = useCallback(
+    (id: string) => {
+      const toRemove = reports.items.find((r) => r.id === id);
+      if (toRemove?.photoKey && !isDataUrl(toRemove.photoKey)) deleteImage(toRemove.photoKey);
+      reports.remove(id);
+    },
+    [reports]
+  );
+
   const hydrated =
     reports.hydrated &&
     appointments.hydrated &&
@@ -224,8 +259,8 @@ export function MedicalProvider({ children }: { children: React.ReactNode }) {
         hydrated,
         reports: reports.items,
         addReport: reports.add,
-        updateReport: reports.update,
-        removeReport: reports.remove,
+        updateReport,
+        removeReport,
         appointments: appointments.items,
         addAppointment: appointments.add,
         updateAppointment: appointments.update,

@@ -102,7 +102,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      <div className="glass-strong relative -mt-5 flex flex-1 flex-col rounded-t-xl3 border-t border-white/10 px-5 pt-5">
+      <div className="glass-strong relative -mt-5 flex min-h-0 flex-1 flex-col rounded-t-xl3 border-t border-white/10 px-5 pt-5">
         <div className="shrink-0 relative z-10 mx-auto mb-4 h-1 w-10 rounded-full bg-white/15" />
         <div className="shrink-0 relative z-10 mb-4 flex items-center justify-between gap-3">
           <p className="shrink-0 font-display text-sm text-ink-100">{places.length} luoghi</p>

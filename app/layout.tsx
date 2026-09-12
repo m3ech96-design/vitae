@@ -5,6 +5,8 @@ import { HouseholdProvider } from "@/lib/household-context";
 import { TasksProvider } from "@/lib/tasks-context";
 import { FeedProvider } from "@/lib/feed-context";
 import { HealthProvider } from "@/lib/health-context";
+import { WorkoutPlansProvider } from "@/lib/workout-plans-context";
+import { NotesProvider } from "@/lib/notes-context";
 import { MedicalProvider } from "@/lib/medical-context";
 import { FoodProvider } from "@/lib/food-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -69,6 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TasksProvider>
                 <FeedProvider>
                   <HealthProvider>
+                  <WorkoutPlansProvider>
+                  <NotesProvider>
                     <MedicalProvider>
                     <FoodProvider>
                     <WishlistProvider>
@@ -115,6 +119,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </WishlistProvider>
                     </FoodProvider>
                     </MedicalProvider>
+                  </NotesProvider>
+                  </WorkoutPlansProvider>
                   </HealthProvider>
                 </FeedProvider>
               </TasksProvider>

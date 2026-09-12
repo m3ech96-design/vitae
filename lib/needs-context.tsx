@@ -32,13 +32,16 @@ export function NeedsProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [needs, setNeeds] = useState<ActiveNeed[]>([]);
 
-  const persist = useCallback((next: ActiveNeed[]) => {
-    setNeeds(next);
-    try {
-      window.localStorage.setItem(NEEDS_KEY, JSON.stringify(next));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
+  const persist = useCallback((updater: ActiveNeed[] | ((prev: ActiveNeed[]) => ActiveNeed[])) => {
+    setNeeds((prev) => {
+      const next = typeof updater === "function" ? (updater as (n: ActiveNeed[]) => ActiveNeed[])(prev) : updater;
+      try {
+        window.localStorage.setItem(NEEDS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile: continua solo in memoria
+      }
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -86,22 +89,22 @@ export function NeedsProvider({ children }: { children: React.ReactNode }) {
     (label: string, moodId: string) => {
       const trimmed = label.trim();
       if (!trimmed) return;
-      persist([...needs, { id: newId(), label: trimmed, startedAt: new Date().toISOString(), moodId }]);
+      persist((prev) => [...prev, { id: newId(), label: trimmed, startedAt: new Date().toISOString(), moodId }]);
     },
-    [needs, persist]
+    [persist]
   );
 
   const cancelNeed = useCallback(
     (id: string) => {
-      persist(needs.filter((n) => n.id !== id));
+      persist((prev) => prev.filter((n) => n.id !== id));
     },
-    [needs, persist]
+    [persist]
   );
 
   const fulfillNeed = useCallback(
     (id: string) => {
       const exists = needs.some((n) => n.id === id);
-      if (exists) persist(needs.filter((n) => n.id !== id));
+      if (exists) persist((prev) => prev.filter((n) => n.id !== id));
       return exists;
     },
     [needs, persist]
