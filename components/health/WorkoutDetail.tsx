@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Clock, Flame, Trash2, Pencil } from "lucide-react";
+import { X, Clock, Flame, MapPin, Trash2, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { Workout } from "@/lib/types";
 import { categoryOf, activityLabel } from "@/lib/activity-catalog";
@@ -18,13 +18,20 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [minutes, setMinutes] = useState(String(workout.minutes));
+  const [distanceKm, setDistanceKm] = useState(workout.distanceKm !== undefined ? String(workout.distanceKm) : "");
   const [calories, setCalories] = useState(String(workout.calories));
   const [date, setDate] = useState(workout.date);
 
   const save = () => {
     const m = Math.max(1, Math.round(parseFloat(minutes.replace(",", ".")) || workout.minutes));
     const c = Math.max(0, Math.round(parseFloat(calories.replace(",", ".")) || 0));
-    updateWorkout(workout.id, { minutes: m, calories: c, date });
+    const parsedDistance = parseFloat(distanceKm.replace(",", "."));
+    updateWorkout(workout.id, {
+      minutes: m,
+      calories: c,
+      distanceKm: !Number.isNaN(parsedDistance) && parsedDistance > 0 ? parsedDistance : undefined,
+      date,
+    });
     setEditing(false);
   };
 
@@ -68,13 +75,18 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
         {!editing ? (
           <>
             <p className="mb-4 text-xs text-ink-600">{formatDateShort(workout.date)}</p>
-            <div className="flex gap-4 text-sm text-ink-400">
+            <div className="flex flex-wrap gap-4 text-sm text-ink-400">
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {workout.minutes} min
               </span>
               <span className="flex items-center gap-1.5">
                 <Flame size={14} /> {workout.calories} kcal
               </span>
+              {workout.distanceKm !== undefined && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin size={14} /> {workout.distanceKm} km
+                </span>
+              )}
             </div>
             <Button variant="danger" size="sm" className="mt-6 w-full justify-center" onClick={() => setConfirmDelete(true)}>
               <Trash2 size={13} /> Elimina
@@ -86,8 +98,16 @@ export function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose:
               <TextField label="Minuti" type="number" value={minutes} onChange={(e) => setMinutes(e.target.value)} autoFocus />
               <TextField label="Calorie" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} />
             </div>
-            <div className="mt-3">
+            <div className="mt-3 grid grid-cols-2 gap-3">
               <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <TextField
+                label="Distanza (km)"
+                type="number"
+                inputMode="decimal"
+                value={distanceKm}
+                onChange={(e) => setDistanceKm(e.target.value)}
+                placeholder="opzionale"
+              />
             </div>
             <div className="mt-6 flex gap-2">
               <Button variant="ghost" size="sm" className="flex-1 justify-center" onClick={() => setEditing(false)}>

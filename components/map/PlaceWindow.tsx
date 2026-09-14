@@ -12,7 +12,6 @@ import { useTasks } from "@/lib/tasks-context";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { MultiPersonPicker } from "../ui/MultiPersonPicker";
 import { personColor } from "@/lib/person-color";
-import { auraIntensity } from "@/lib/aura-intensity";
 import { Button } from "../ui/Button";
 import { SpentPrompt } from "../ui/SpentPrompt";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -271,7 +270,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
                               size={36}
                               ring="idle"
                               glowColor={personColor(p.id)}
-                              glowIntensity={auraIntensity(p, tasks, places)}
+                              glowIntensity={1}
                               deceased={p.deceased}
                             />
                           );
@@ -320,7 +319,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
                               size={22}
                               ring="idle"
                               glowColor={personColor(p.id)}
-                              glowIntensity={auraIntensity(p, tasks, places)}
+                              glowIntensity={1}
                               deceased={p.deceased}
                               className="border border-void-900"
                             />

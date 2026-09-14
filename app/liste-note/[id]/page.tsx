@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Pin, Plus, Trash2 } from "lucide-react";
 import { useNotes } from "@/lib/notes-context";
 import { formatExactMoment } from "@/lib/date-format";
 import { TextArea } from "@/components/ui/TextField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { NoteListItemRow } from "@/components/notes/NoteListItemRow";
+import { TagEditor } from "@/components/notes/TagEditor";
+import { EntityLinksSection } from "@/components/ui/EntityLinksSection";
 
 export default function NoteEntryDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -20,6 +22,11 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
     updateListItem,
     removeListItem,
     moveListItem,
+    togglePinned,
+    addTag,
+    removeTag,
+    addLink,
+    removeLink,
   } = useNotes();
 
   const [editingTitle, setEditingTitle] = useState(false);
@@ -84,6 +91,15 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
           <ArrowLeft size={16} />
         </button>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => togglePinned(entry.id)}
+            className={`focus-ring flex h-9 w-9 items-center justify-center rounded-full border transition ${
+              entry.pinned ? "border-aura-amber/60 bg-aura-amber/15 text-aura-amber" : "border-white/10 text-ink-300 hover:border-aura-amber/50"
+            }`}
+            aria-label={entry.pinned ? "Rimuovi da in cima" : "Fissa in cima"}
+          >
+            <Pin size={14} className={entry.pinned ? "fill-aura-amber" : ""} />
+          </button>
           {!editingTitle && (
             <button
               onClick={() => {
@@ -123,6 +139,24 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
         <h1 className="mt-4 font-display text-2xl text-ink-100">{entry.title}</h1>
       )}
       <p className="mt-1 text-xs text-ink-800">Aggiornato il {formatExactMoment(entry.updatedAt)}</p>
+
+      {entry.kind === "list" && entry.items.length > 0 && (
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-aura-emerald/70 transition-all"
+              style={{ width: `${(entry.items.filter((i) => i.done).length / entry.items.length) * 100}%` }}
+            />
+          </div>
+          <span className="shrink-0 text-[11px] text-ink-600">
+            {entry.items.filter((i) => i.done).length}/{entry.items.length}
+          </span>
+        </div>
+      )}
+
+      <div className="mt-3">
+        <TagEditor tags={entry.tags} onAdd={(tag) => addTag(entry.id, tag)} onRemove={(tag) => removeTag(entry.id, tag)} />
+      </div>
 
       {entry.kind === "note" ? (
         <div className="mt-6">
@@ -172,6 +206,14 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
           )}
         </div>
       )}
+
+      <div className="mt-8">
+        <EntityLinksSection
+          links={entry.links}
+          onAdd={(link) => addLink(entry.id, link)}
+          onRemove={(link) => removeLink(entry.id, link)}
+        />
+      </div>
 
       {confirmDelete && (
         <ConfirmDialog

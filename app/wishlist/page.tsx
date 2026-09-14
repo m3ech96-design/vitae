@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Plus, LayoutGrid, GalleryVertical } from "lucide-react";
+import { Plus, LayoutGrid, GalleryVertical, RefreshCw } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { isFulfilled, unlockThreshold } from "@/lib/wishlist-types";
 import { useFinance } from "@/lib/finance-context";
@@ -8,15 +8,17 @@ import { WishlistCard } from "@/components/wishlist/WishlistCard";
 import { WishlistShortView } from "@/components/wishlist/WishlistShortView";
 import { WishlistItemSheet } from "@/components/wishlist/WishlistItemSheet";
 import { AddWishlistItemModal } from "@/components/wishlist/AddWishlistItemModal";
+import { BulkPriceCheckSheet } from "@/components/wishlist/BulkPriceCheckSheet";
 
 type ViewMode = "griglia" | "verticale";
 
 export default function WishlistPage() {
-  const { hydrated, items, setSavedAmount } = useWishlist();
+  const { hydrated, items, setSavedAmount, updateItem } = useWishlist();
   const { savingsGoals, savingsEntries } = useFinance();
   const [view, setView] = useState<ViewMode>("griglia");
   const [addOpen, setAddOpen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
+  const [bulkCheckOpen, setBulkCheckOpen] = useState(false);
 
   /**
    * Tenere `item.savedAmount` allineato al saldo reale della destinazione collegata — non
@@ -73,13 +75,24 @@ export default function WishlistPage() {
           <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Wishlist</p>
           <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa vuoi, e per quando</h1>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="focus-ring flex h-10 w-10 items-center justify-center rounded-full bg-aura-gradient text-void-950 shadow-glow"
-          aria-label="Aggiungi articolo"
-        >
-          <Plus size={18} />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {items.some((i) => i.siteUrl) && (
+            <button
+              onClick={() => setBulkCheckOpen(true)}
+              className="focus-ring flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-ink-300 hover:border-aura-cyan/50"
+              aria-label="Aggiorna tutti i prezzi"
+            >
+              <RefreshCw size={16} />
+            </button>
+          )}
+          <button
+            onClick={() => setAddOpen(true)}
+            className="focus-ring flex h-10 w-10 items-center justify-center rounded-full bg-aura-gradient text-void-950 shadow-glow"
+            aria-label="Aggiungi articolo"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
       </div>
 
       {sorted.length > 0 && (
@@ -122,6 +135,13 @@ export default function WishlistPage() {
 
       {addOpen && <AddWishlistItemModal onClose={() => setAddOpen(false)} />}
       {openItem && <WishlistItemSheet item={openItem} onClose={() => setOpenItemId(null)} />}
+      {bulkCheckOpen && (
+        <BulkPriceCheckSheet
+          items={items}
+          onItemUpdated={(id, price, history) => updateItem(id, { price, priceHistory: history })}
+          onClose={() => setBulkCheckOpen(false)}
+        />
+      )}
     </div>
   );
 }

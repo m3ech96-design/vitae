@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-import { RecurringExpense, PlannedExpense, SingleExpense, SavingsGoal, SavingsEntry, ExpenseCategory, ExpenseRecurrence } from "./types";
+import { RecurringExpense, PlannedExpense, SingleExpense, SavingsGoal, SavingsEntry, SavingsGoalContribution, ExpenseCategory, ExpenseRecurrence } from "./types";
 import { newId } from "./id";
 
 const BUDGET_KEY = "vitae:finance-budget";
@@ -9,6 +9,7 @@ const PLANNED_KEY = "vitae:finance-planned";
 const SINGLE_KEY = "vitae:finance-single";
 const GOALS_KEY = "vitae:finance-goals";
 const SAVINGS_KEY = "vitae:finance-savings";
+const GOAL_CONTRIBUTIONS_KEY = "vitae:finance-goal-contributions";
 const CYCLE_START_DAY_KEY = "vitae:finance-cycle-start-day";
 const SALARY_SPLIT_KEY = "vitae:finance-salary-split";
 
@@ -52,7 +53,10 @@ interface FinanceContextValue {
   contributeSavingsGoal: (id: string, amount: number) => void;
   removeSavingsGoal: (id: string) => void;
   savingsEntries: SavingsEntry[];
-  addSavingsEntry: (amount: number, note?: string) => void;
+  addSavingsEntry: (amount: number, note?: string, totalIncomeAmount?: number) => void;
+  /** Storico dei versamenti per obiettivo (vedi SavingsGoalContribution in types.ts) —
+   * popolato automaticamente da contributeSavingsGoal, mai scritto direttamente altrove. */
+  goalContributions: SavingsGoalContribution[];
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null);
@@ -102,6 +106,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [singleExpenses, persistSingle] = usePersistedList<SingleExpense>(SINGLE_KEY);
   const [savingsGoals, persistGoals] = usePersistedList<SavingsGoal>(GOALS_KEY);
   const [savingsEntries, persistSavings] = usePersistedList<SavingsEntry>(SAVINGS_KEY);
+  const [goalContributions, persistGoalContributions] = usePersistedList<SavingsGoalContribution>(GOAL_CONTRIBUTIONS_KEY);
 
   useEffect(() => {
     try {
@@ -227,14 +232,27 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     [persistGoals]
   );
   const contributeSavingsGoal = useCallback(
-    (id: string, amount: number) =>
-      persistGoals((prev) => prev.map((g) => (g.id === id ? { ...g, currentAmount: Math.max(0, g.currentAmount + amount) } : g))),
-    [persistGoals]
+    (id: string, amount: number) => {
+      persistGoals((prev) => prev.map((g) => (g.id === id ? { ...g, currentAmount: Math.max(0, g.currentAmount + amount) } : g)));
+      // Logga sia versamenti che prelievi (amount può essere negativo, es. scollegamento
+      // da un articolo Wishlist) — un prelievo è un evento reale quanto un versamento ai
+      // fini del ritmo di risparmio: ignorarlo farebbe sembrare il progresso più veloce di
+      // quanto sia stato davvero.
+      persistGoalContributions((prev) => [...prev, { id: newId(), goalId: id, amount, date: new Date().toISOString() }]);
+    },
+    [persistGoals, persistGoalContributions]
   );
-  const removeSavingsGoal = useCallback((id: string) => persistGoals((prev) => prev.filter((g) => g.id !== id)), [persistGoals]);
+  const removeSavingsGoal = useCallback(
+    (id: string) => {
+      persistGoals((prev) => prev.filter((g) => g.id !== id));
+      persistGoalContributions((prev) => prev.filter((c) => c.goalId !== id));
+    },
+    [persistGoals, persistGoalContributions]
+  );
 
   const addSavingsEntry = useCallback(
-    (amount: number, note?: string) => persistSavings((prev) => [...prev, { id: newId(), amount, date: new Date().toISOString(), note }]),
+    (amount: number, note?: string, totalIncomeAmount?: number) =>
+      persistSavings((prev) => [...prev, { id: newId(), amount, date: new Date().toISOString(), note, totalIncomeAmount }]),
     [persistSavings]
   );
 
@@ -264,6 +282,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       removeSavingsGoal,
       savingsEntries,
       addSavingsEntry,
+      goalContributions,
     }),
     [
       hydrated,
@@ -290,6 +309,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       removeSavingsGoal,
       savingsEntries,
       addSavingsEntry,
+      goalContributions,
     ]
   );
 

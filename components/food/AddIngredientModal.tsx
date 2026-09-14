@@ -5,6 +5,7 @@ import { X, ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
 import { Ingredient, FoodUnit, computeKcal, scaleFactor } from "@/lib/food-types";
+import { FOOD_CATEGORIES } from "@/lib/food-category-catalog";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { Chip } from "../ui/Chip";
@@ -35,6 +36,7 @@ export function AddIngredientModal({
   const [mode, setMode] = useState<"singolo" | "ricetta">("singolo");
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? initialName ?? "");
+  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [unit, setUnit] = useState<FoodUnit>(initial?.unit ?? "g");
   const [unitLabel, setUnitLabel] = useState(initial?.unitLabel ?? "");
   const [gramsPerUnit, setGramsPerUnit] = useState(initial?.gramsPerUnit ? String(initial.gramsPerUnit) : "");
@@ -96,6 +98,7 @@ export function AddIngredientModal({
     if (!canSave) return;
     const payload = {
       name: name.trim(),
+      categoryId: categoryId || undefined,
       unit,
       unitLabel: unit === "altro" ? unitLabel.trim() : undefined,
       gramsPerUnit: unit === "altro" ? unitWeight : undefined,
@@ -158,6 +161,17 @@ export function AddIngredientModal({
         <>
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <TextField label="Nome" value={name} onChange={(e) => setName(e.target.value)} placeholder="Es. Petto di pollo" />
+
+          <div>
+            <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
+              Categoria <span className="normal-case text-ink-800">(opzionale — serve solo a stimare la scadenza quando lo metti in dispensa)</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {FOOD_CATEGORIES.map((c) => (
+                <Chip key={c.id} label={c.label} selected={categoryId === c.id} onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)} />
+              ))}
+            </div>
+          </div>
 
           <div>
             <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Dimensione di servizio</p>

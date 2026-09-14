@@ -114,6 +114,9 @@ export interface Vaccination {
   name: string;
   date?: string;
   nextDueDate?: string;
+  /** Vedi lo stesso campo su AnimalVaccination (lib/animal-health-context.tsx) — stessa
+   * logica di preavviso, stesso default se non impostato. */
+  reminderDaysBefore?: number;
   notes?: string;
 }
 

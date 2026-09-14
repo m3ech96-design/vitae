@@ -3,8 +3,10 @@ import { useState } from "react";
 import { Plus, X, Syringe } from "lucide-react";
 import { useAnimalHealth } from "@/lib/animal-health-context";
 import { formatDateShort, todayIso } from "@/lib/date-format";
+import { DEFAULT_VACCINATION_REMINDER_DAYS, isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
+import { VaccinationReminderPicker } from "../medical/VaccinationReminderPicker";
 
 export function AnimalVaccinationsSection({ animalId, vaccinations }: { animalId: string; vaccinations: ReturnType<typeof useAnimalHealth>["vaccinations"] }) {
   const { addVaccination, removeVaccination } = useAnimalHealth();
@@ -12,13 +14,15 @@ export function AnimalVaccinationsSection({ animalId, vaccinations }: { animalId
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
   const [nextDueDate, setNextDueDate] = useState("");
+  const [reminderDaysBefore, setReminderDaysBefore] = useState(DEFAULT_VACCINATION_REMINDER_DAYS);
 
   const submit = () => {
     if (!name.trim()) return;
-    addVaccination({ animalId, name: name.trim(), date, nextDueDate: nextDueDate || undefined });
+    addVaccination({ animalId, name: name.trim(), date, nextDueDate: nextDueDate || undefined, reminderDaysBefore });
     setName("");
     setDate(todayIso());
     setNextDueDate("");
+    setReminderDaysBefore(DEFAULT_VACCINATION_REMINDER_DAYS);
     setOpen(false);
   };
 
@@ -28,7 +32,7 @@ export function AnimalVaccinationsSection({ animalId, vaccinations }: { animalId
   return (
     <div className="space-y-2">
       {sorted.map((v) => {
-        const dueSoon = v.nextDueDate && v.nextDueDate <= today;
+        const dueSoon = v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today);
         return (
           <div key={v.id} className="flex items-start justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
             <div className="min-w-0">
@@ -63,6 +67,7 @@ export function AnimalVaccinationsSection({ animalId, vaccinations }: { animalId
             <TextField label="Fatta il" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <TextField label="Richiamo previsto" type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} />
           </div>
+          {nextDueDate && <VaccinationReminderPicker value={reminderDaysBefore} onChange={setReminderDaysBefore} />}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
               Annulla

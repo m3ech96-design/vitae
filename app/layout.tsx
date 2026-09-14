@@ -33,7 +33,9 @@ import { NearbyPlacePrompt } from "@/components/household/NearbyPlacePrompt";
 import { EngagementNotifier } from "@/components/persone/EngagementNotifier";
 import { TaskNotifier } from "@/components/task/TaskNotifier";
 import { MedicationNotifier } from "@/components/medical/MedicationNotifier";
+import { VaccinationNotifier } from "@/components/medical/VaccinationNotifier";
 import { AnimalNotifier } from "@/components/animali/AnimalNotifier";
+import { PantryNotifier } from "@/components/food/PantryNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
 import "./globals.css";
 
@@ -98,7 +100,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <EngagementNotifier />
                             <TaskNotifier />
                             <MedicationNotifier />
+                            <VaccinationNotifier />
                             <AnimalNotifier />
+                            <PantryNotifier />
                             <MoodSuggestionPrompt />
                           </VitaecomDraftProvider>
                           </VitaecomChatProvider>

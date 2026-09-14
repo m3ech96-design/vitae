@@ -18,7 +18,6 @@ import { useHousehold } from "@/lib/household-context";
 import { usePlaces } from "@/lib/places-context";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { personColor } from "@/lib/person-color";
-import { auraIntensity } from "@/lib/aura-intensity";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { NewTaskModal } from "./NewTaskModal";
@@ -132,7 +131,7 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
                       size={40}
                       ring="idle"
                       glowColor={personColor(p.id)}
-                      glowIntensity={auraIntensity(p, tasks, places)}
+                      glowIntensity={1}
                       deceased={p.deceased}
                     />
                     <span className="text-[10px] text-ink-600">{p.firstName}</span>

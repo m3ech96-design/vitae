@@ -130,11 +130,15 @@ export function SalarySplitCalculator() {
     // scritti così come sono, non quelli ricostruiti dalla percentuale arrotondata.
     if (mode === "percentuali") {
       if (!percentOk) return;
-      addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${risparmiPct}% di ${n.toLocaleString("it-IT")}€)`);
+      addSavingsEntry(risparmiAmount, `Suddivisione stipendio (${risparmiPct}% di ${n.toLocaleString("it-IT")}€)`, n);
       setMonthlyBudget(speseFisseAmount + tempoLiberoAmount);
     } else {
       if (!amountOk) return;
-      addSavingsEntry(risparmiAmountText, `Suddivisione stipendio (${Math.round(risparmiAmountText).toLocaleString("it-IT")}€ di ${n.toLocaleString("it-IT")}€)`);
+      addSavingsEntry(
+        risparmiAmountText,
+        `Suddivisione stipendio (${Math.round(risparmiAmountText).toLocaleString("it-IT")}€ di ${n.toLocaleString("it-IT")}€)`,
+        n
+      );
       setMonthlyBudget(speseFisseAmountText + tempoLiberoAmountText);
     }
     fireTrigger("finanze:stipendio-diviso");

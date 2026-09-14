@@ -21,9 +21,12 @@ export default function ListeNotePage() {
 
   const filtered = useMemo(() => {
     const arr = entries.filter((e) => noteMatchesQuery(e, query));
-    arr.sort((a, b) =>
-      sort === "alfabetico" ? a.title.localeCompare(b.title, "it") : b.updatedAt.localeCompare(a.updatedAt)
-    );
+    arr.sort((a, b) => {
+      // I pin restano sempre in cima, qualunque sia il criterio scelto — un pin è una
+      // scelta esplicita dell'utente che un ordinamento automatico non deve scavalcare.
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return sort === "alfabetico" ? a.title.localeCompare(b.title, "it") : b.updatedAt.localeCompare(a.updatedAt);
+    });
     return arr;
   }, [entries, query, sort]);
 

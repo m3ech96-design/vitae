@@ -7,17 +7,20 @@ import { useFinance } from "@/lib/finance-context";
 import { TextField } from "../ui/TextField";
 import { InlineAddPanel } from "../ui/InlineAddPanel";
 import { SavingsVessel } from "./SavingsVessel";
+import { SavingsGoalDetailSheet } from "./SavingsGoalDetailSheet";
 
 const HISTORY_PAGE_SIZE = 10;
 
 export function SavingsSection() {
-  const { savingsGoals, addSavingsGoal, contributeSavingsGoal, removeSavingsGoal, savingsEntries, addSavingsEntry } = useFinance();
+  const { savingsGoals, addSavingsGoal, contributeSavingsGoal, removeSavingsGoal, savingsEntries, addSavingsEntry, goalContributions } =
+    useFinance();
   const [goalLabel, setGoalLabel] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [depositMode, setDepositMode] = useState<"deposita" | "preleva">("deposita");
   const [depositing, setDepositing] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(HISTORY_PAGE_SIZE);
+  const [openGoalId, setOpenGoalId] = useState<string | null>(null);
 
   const balance = savingsEntries.reduce((s, e) => s + e.amount, 0);
   const recentEntries = [...savingsEntries].sort((a, b) => b.date.localeCompare(a.date));
@@ -147,9 +150,17 @@ export function SavingsSection() {
             goal={g}
             onContribute={(amount) => contributeSavingsGoal(g.id, amount)}
             onRemove={() => removeSavingsGoal(g.id)}
+            onOpen={() => setOpenGoalId(g.id)}
           />
         ))}
       </div>
+
+      {openGoalId &&
+        (() => {
+          const openGoal = savingsGoals.find((g) => g.id === openGoalId);
+          if (!openGoal) return null;
+          return <SavingsGoalDetailSheet goal={openGoal} contributions={goalContributions} onClose={() => setOpenGoalId(null)} />;
+        })()}
 
       <div className="mt-4">
         <InlineAddPanel label="Nuovo obiettivo" canConfirm={Boolean(goalLabel.trim() && goalTarget)} onConfirm={submitGoal}>

@@ -60,14 +60,12 @@ export function RecentMealsWidget({ size }: { size: WidgetSize }) {
   const { entries, ingredients } = useFood();
   const today = todayIso();
   const todays = entriesForDate(entries, today);
-  const items = [...todays]
-    .sort((a, b) => b.time.localeCompare(a.time))
-    .slice(0, 4)
-    .map((e) => {
-      const ing = ingredients.find((i) => i.id === e.ingredientId);
-      return { id: e.id, label: ing?.name ?? "?", meta: MEAL_SLOT_LABELS[e.slot].split(" · ")[0] };
-    });
-  return <WidgetList title="Ultimi pasti di oggi" icon={Flame} items={items} emptyLabel="Ancora nulla registrato oggi" />;
+  const sorted = [...todays].sort((a, b) => b.time.localeCompare(a.time));
+  const items = sorted.slice(0, 4).map((e) => {
+    const ing = ingredients.find((i) => i.id === e.ingredientId);
+    return { id: e.id, label: ing?.name ?? "?", meta: MEAL_SLOT_LABELS[e.slot].split(" · ")[0] };
+  });
+  return <WidgetList title="Ultimi pasti di oggi" icon={Flame} items={items} totalCount={sorted.length} emptyLabel="Ancora nulla registrato oggi" />;
 }
 
 export function MealSuggestionWidget({ size }: { size: WidgetSize }) {

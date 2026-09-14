@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ListChecks, CalendarDays, Flame, Check, ListTodo, MoreHorizontal } from "lucide-react";
+import { Plus, ListChecks, CalendarDays, Flame, Check, ListTodo, MoreHorizontal, ChevronDown } from "lucide-react";
 import { useTasks } from "@/lib/tasks-context";
 import { Task, TaskType, TASK_TYPE_LABEL } from "@/lib/types";
 import { taskOccursOnDate } from "@/lib/recurrence";
@@ -9,12 +9,13 @@ import { taskCategory, TaskCategory, STREAK_MILESTONES } from "@/lib/task-status
 import { spendCategoriesFor } from "@/lib/spending-categories";
 import { usePlaces } from "@/lib/places-context";
 import { useMood } from "@/lib/mood-context";
-import { todayIso } from "@/lib/date-format";
+import { todayIso, addDaysIso } from "@/lib/date-format";
 import { TaskCard } from "@/components/task/TaskCard";
 import { TaskWindow } from "@/components/task/TaskWindow";
 import { NewTaskModal } from "@/components/task/NewTaskModal";
 import { SpentPrompt } from "@/components/ui/SpentPrompt";
 import { DayStrip } from "@/components/task/DayStrip";
+import { CompletionRateCard } from "@/components/task/CompletionRateCard";
 
 const OTHER_TYPES: TaskType[] = ["evento", "appuntamento", "promemoria", "obiettivo", "spesa"];
 const CATEGORIES: { id: TaskCategory; label: string }[] = [
@@ -34,6 +35,11 @@ export default function TaskPage() {
   const [typeFilter, setTypeFilter] = useState<TaskType | "tutti">("tutti");
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory>("attive");
   const [selectedDay, setSelectedDay] = useState(todayIso());
+  // Chiusa di default: le task oltre la settimana non devono affollare la vista principale,
+  // ma restano raggiungibili con un tocco — mai nascoste del tutto, solo ripiegate. Si
+  // riapre da sola quando non ci sono più task lontane da nascondere (nulla da ripiegare
+  // significa nulla su cui questo controllo abbia più senso di esistere aperto o chiuso).
+  const [showFarTasks, setShowFarTasks] = useState(false);
 
   const dailyActivities = useMemo(() => tasks.filter((t) => t.type === "quotidiana"), [tasks]);
 
@@ -46,6 +52,14 @@ export default function TaskPage() {
       return categoryFilter === "completate" ? db.localeCompare(da) : da.localeCompare(db);
     });
   }, [tasks, typeFilter, categoryFilter]);
+
+  // Solo per "Attive": oltre la settimana in corso una task non ha bisogno di occupare
+  // spazio nella vista principale insieme a quelle imminenti — resta raggiungibile in una
+  // tendina invece di sparire, e il giorno in cui la sua data rientra nei prossimi 7 giorni
+  // torna da sola tra le task normali, senza che nessuno debba spostarla a mano.
+  const weekAheadCutoff = addDaysIso(todayIso(), 7);
+  const nearTasks = categoryFilter === "attive" ? otherTasks.filter((t) => t.date <= weekAheadCutoff) : otherTasks;
+  const farTasks = categoryFilter === "attive" ? otherTasks.filter((t) => t.date > weekAheadCutoff) : [];
 
   const calendarTasks = useMemo(
     () =>
@@ -95,6 +109,9 @@ export default function TaskPage() {
 
       {view === "elenco" ? (
         <>
+          <div className="mt-7">
+            <CompletionRateCard tasks={tasks} />
+          </div>
           {dailyActivities.length > 0 && (
             <div className="mt-7">
               <p className="mb-3 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
@@ -245,7 +262,7 @@ export default function TaskPage() {
             </div>
 
             <div className="space-y-2.5">
-              {otherTasks.length === 0 && (
+              {nearTasks.length === 0 && farTasks.length === 0 && (
                 <p className="py-10 text-center text-sm text-ink-800">
                   {categoryFilter === "attive"
                     ? "Nessuna task attiva per ora."
@@ -255,7 +272,7 @@ export default function TaskPage() {
                 </p>
               )}
               <AnimatePresence initial={false}>
-                {otherTasks.map((t) => (
+                {nearTasks.map((t) => (
                   <motion.div
                     key={t.id}
                     layout
@@ -271,6 +288,39 @@ export default function TaskPage() {
                   </motion.div>
                 ))}
               </AnimatePresence>
+
+              {farTasks.length > 0 && (
+                <div className="pt-1">
+                  <button
+                    onClick={() => setShowFarTasks((v) => !v)}
+                    className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/10 px-3.5 py-2.5 text-xs text-ink-600 transition hover:border-white/20 hover:text-ink-300"
+                  >
+                    <span>Più avanti nel tempo · {farTasks.length}</span>
+                    <ChevronDown size={14} className={`transition-transform ${showFarTasks ? "rotate-180" : ""}`} />
+                  </button>
+                  {showFarTasks && (
+                    <div className="mt-2.5 space-y-2.5">
+                      <AnimatePresence initial={false}>
+                        {farTasks.map((t) => (
+                          <motion.div
+                            key={t.id}
+                            layout
+                            initial={false}
+                            exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.94 }}
+                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                          >
+                            <TaskCard
+                              task={t}
+                              onOpen={() => setOpenTaskId(t.id)}
+                              onCompleted={(r) => r.askSpent && setSpentPromptId(r.taskId)}
+                            />
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </>

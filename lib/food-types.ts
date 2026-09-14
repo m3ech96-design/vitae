@@ -35,6 +35,11 @@ export interface Ingredient {
    * stessa base "per 100" dei macro — mai chieste direttamente, sempre derivate. */
   kcal: number;
   createdAt: string;
+  /** Categoria alimentare (vedi lib/food-category-catalog.ts) — usata solo per stimare la
+   * scadenza di un acquisto (vedi PantryEntry qui sotto), opzionale: un ingrediente senza
+   * categoria semplicemente non compare mai tra le scadenze stimate, senza che questo
+   * rompa nulla del resto della sua scheda nutrizionale. */
+  categoryId?: string;
   /** Presente solo per un ingrediente nato come Ricetta (vedi RecipeComposition qui sotto)
    * — la sua composizione, tenuta per poter tornare a modificarla; i macro/kcal "per 100"
    * qui sopra restano comunque gli stessi campi di un ingrediente qualunque, derivati dalla
@@ -201,4 +206,19 @@ export function macroGramGoals(goals: FoodGoals): { carbs: number; protein: numb
     protein: (kcalGoal * (goals.proteinPercent / 100)) / 4,
     fat: (kcalGoal * (goals.fatPercent / 100)) / 9,
   };
+}
+
+/** Un acquisto/inserimento in dispensa — l'unico dato manuale richiesto per stimare una
+ * scadenza (ingrediente + quando l'hai messo in dispensa), niente quantità obbligatoria e
+ * nessuna data di scadenza da scrivere a mano: quella si deriva da sola sommando questa
+ * data ai giorni tipici della categoria dell'ingrediente (vedi estimatedExpiryDate). */
+export interface PantryEntry {
+  id: string;
+  ingredientId: string;
+  purchasedDate: string;
+  /** Segnato quando l'utente conferma di aver consumato/buttato la confezione — da quel
+   * momento non compare più tra le scadenze imminenti, ma resta nello storico invece di
+   * sparire, così eliminare una voce di dispensa non richiede mai di perdere il log. */
+  consumedDate?: string;
+  notes?: string;
 }

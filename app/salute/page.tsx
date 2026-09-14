@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FileText,
   CalendarClock,
@@ -11,8 +12,10 @@ import {
   Syringe,
   Phone,
   Stethoscope,
+  Sparkles,
 } from "lucide-react";
 import { useMedical } from "@/lib/medical-context";
+import { isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
 import { ReportsSection } from "@/components/medical/ReportsSection";
@@ -39,6 +42,7 @@ type SectionId =
   | "sintomi";
 
 export default function SaluteMedicaPage() {
+  const router = useRouter();
   const { hydrated, appointments, medications, allergies, vaccinations } = useMedical();
   const [open, setOpen] = useState<SectionId | null>(null);
 
@@ -47,7 +51,10 @@ export default function SaluteMedicaPage() {
   const activeMedsCount = useMemo(() => medications.filter((m) => !m.endDate).length, [medications]);
   const severeAllergiesCount = useMemo(() => allergies.filter((a) => a.severity === "grave").length, [allergies]);
   const today = nowIso.slice(0, 10);
-  const dueVaccineCount = useMemo(() => vaccinations.filter((v) => v.nextDueDate && v.nextDueDate <= today).length, [vaccinations, today]);
+  const dueVaccineCount = useMemo(
+    () => vaccinations.filter((v) => v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today)).length,
+    [vaccinations, today]
+  );
 
   const cards: { id: SectionId; label: string; icon: typeof FileText; color: string; note?: string }[] = [
     { id: "appuntamenti", label: "Appuntamenti", icon: CalendarClock, color: "#7C5CFF", note: upcomingCount > 0 ? `${upcomingCount} in arrivo` : undefined },
@@ -78,6 +85,19 @@ export default function SaluteMedicaPage() {
         Allenamenti e peso hanno una loro scheda a parte — questa è la parte medica: referti,
         appuntamenti, farmaci, e tutto il resto.
       </p>
+
+      <button
+        onClick={() => router.push("/salute/resoconto-benessere")}
+        className="focus-ring mt-4 flex w-full items-center gap-3 rounded-xl2 border border-aura-amber/25 bg-aura-amber/[0.05] px-4 py-3.5 text-left transition hover:border-aura-amber/50"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl2 bg-aura-amber/15">
+          <Sparkles size={16} className="text-aura-amber" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm text-ink-100">Resoconto della settimana</p>
+          <p className="text-[11px] text-ink-600">Come stai andando rispetto alle linee guida, più qualche curiosità</p>
+        </div>
+      </button>
 
       <div className="mt-7 grid grid-cols-2 gap-3">
         {cards.map(({ id, label, icon: Icon, color, note }) => (

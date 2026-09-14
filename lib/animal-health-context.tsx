@@ -18,6 +18,12 @@ export interface AnimalVaccination {
   /** Richiamo previsto — è la data che il notificatore globale guarda per avvisare, non
    * legata a comparire nel riquadro Casa (vedi AnimalNotifier.tsx). */
   nextDueDate?: string;
+  /** Quanti giorni prima di `nextDueDate` far scattare il primo avviso — non solo il
+   * giorno esatto, che rischia di passare inosservato su una PWA senza notifiche push in
+   * background reali (l'app deve essere aperta perché il controllo scatti). `undefined`
+   * quando non è ancora stato impostato: il notificatore usa comunque un default (vedi
+   * DEFAULT_VACCINATION_REMINDER_DAYS in lib/vaccination-reminder.ts), non lo tratta come 0. */
+  reminderDaysBefore?: number;
   notes?: string;
 }
 

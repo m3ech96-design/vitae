@@ -49,6 +49,7 @@ export function QuickDiaryNoteWidget({ size }: { size: WidgetSize }) {
       time: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
       text: text.trim(),
       media: [],
+      links: [],
     });
     setText("");
   };

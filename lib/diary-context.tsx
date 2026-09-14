@@ -30,6 +30,14 @@ function deleteMedia(media: DiaryMedia) {
   if (media.type === "audio") deleteAudio(media.key);
 }
 
+/** Voci salvate prima dell'introduzione di `links` non hanno questo campo nel proprio JSON
+ * persistito — stessa normalizzazione già applicata in notes-context.tsx per lo stesso
+ * identico motivo: senza questo, ogni lettura di `.links.map(...)` su una voce vecchia
+ * andrebbe in errore alla prima apertura dopo l'aggiornamento. */
+function normalizeEntry(e: DiaryEntry): DiaryEntry {
+  return { ...e, links: e.links ?? [] };
+}
+
 export function DiaryProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [scrubPreviewEnabled, setScrubPreviewEnabledState] = useState(true);
@@ -38,7 +46,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(ENTRIES_KEY);
-      if (raw) setEntries(JSON.parse(raw));
+      if (raw) setEntries((JSON.parse(raw) as DiaryEntry[]).map(normalizeEntry));
       const scrub = window.localStorage.getItem(SCRUB_PREVIEW_KEY);
       if (scrub !== null) setScrubPreviewEnabledState(scrub === "1");
     } catch {

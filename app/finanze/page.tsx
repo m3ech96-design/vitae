@@ -1,6 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, FileBarChart } from "lucide-react";
 import { useTasks } from "@/lib/tasks-context";
 import { usePlaces } from "@/lib/places-context";
 import { useFinance } from "@/lib/finance-context";
@@ -17,6 +18,7 @@ import { SalarySplitCalculator } from "@/components/finance/SalarySplitCalculato
 import { ChronologicalExpensesTable } from "@/components/finance/ChronologicalExpensesTable";
 
 export default function FinanzePage() {
+  const router = useRouter();
   const { hydrated: tasksHydrated, tasks } = useTasks();
   const { hydrated: placesHydrated, places } = usePlaces();
   const {
@@ -86,8 +88,18 @@ export default function FinanzePage() {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
-      <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Finanze</p>
-      <h1 className="mt-1 font-display text-2xl text-ink-100">Dove va il tuo denaro</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Finanze</p>
+          <h1 className="mt-1 font-display text-2xl text-ink-100">Dove va il tuo denaro</h1>
+        </div>
+        <button
+          onClick={() => router.push("/finanze/report")}
+          className="focus-ring mt-1 flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-cyan/50"
+        >
+          <FileBarChart size={13} /> Report
+        </button>
+      </div>
 
       <GlassCard glow="violet" className="mt-6 flex flex-col items-center gap-5 p-6">
         <BudgetRing

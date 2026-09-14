@@ -9,10 +9,12 @@ export function SavingsVessel({
   goal,
   onContribute,
   onRemove,
+  onOpen,
 }: {
   goal: SavingsGoal;
   onContribute: (amount: number) => void;
   onRemove: () => void;
+  onOpen: () => void;
 }) {
   const pct = goal.targetAmount > 0 ? Math.min(1, goal.currentAmount / goal.targetAmount) : 0;
   const complete = pct >= 1;
@@ -36,7 +38,11 @@ export function SavingsVessel({
       >
         <X size={13} />
       </button>
-      <div className="relative h-28 w-14 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.02]">
+      <button
+        onClick={onOpen}
+        className="focus-ring relative h-28 w-14 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.02]"
+        aria-label={`Dettagli e proiezione per ${goal.label}`}
+      >
         <motion.div
           className="absolute inset-x-0 bottom-0"
           style={{
@@ -49,7 +55,7 @@ export function SavingsVessel({
           transition={{ type: "spring", stiffness: 90, damping: 18 }}
         />
         <span className="absolute inset-x-0 top-1.5 text-center text-[10px] text-ink-400">{Math.round(pct * 100)}%</span>
-      </div>
+      </button>
       <p className="max-w-[70px] truncate text-center text-[11px] text-ink-200">{goal.label}</p>
       <p className="text-[10px] text-ink-800">
         {Math.round(goal.currentAmount)}€ / {Math.round(goal.targetAmount)}€

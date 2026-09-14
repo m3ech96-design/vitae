@@ -7,8 +7,11 @@ export function noteMatchesQuery(entry: NoteEntry, query: string): boolean {
   const q = query.trim().toLocaleLowerCase("it-IT");
   if (!q) return true;
 
-  const haystack: string[] =
-    entry.kind === "note" ? [entry.title, entry.body] : [entry.title, ...entry.items.map((i) => i.text)];
+  const haystack: string[] = [
+    entry.title,
+    ...entry.tags,
+    ...(entry.kind === "note" ? [entry.body] : entry.items.map((i) => i.text)),
+  ];
 
   return haystack.some((v) => v.toLocaleLowerCase("it-IT").includes(q));
 }

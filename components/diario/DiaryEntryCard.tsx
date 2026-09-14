@@ -10,6 +10,8 @@ import { VideoThumb } from "./VideoThumb";
 import { MediaLightbox } from "./MediaLightbox";
 import { DiaryComposer } from "./DiaryComposer";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { EntityLinkCard } from "../ui/EntityLinkCard";
+import { useEntityResolver } from "@/lib/entity-resolver";
 
 function ImageThumb({ imageKey, onClick }: { imageKey: string; onClick: () => void }) {
   const url = useResolvedImage(imageKey);
@@ -44,6 +46,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 export function DiaryEntryCard({ entry, highlightQuery }: { entry: DiaryEntry; highlightQuery?: string }) {
   const { removeEntry } = useDiary();
   const { allMoods } = useMood();
+  const { resolve } = useEntityResolver();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -102,6 +105,14 @@ export function DiaryEntryCard({ entry, highlightQuery }: { entry: DiaryEntry; h
         <div className="mt-3 space-y-2">
           {audios.map((a) => (
             <AudioNote key={a.id} audioKey={a.key} />
+          ))}
+        </div>
+      )}
+
+      {entry.links.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-3 border-t border-white/[0.06] pt-3">
+          {entry.links.map((link) => (
+            <EntityLinkCard key={`${link.type}-${link.id}`} entity={resolve(link)} />
           ))}
         </div>
       )}

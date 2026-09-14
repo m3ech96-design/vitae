@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, Users, LocateFixed, Sparkles } from "lucide-react";
+import { Pencil, Users, LocateFixed, Sparkles, Search, BarChart3 } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -32,10 +32,10 @@ import { AddWidgetSheet } from "@/components/widgets/AddWidgetSheet";
 import { BackupSection } from "@/components/home/BackupSection";
 import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
-import { RapportNudgeCard } from "@/components/home/RapportNudgeCard";
 import { WeeklyNeedsCard } from "@/components/home/WeeklyNeedsCard";
 import { VitaecomNotificationsCard } from "@/components/home/VitaecomNotificationsCard";
 import { PersonalCardMenu } from "@/components/home/PersonalCardMenu";
+import { GlobalSearchSheet } from "@/components/home/GlobalSearchSheet";
 import { useMood } from "@/lib/mood-context";
 import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { moodBackgroundLayers, moodBackgroundOpacity } from "@/lib/mood-tone";
@@ -68,6 +68,7 @@ export default function HomePage() {
   const [greeting, setGreeting] = useState("Ciao");
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
@@ -114,10 +115,30 @@ export default function HomePage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <Reveal>
-        <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Home</p>
-        <h1 className="mt-1 font-display text-2xl text-ink-100">
-          {greeting}, {profile.firstName || "Ospite"}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Home</p>
+            <h1 className="mt-1 font-display text-2xl text-ink-100">
+              {greeting}, {profile.firstName || "Ospite"}
+            </h1>
+          </div>
+          <div className="mt-1 flex shrink-0 items-center gap-2">
+            <Link
+              href="/riepilogo-settimana"
+              className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 transition hover:border-aura-emerald/50"
+              aria-label="Riepilogo della settimana"
+            >
+              <BarChart3 size={15} />
+            </Link>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 transition hover:border-aura-cyan/50"
+              aria-label="Cerca in tutta l'app"
+            >
+              <Search size={15} />
+            </button>
+          </div>
+        </div>
       </Reveal>
 
       <Reveal delay={0.05}>
@@ -282,7 +303,6 @@ export default function HomePage() {
       <Reveal delay={0.15} className="mt-9 space-y-6">
         <TodaySummaryCard />
         <TaskCountdownLog />
-        <RapportNudgeCard />
         <WeeklyNeedsCard />
         <VitaecomNotificationsCard />
       </Reveal>
@@ -327,6 +347,7 @@ export default function HomePage() {
 
       {openPerson && <PersonWindow person={openPerson} onClose={() => setOpenPerson(null)} />}
       {addWidgetOpen && <AddWidgetSheet onClose={() => setAddWidgetOpen(false)} />}
+      {searchOpen && <GlobalSearchSheet onClose={() => setSearchOpen(false)} />}
 
       {/* Il componente esisteva già pronto (lib/backup.ts + questa stessa UI, vedi
          components/home/BackupSection.tsx) ma non era mai importato da nessuna pagina — di

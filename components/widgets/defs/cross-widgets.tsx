@@ -9,6 +9,7 @@ import { useFood } from "@/lib/food-context";
 import { useFinance } from "@/lib/finance-context";
 import { useMedical } from "@/lib/medical-context";
 import { useAnimalHealth } from "@/lib/animal-health-context";
+import { isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { useHobby } from "@/lib/hobby-context";
 import { useWishlist } from "@/lib/wishlist-context";
 import { ANIMAL_KINDS } from "@/lib/types";
@@ -103,9 +104,16 @@ export function NextRecurringDueWidget({ size }: { size: WidgetSize }) {
   const { vaccinations } = useAnimalHealth();
   const today = todayIso();
 
-  const nextVaccine = [...vaccinations].filter((v) => v.nextDueDate).sort((a, b) => (a.nextDueDate as string).localeCompare(b.nextDueDate as string))[0];
+  // Solo vaccini già dentro la propria finestra di preavviso (o scaduti) — non il più
+  // vicino in assoluto tra TUTTE le scadenze future, altrimenti un vaccino tra 6 mesi
+  // occuperebbe comunque questo posto e il preavviso configurato non cambierebbe mai
+  // cosa viene mostrato qui, solo il suo colore.
+  const dueVaccines = vaccinations
+    .filter((v) => v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today))
+    .sort((a, b) => (a.nextDueDate as string).localeCompare(b.nextDueDate as string));
+  const nextVaccine = dueVaccines[0];
 
-  if (!nextVaccine) return <WidgetEmpty icon={Repeat} label="Nessuna scadenza ricorrente" />;
+  if (!nextVaccine) return <WidgetEmpty icon={Repeat} label="Nessuna scadenza imminente" />;
   const overdue = (nextVaccine.nextDueDate as string) <= today;
   return <WidgetStat icon={Repeat} value={nextVaccine.name} label={`Vaccino · ${nextVaccine.nextDueDate}`} color={overdue ? "#FF4D6D" : "#8B90A8"} />;
 }
@@ -138,9 +146,16 @@ export function TodayAtGlanceWidget({ size }: { size: WidgetSize }) {
   const hungryAnimals = people
     .filter((p) => ANIMAL_KINDS.includes(p.kind))
     .filter((a) => a.feedingTimes.length > 0)
-    .map((a) => ({ id: a.id, label: `Pappa di ${a.firstName}`, color: "#FFB454" }));
+    .map((a) => ({ id: a.id, label: `Pappa di ${a.firstName}`, meta: undefined as string | undefined, color: "#FFB454" }));
 
-  const items = [...todayAppointments, ...todayTasks, ...hungryAnimals];
+  // Ordinate per orario quando disponibile (task/appuntamenti), non nell'ordine casuale in
+  // cui le tre fonti vengono concatenate — se lo spazio del widget costringe a tagliarne
+  // alcune, meglio perdere quelle più lontane nella giornata piuttosto che una scelta
+  // arbitraria dipendente solo da quale lista è stata unita per prima. `href` porta solo a
+  // /task (non esiste una pagina che riunisca task+appuntamenti+pappa insieme), quindi qui
+  // non mostriamo l'indicatore "+N altre" — rimanderebbe a una pagina che non contiene
+  // davvero il resto promesso.
+  const items = [...todayAppointments, ...todayTasks, ...hungryAnimals].sort((a, b) => (a.meta || "").localeCompare(b.meta || ""));
   return <WidgetList title="Cosa ti aspetta oggi" icon={Sunrise} items={items} emptyLabel="Giornata libera" />;
 }
 

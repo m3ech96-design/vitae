@@ -142,6 +142,11 @@ export interface UserProfile extends PersonalDetails {
    * valori, luoghi...), scelti a mano tra quelli esistenti invece di duplicare un campo testo
    * a parte da tenere sincronizzato a mano. */
   vitaecomShowcase: string[];
+  /** Se false, il resoconto di benessere settimanale (vedi lib/wellbeing-report.ts) non
+   * compare in Salute — l'utente può disattivarlo se lo trova invadente (richiesto
+   * esplicitamente: il resoconto non deve mai essere imposto). Default `true`: comincia
+   * visibile, non richiede un'attivazione esplicita per essere scoperto. */
+  wellbeingReportEnabled?: boolean;
   /** Come su Person (lib/types.ts) per gli altri componenti della famiglia: di notte
    * l'utente principale risulta dormiente come chiunque altro, a meno che non si sia svegliato
    * per un'ora toccando il proprio avatar — vedi lib/time.ts. */
@@ -574,6 +579,27 @@ export interface SavingsEntry {
   amount: number;
   date: string;
   note?: string;
+  /** Presente SOLO quando questa entry nasce dall'applicazione del calcolatore stipendio
+   * (vedi SalarySplitCalculator.tsx) — la retribuzione totale che ha generato questo
+   * versamento, non solo la quota finita nei risparmi. Prima esisteva solo dentro `note`
+   * come testo libero ("Suddivisione stipendio (20% di 2000€)"): utile da leggere ma non
+   * da usare come dato, perché un parsing di stringa si romperebbe al primo cambio di
+   * formattazione o lingua. Questo campo è la stessa informazione, ma come numero vero su
+   * cui costruire un report entrate/uscite affidabile. */
+  totalIncomeAmount?: number;
+}
+
+/** Log dei versamenti per un singolo obiettivo — a differenza di SavingsGoal.currentAmount
+ * (un totale che si limita ad aggiornarsi), questo conserva OGNI versamento con la sua
+ * data: senza questo storico non esisterebbe alcun modo onesto di stimare "a che ritmo
+ * risparmi per QUESTO obiettivo", solo il totale attuale senza contesto temporale. Creato
+ * insieme a questa funzionalità, quindi uno storico che comincia da qui in avanti — non
+ * inventa un ritmo per i versamenti fatti prima che questo log esistesse. */
+export interface SavingsGoalContribution {
+  id: string;
+  goalId: string;
+  amount: number;
+  date: string;
 }
 
 export interface Workout {
@@ -581,6 +607,11 @@ export interface Workout {
   activityId: string;
   minutes: number;
   calories: number;
+  /** Distanza percorsa in km — opzionale: ha senso solo per attività dove "percorrere
+   * distanza" è il concetto stesso (corsa, camminata, ciclismo, nuoto...), non per tutte
+   * (pesi, yoga, sport di squadra senza un tragitto). Non derivata né stimata da minuti o
+   * calorie: quando presente è un dato che l'utente ha registrato per quella sessione. */
+  distanceKm?: number;
   date: string;
   notes?: string;
   createdAt: string;
@@ -598,6 +629,22 @@ export interface WeightEntry {
  * dei due usare. */
 export type WorkoutPlanExerciseMediaType = "youtube" | "video" | "image";
 
+/** Una singola sessione svolta per questo esercizio — cosa hai fatto DAVVERO quel giorno,
+ * distinto da `reps`/`note` sull'esercizio che restano la prescrizione della scheda (es.
+ * "3x10") e non cambiano a ogni allenamento. Peso e ripetizioni sono numeri qui (non testo
+ * libero come `reps`) proprio perché servono a calcolare massimale e volume nel tempo —
+ * cosa che una stringa tipo "al cedimento" non permetterebbe mai di fare in modo affidabile. */
+export interface ExerciseLogEntry {
+  id: string;
+  date: string;
+  weightKg: number;
+  reps: number;
+  /** Quante serie a questo peso/ripetizioni — il volume (peso × reps × serie) ha senso solo
+   * sapendo quante volte è stata ripetuta la stessa combinazione quel giorno. */
+  sets: number;
+  note?: string;
+}
+
 export interface WorkoutPlanExercise {
   id: string;
   name: string;
@@ -606,6 +653,10 @@ export interface WorkoutPlanExercise {
   mediaType?: WorkoutPlanExerciseMediaType;
   /** URL YouTube se mediaType è "youtube", altrimenti chiave IndexedDB (video-store/image-store). */
   mediaValue?: string;
+  /** Storico delle sessioni svolte per QUESTO esercizio — legato all'id della riga, non al
+   * nome: se lo rinomini o lo sposti tra tabelle lo storico resta suo, ma un esercizio
+   * diverso con lo stesso nome scritto altrove non lo eredita per sbaglio. */
+  log?: ExerciseLogEntry[];
 }
 
 /** Una tabella rinominabile dentro "Schede allenamenti" (es. "Push day", "Gambe") — una

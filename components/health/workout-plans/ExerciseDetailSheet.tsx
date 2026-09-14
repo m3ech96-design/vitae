@@ -4,17 +4,22 @@ import { WorkoutPlanExercise } from "@/lib/types";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
 import { Button } from "@/components/ui/Button";
 import { ExerciseMediaPlayer } from "./ExerciseMediaPlayer";
+import { ExerciseLogSection } from "./ExerciseLogSection";
 
 export function ExerciseDetailSheet({
   exercise,
   onEdit,
   onDelete,
   onClose,
+  onAddLogEntry,
+  onRemoveLogEntry,
 }: {
   exercise: WorkoutPlanExercise;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
+  onAddLogEntry: () => void;
+  onRemoveLogEntry: (entryId: string) => void;
 }) {
   return (
     <PersonalCardSheet title={exercise.name} onClose={onClose}>
@@ -32,6 +37,7 @@ export function ExerciseDetailSheet({
             <p className="mt-1 whitespace-pre-wrap text-sm text-ink-300">{exercise.note}</p>
           </div>
         )}
+        <ExerciseLogSection log={exercise.log ?? []} onAdd={onAddLogEntry} onRemove={onRemoveLogEntry} />
         <div className="flex gap-2 pt-2">
           <Button variant="danger" size="sm" onClick={onDelete}>
             <Trash2 size={13} />

@@ -42,10 +42,8 @@ export function AuraAvatar({
    * contesti dove l'alone non ha già un significato di stato (Casa/Fuori Casa/Mondo restano
    * sempre i loro colori fissi, questa prop non li tocca mai). */
   glowColor?: string;
-  /** 0..1 (vedi lib/aura-intensity.ts) — quanto è "vivo" l'alone di questa persona in base a
-   * quanto tempo è passato dall'ultimo contatto reale. 1 = opacità e respiro normali;
-   * scendendo, l'alone si affievolisce E rallenta il proprio battito, non solo si scurisce —
-   * chi hai dimenticato si vede anche nel ritmo, non solo nel colore. Ha effetto solo insieme
+  /** 0..1 — intensità dell'alone. 1 = opacità e respiro normali; scendendo, l'alone si
+   * affievolisce E rallenta il proprio battito, non solo si scurisce. Ha effetto solo insieme
    * a `glowColor`, mai sui ring di stato. */
   glowIntensity?: number;
   /** Quando due AuraAvatar in punti diversi dell'app condividono lo stesso layoutId (di

@@ -10,7 +10,6 @@ import { usePlaces } from "@/lib/places-context";
 import { useProfile } from "@/lib/profile-context";
 import { useTasks } from "@/lib/tasks-context";
 import { personColor } from "@/lib/person-color";
-import { auraIntensity } from "@/lib/aura-intensity";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { useMood } from "@/lib/mood-context";
 import { STREAK_MILESTONES } from "@/lib/task-status";
@@ -98,7 +97,7 @@ export function TaskCard({
               size={36}
               ring="idle"
               glowColor={personColor(p.id ?? "")}
-              glowIntensity={p.id ? auraIntensity(p as (typeof linkedPeople)[number] & { id: string }, tasks, places) : 1}
+              glowIntensity={1}
               deceased={p.deceased}
               innerClassName="ring-2 ring-void-900"
             />

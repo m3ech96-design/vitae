@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import { newId } from "./id";
 import { deleteImage } from "./image-store";
 import { deleteVideo } from "./video-store";
-import { WorkoutPlan, WorkoutPlanTable, WorkoutPlanExercise, WorkoutPlanExerciseMediaType } from "./types";
+import { WorkoutPlan, WorkoutPlanTable, WorkoutPlanExercise, WorkoutPlanExerciseMediaType, ExerciseLogEntry } from "./types";
 
 const WORKOUT_PLANS_KEY = "vitae:workout-plans";
 
@@ -31,6 +31,9 @@ interface WorkoutPlansContextValue {
   addExercise: (planId: string, tableId: string, input: Omit<WorkoutPlanExercise, "id">) => void;
   updateExercise: (planId: string, tableId: string, exerciseId: string, patch: Partial<Omit<WorkoutPlanExercise, "id">>) => void;
   removeExercise: (planId: string, tableId: string, exerciseId: string) => void;
+
+  addLogEntry: (planId: string, tableId: string, exerciseId: string, entry: Omit<ExerciseLogEntry, "id">) => void;
+  removeLogEntry: (planId: string, tableId: string, exerciseId: string, entryId: string) => void;
 }
 
 const WorkoutPlansContext = createContext<WorkoutPlansContextValue | null>(null);
@@ -181,6 +184,52 @@ export function WorkoutPlansProvider({ children }: { children: React.ReactNode }
     [persist]
   );
 
+  const addLogEntry = useCallback(
+    (planId: string, tableId: string, exerciseId: string, entry: Omit<ExerciseLogEntry, "id">) => {
+      const logEntry: ExerciseLogEntry = { ...entry, id: newId() };
+      persist((prev) =>
+        prev.map((p) => {
+          if (p.id !== planId) return p;
+          return {
+            ...p,
+            tables: p.tables.map((t) => {
+              if (t.id !== tableId) return t;
+              return {
+                ...t,
+                exercises: t.exercises.map((ex) =>
+                  ex.id === exerciseId ? { ...ex, log: [...(ex.log ?? []), logEntry] } : ex
+                ),
+              };
+            }),
+          };
+        })
+      );
+    },
+    [persist]
+  );
+
+  const removeLogEntry = useCallback(
+    (planId: string, tableId: string, exerciseId: string, entryId: string) =>
+      persist((prev) =>
+        prev.map((p) => {
+          if (p.id !== planId) return p;
+          return {
+            ...p,
+            tables: p.tables.map((t) => {
+              if (t.id !== tableId) return t;
+              return {
+                ...t,
+                exercises: t.exercises.map((ex) =>
+                  ex.id === exerciseId ? { ...ex, log: (ex.log ?? []).filter((e) => e.id !== entryId) } : ex
+                ),
+              };
+            }),
+          };
+        })
+      ),
+    [persist]
+  );
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -194,8 +243,24 @@ export function WorkoutPlansProvider({ children }: { children: React.ReactNode }
       addExercise,
       updateExercise,
       removeExercise,
+      addLogEntry,
+      removeLogEntry,
     }),
-    [hydrated, plans, addPlan, renamePlan, removePlan, addTable, renameTable, removeTable, addExercise, updateExercise, removeExercise]
+    [
+      hydrated,
+      plans,
+      addPlan,
+      renamePlan,
+      removePlan,
+      addTable,
+      renameTable,
+      removeTable,
+      addExercise,
+      updateExercise,
+      removeExercise,
+      addLogEntry,
+      removeLogEntry,
+    ]
   );
 
   return <WorkoutPlansContext.Provider value={value}>{children}</WorkoutPlansContext.Provider>;

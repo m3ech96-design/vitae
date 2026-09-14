@@ -1,5 +1,5 @@
 "use client";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Check } from "lucide-react";
 
 /** "Numero + etichetta" — la forma più comune tra i widget quadrati: una cifra sola,
  * grande, con un'icona sopra per il colpo d'occhio e un'etichetta che dice cosa significa. */
@@ -26,18 +26,44 @@ export function WidgetStat({
   );
 }
 
-/** Elenco breve — 2-4 righe, per le taglie a mezza larghezza o intere. */
+/** Elenco breve — 2-4 righe, per le taglie a mezza larghezza o intere.
+ *
+ * `onItemToggle`/`onItemOpen` sono opzionali e retrocompatibili: i widget che non li
+ * passano restano l'elenco puramente visuale di sempre. Dove sono passati, ogni riga
+ * diventa un bottone reale con `stopPropagation` — il widget intero è già cliccabile per
+ * navigare (vedi WidgetShell), quindi senza fermare la propagazione un tocco su una singola
+ * voce aprirebbe la pagina piena invece di agire sul posto, vanificando lo scopo stesso di
+ * renderla interattiva. `onItemToggle` mostra una checkbox (per uno stato fatto/non fatto,
+ * come le voci di una lista della spesa); `onItemOpen` rende la riga un link cliccabile
+ * senza checkbox (per aprire qualcosa altrove, come un articolo di news) — usarli insieme
+ * sulla stessa voce non avrebbe senso semantico, quindi la UI ne mostra sempre solo uno. */
 export function WidgetList({
   title,
   icon: Icon,
   items,
   emptyLabel,
+  onItemToggle,
+  onItemOpen,
+  totalCount,
 }: {
   title: string;
   icon: LucideIcon;
-  items: { id: string; label: string; meta?: string; color?: string }[];
+  items: { id: string; label: string; meta?: string; color?: string; done?: boolean; disabled?: boolean }[];
   emptyLabel: string;
+  onItemToggle?: (id: string) => void;
+  onItemOpen?: (id: string) => void;
+  /** Quante voci esistono IN TOTALE, se diverso dalla lunghezza di `items` — `items` può
+   * già arrivare qui pre-tagliato a 4 dal chiamante (che sa come vuole ordinarle: prima le
+   * non fatte, per esempio), ma senza questo numero il widget non avrebbe modo di sapere
+   * se sta mostrando tutto o solo una parte, e quindi se disegnare l'indicatore "+N altre"
+   * in fondo. Quando presente e maggiore di `items.length`, l'ultima riga visibile diventa
+   * quell'indicatore invece dell'ultimo item — mai silenziosamente troncato senza dirlo. */
+  totalCount?: number;
 }) {
+  const visibleCount = totalCount !== undefined && totalCount > items.length ? Math.max(0, 3) : 4;
+  const shown = items.slice(0, visibleCount);
+  const remaining = (totalCount ?? items.length) - shown.length;
+
   return (
     <div className="flex h-full flex-col">
       <p className="mb-2 flex items-center gap-1.5 font-display text-xs text-ink-100">
@@ -47,16 +73,59 @@ export function WidgetList({
         <p className="flex flex-1 items-center justify-center text-center text-[11px] text-ink-800">{emptyLabel}</p>
       ) : (
         <div className="flex-1 space-y-1.5 overflow-hidden">
-          {items.slice(0, 4).map((it) => (
-            <div key={it.id} className="flex items-center justify-between gap-2">
-              <span className="truncate text-xs text-ink-200">{it.label}</span>
-              {it.meta && (
-                <span className="shrink-0 text-[11px]" style={{ color: it.color || "#8B90A8" }}>
-                  {it.meta}
-                </span>
-              )}
-            </div>
-          ))}
+          {shown.map((it) => {
+            // Una riga può disattivare la propria interattività (`disabled`) pur dentro
+            // una lista altrimenti cliccabile — es. una quotidiana con sub-task, che va
+            // sempre aperta in dettaglio per spuntarli uno per uno e non ha senso mostrare
+            // come "spuntabile con un tap" qui dove quel dettaglio non è raggiungibile.
+            const interactive = Boolean((onItemToggle || onItemOpen) && !it.disabled);
+            const content = (
+              <>
+                {onItemToggle && (
+                  <span
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                      it.done ? "border-transparent bg-aura-emerald" : "border-white/25"
+                    } ${it.disabled ? "opacity-40" : ""}`}
+                  >
+                    {it.done && <Check size={9} className="text-void-950" />}
+                  </span>
+                )}
+                <span className={`truncate text-xs ${it.done ? "text-ink-800 line-through" : "text-ink-200"}`}>{it.label}</span>
+                {it.meta && (
+                  <span className="ml-auto shrink-0 text-[11px]" style={{ color: it.color || "#8B90A8" }}>
+                    {it.meta}
+                  </span>
+                )}
+              </>
+            );
+            if (!interactive) {
+              return (
+                <div key={it.id} className="flex items-center gap-2">
+                  {content}
+                </div>
+              );
+            }
+            return (
+              <button
+                key={it.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onItemToggle) onItemToggle(it.id);
+                  else onItemOpen?.(it.id);
+                }}
+                className="focus-ring flex w-full items-center gap-2 rounded-md text-left transition hover:bg-white/[0.04]"
+              >
+                {content}
+              </button>
+            );
+          })}
+          {remaining > 0 && (
+            // Non interattivo di suo (nessuna checkbox, nessun toggle) — il suo unico
+            // scopo è dire onestamente "c'è dell'altro" e lasciare che il tap sul widget
+            // (già gestito da WidgetShell tramite href) porti alla lista intera, invece di
+            // duplicare qui una seconda navigazione.
+            <p className="pt-0.5 text-[11px] text-ink-800">+{remaining} altre — tocca per vedere tutto</p>
+          )}
         </div>
       )}
     </div>

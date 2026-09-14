@@ -3,8 +3,10 @@ import { useState } from "react";
 import { Plus, X, Syringe } from "lucide-react";
 import { useMedical } from "@/lib/medical-context";
 import { formatDateShort, todayIso } from "@/lib/date-format";
+import { DEFAULT_VACCINATION_REMINDER_DAYS, isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
+import { VaccinationReminderPicker } from "./VaccinationReminderPicker";
 
 export function VaccinationsSection() {
   const { vaccinations, addVaccination, removeVaccination } = useMedical();
@@ -12,13 +14,15 @@ export function VaccinationsSection() {
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
   const [nextDueDate, setNextDueDate] = useState("");
+  const [reminderDaysBefore, setReminderDaysBefore] = useState(DEFAULT_VACCINATION_REMINDER_DAYS);
 
   const submit = () => {
     if (!name.trim()) return;
-    addVaccination({ name: name.trim(), date: date || undefined, nextDueDate: nextDueDate || undefined });
+    addVaccination({ name: name.trim(), date: date || undefined, nextDueDate: nextDueDate || undefined, reminderDaysBefore });
     setName("");
     setDate(todayIso());
     setNextDueDate("");
+    setReminderDaysBefore(DEFAULT_VACCINATION_REMINDER_DAYS);
     setOpen(false);
   };
 
@@ -28,7 +32,7 @@ export function VaccinationsSection() {
   return (
     <div className="space-y-2">
       {sorted.map((v) => {
-        const dueSoon = v.nextDueDate && v.nextDueDate <= today;
+        const dueSoon = v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today);
         return (
           <div key={v.id} className="flex items-start justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
             <div className="min-w-0">
@@ -65,6 +69,7 @@ export function VaccinationsSection() {
             <TextField label="Fatta il" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <TextField label="Richiamo previsto" type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} />
           </div>
+          {nextDueDate && <VaccinationReminderPicker value={reminderDaysBefore} onChange={setReminderDaysBefore} />}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
               Annulla

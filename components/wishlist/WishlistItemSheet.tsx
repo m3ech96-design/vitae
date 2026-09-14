@@ -11,6 +11,7 @@ import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { SavingsRing } from "./SavingsRing";
 import { AddWishlistItemModal } from "./AddWishlistItemModal";
+import { WishlistPriceHistorySection } from "./WishlistPriceHistorySection";
 
 function DetailPhoto({ photoKey }: { photoKey?: string }) {
   const url = useResolvedImage(photoKey);
@@ -29,7 +30,7 @@ function DetailPhoto({ photoKey }: { photoKey?: string }) {
  * le funzioni di FinanceContext, mai tramite un pulsante manuale sull'articolo.
  */
 export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClose: () => void }) {
-  const { removeItem, setLinkedTo, fulfillItem, unfulfillItem } = useWishlist();
+  const { removeItem, updateItem, setLinkedTo, fulfillItem, unfulfillItem } = useWishlist();
   const { places } = usePlaces();
   const { savingsGoals, contributeSavingsGoal, addSavingsEntry } = useFinance();
   const [editing, setEditing] = useState(false);
@@ -136,6 +137,11 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
             )}
           </div>
         )}
+
+        <WishlistPriceHistorySection
+          item={item}
+          onPriceUpdated={(price, history) => updateItem(item.id, { price, priceHistory: history })}
+        />
 
         {(place || positionBits.length > 0) && (
           <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-3">

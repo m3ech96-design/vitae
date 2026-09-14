@@ -19,6 +19,7 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
   const [activityId, setActivityId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [minutes, setMinutes] = useState("30");
+  const [distanceKm, setDistanceKm] = useState("");
   const [calories, setCalories] = useState<string>("");
   const [calorieTouched, setCalorieTouched] = useState(false);
   const [date, setDate] = useState(todayIso());
@@ -52,10 +53,12 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
 
   const submit = () => {
     if (!activityId || !minutes) return;
+    const parsedDistance = parseFloat(distanceKm.replace(",", "."));
     addWorkout({
       activityId,
       minutes: Math.max(1, Math.round(parseFloat(minutes))),
       calories: Math.max(0, Math.round(parseFloat(effectiveCalories) || 0)),
+      distanceKm: !Number.isNaN(parsedDistance) && parsedDistance > 0 ? parsedDistance : undefined,
       date,
     });
     fireTrigger("salute:allenamento");
@@ -159,6 +162,14 @@ export function AddWorkoutModal({ onClose }: { onClose: () => void }) {
 
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <TextField
+              label="Distanza (km)"
+              type="number"
+              inputMode="decimal"
+              value={distanceKm}
+              onChange={(e) => setDistanceKm(e.target.value)}
+              placeholder="opzionale"
+            />
           </div>
         </div>
 

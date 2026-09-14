@@ -5,6 +5,7 @@ import { useAnimalHealth } from "@/lib/animal-health-context";
 import { useAnimalFood, isLowStock } from "@/lib/animal-food-context";
 import { ANIMAL_KINDS } from "@/lib/types";
 import { useNotificationPolling } from "@/lib/use-notification-polling";
+import { isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 
 /**
  * Notifica pappa/vaccinazioni/farmaci/appuntamenti per OGNI animale, a prescindere da dove
@@ -59,15 +60,20 @@ export function AnimalNotifier() {
         new Notification(`È ora della pappa di ${name}`, { body: `Orario delle ${f.time}` });
       });
 
-      // --- Vaccinazioni in scadenza o già scadute — un promemoria al giorno, non uno al
-      // minuto, ma continua a ripresentarsi finché non viene aggiornata.
+      // --- Vaccinazioni: un promemoria al giorno (non uno al minuto) a partire da
+      // `reminderDaysBefore` giorni prima del richiamo, poi ogni giorno finché non viene
+      // aggiornata — vedi lib/vaccination-reminder.ts per il perché di un preavviso invece
+      // del solo giorno esatto.
       vaccinations
-        .filter((v) => v.animalId === animal.id && v.nextDueDate && v.nextDueDate <= today)
+        .filter((v) => v.animalId === animal.id && v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today))
         .forEach((v) => {
           const key = `vaccino-${v.id}-${today}`;
           if (remindedRef.current.has(key)) return;
           remindedRef.current.add(key);
-          new Notification(`Richiamo vaccino per ${name}`, { body: v.name });
+          const isToday = v.nextDueDate === today;
+          const isOverdue = v.nextDueDate! < today;
+          const body = isOverdue ? `${v.name} · scaduto` : isToday ? v.name : `${v.name} · tra pochi giorni`;
+          new Notification(`Richiamo vaccino per ${name}`, { body });
         });
 
       // --- Farmaci: stesso identico meccanismo di MedicationNotifier, per animale.

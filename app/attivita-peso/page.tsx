@@ -5,6 +5,7 @@ import { useHealth } from "@/lib/health-context";
 import { Workout } from "@/lib/types";
 import { addDaysIso, todayIso, formatDateShort } from "@/lib/date-format";
 import { ActivityOrb } from "@/components/health/ActivityOrb";
+import { RecoveryEstimateCard } from "@/components/health/RecoveryEstimateCard";
 import { AddWorkoutModal } from "@/components/health/AddWorkoutModal";
 import { WorkoutDetail } from "@/components/health/WorkoutDetail";
 import { WeightChart } from "@/components/health/WeightChart";
@@ -142,6 +143,7 @@ export default function AttivitaPesoPage() {
             </button>
           </div>
         </div>
+        <RecoveryEstimateCard workouts={workouts} />
         {energyFieldWorkouts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl2 border border-dashed border-white/10 py-14 text-center">
             <Zap size={20} className="text-ink-800" />

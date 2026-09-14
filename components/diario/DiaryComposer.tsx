@@ -4,6 +4,7 @@ import { ImagePlus, Video, X, Send } from "lucide-react";
 import { useDiary } from "@/lib/diary-context";
 import { useMood } from "@/lib/mood-context";
 import { DiaryEntry, DiaryMedia } from "@/lib/diary-types";
+import { EntityLink } from "@/lib/entity-link";
 import { newId } from "@/lib/id";
 import { todayIso } from "@/lib/date-format";
 import { TextArea } from "../ui/TextField";
@@ -12,6 +13,7 @@ import { VideoPickerInput } from "../ui/VideoPickerInput";
 import { VoiceRecorderInput } from "./VoiceRecorderInput";
 import { MoodPicker } from "../vitaecom/MoodPicker";
 import { useResolvedImage } from "@/lib/use-resolved-image";
+import { EntityLinksSection } from "../ui/EntityLinksSection";
 
 function PendingThumb({ media, onRemove }: { media: DiaryMedia; onRemove: () => void }) {
   const imgUrl = useResolvedImage(media.type === "image" ? media.key : undefined);
@@ -57,6 +59,7 @@ export function DiaryComposer({
   const { allMoods, activeMood } = useMood();
   const [text, setText] = useState(entry?.text ?? "");
   const [media, setMedia] = useState<DiaryMedia[]>(entry?.media ?? []);
+  const [links, setLinks] = useState<EntityLink[]>(entry?.links ?? []);
   const [moodId, setMoodId] = useState<string | undefined>(
     entry ? entry.moodId : date === todayIso() ? activeMood?.moodId : undefined
   );
@@ -67,10 +70,18 @@ export function DiaryComposer({
   const addMedia = (type: DiaryMedia["type"], key: string) => setMedia((prev) => [...prev, { id: newId(), type, key }]);
   const removeMedia = (id: string) => setMedia((prev) => prev.filter((m) => m.id !== id));
 
+  // Il collegamento agisce SEMPRE sullo stato locale `links`, mai direttamente su
+  // `addLink`/`removeLink` del context: durante la creazione di una voce nuova non esiste
+  // ancora un id su cui il context potrebbe scrivere, quindi l'unica via uniforme (che
+  // funziona identica sia creando sia modificando) è tenere i link in memoria qui e
+  // consegnarli tutti insieme al resto della voce al momento del salvataggio.
+  const addEntityLink = (link: EntityLink) => setLinks((prev) => (prev.some((l) => l.type === link.type && l.id === link.id) ? prev : [...prev, link]));
+  const removeEntityLink = (link: EntityLink) => setLinks((prev) => prev.filter((l) => !(l.type === link.type && l.id === link.id)));
+
   const submit = () => {
     if (!canSave) return;
     if (entry) {
-      updateEntry(entry.id, { text: text.trim(), media, moodId });
+      updateEntry(entry.id, { text: text.trim(), media, moodId, links });
       onDone?.();
       return;
     }
@@ -81,9 +92,11 @@ export function DiaryComposer({
       text: text.trim(),
       media,
       moodId,
+      links,
     });
     setText("");
     setMedia([]);
+    setLinks([]);
   };
 
   return (
@@ -139,6 +152,10 @@ export function DiaryComposer({
             </button>
           )}
         </div>
+      </div>
+
+      <div className="mt-4 border-t border-white/[0.06] pt-3">
+        <EntityLinksSection links={links} onAdd={addEntityLink} onRemove={removeEntityLink} />
       </div>
 
       <button

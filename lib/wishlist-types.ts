@@ -24,6 +24,12 @@ export interface WishlistItem {
   siteName?: string;
   siteUrl?: string;
   price: number | null;
+  /** Storico dei prezzi rilevati nel tempo — popolato SOLO da un aggiornamento reale
+   * (manuale via "Aggiorna prezzo ora", vedi WishlistPriceHistorySection.tsx), mai da una
+   * modifica del prezzo fatta a mano nel form: quella è una correzione dell'utente, non
+   * un'osservazione di mercato, e mescolarle nello stesso storico renderebbe il grafico
+   * inaffidabile (un prezzo "osservato" indistinguibile da uno inventato). */
+  priceHistory?: { price: number; date: string }[];
   /** Testo libero, non una data precisa: un "periodo stimato" è per natura impreciso
    * ("a Natale", "tra 2-3 mesi", "quando esce il nuovo modello"). */
   estimatedPeriod?: string;

@@ -1,10 +1,11 @@
 "use client";
 import { WeightEntry } from "@/lib/types";
+import { weightTrend, weightTendencyDelta } from "@/lib/weight-trend";
 
 export function WeightChart({ entries, goal }: { entries: WeightEntry[]; goal: number | null }) {
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date)).slice(-20);
+  const trend = weightTrend(entries, 20);
 
-  if (sorted.length === 0) {
+  if (trend.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-xl2 border border-dashed border-white/10 text-xs text-ink-800">
         Nessuna pesata registrata ancora.
@@ -12,23 +13,43 @@ export function WeightChart({ entries, goal }: { entries: WeightEntry[]; goal: n
     );
   }
 
-  const values = sorted.map((e) => e.value);
-  const allValues = goal ? [...values, goal] : values;
+  const rawValues = trend.map((e) => e.raw);
+  const smoothedValues = trend.map((e) => e.smoothed).filter((v): v is number => v !== null);
+  const allValues = goal ? [...rawValues, ...smoothedValues, goal] : [...rawValues, ...smoothedValues];
   const min = Math.min(...allValues) - 1;
   const max = Math.max(...allValues) + 1;
   const w = 320;
   const h = 128;
   const padX = 10;
   const padY = 14;
-  const stepX = sorted.length > 1 ? (w - padX * 2) / (sorted.length - 1) : 0;
+  const stepX = trend.length > 1 ? (w - padX * 2) / (trend.length - 1) : 0;
   const scaleY = (v: number) => h - padY - ((v - min) / (max - min || 1)) * (h - padY * 2);
-  const points = sorted.map((e, i) => ({ x: padX + i * stepX, y: scaleY(e.value) }));
-  const pathD = points.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(" ");
-  const areaD = `${pathD} L${points[points.length - 1].x},${h - padY} L${points[0].x},${h - padY} Z`;
+
+  const rawPoints = trend.map((e, i) => ({ x: padX + i * stepX, y: scaleY(e.raw) }));
+  const rawPathD = rawPoints.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(" ");
+  const areaD = `${rawPathD} L${rawPoints[rawPoints.length - 1].x},${h - padY} L${rawPoints[0].x},${h - padY} Z`;
+
+  // La linea di tendenza può avere "buchi" (i primi punti di uno storico corto non hanno
+  // ancora una media affidabile, vedi lib/weight-trend.ts) — si spezza in più segmenti
+  // invece di saltare da un punto valido al successivo attraverso quelli mancanti, che
+  // disegnerebbe un tratto dritto falsato sopra un vuoto di dati.
+  const smoothedSegments: { x: number; y: number }[][] = [];
+  let currentSegment: { x: number; y: number }[] = [];
+  trend.forEach((e, i) => {
+    if (e.smoothed === null) {
+      if (currentSegment.length > 1) smoothedSegments.push(currentSegment);
+      currentSegment = [];
+      return;
+    }
+    currentSegment.push({ x: padX + i * stepX, y: scaleY(e.smoothed) });
+  });
+  if (currentSegment.length > 1) smoothedSegments.push(currentSegment);
+  const smoothedPathsD = smoothedSegments.map((seg) => seg.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(" "));
+
   const goalY = goal !== null ? scaleY(goal) : null;
-  const current = sorted[sorted.length - 1].value;
-  const prev = sorted.length > 1 ? sorted[sorted.length - 2].value : null;
-  const delta = prev !== null ? current - prev : null;
+  const current = trend[trend.length - 1].raw;
+  const { delta } = weightTendencyDelta(entries);
+  const hasTrendLine = smoothedSegments.length > 0;
 
   return (
     <div>
@@ -54,9 +75,16 @@ export function WeightChart({ entries, goal }: { entries: WeightEntry[]; goal: n
           <line x1={padX} y1={goalY} x2={w - padX} y2={goalY} stroke="#34D399" strokeDasharray="4 4" strokeWidth={1} opacity={0.6} />
         )}
         <path d={areaD} fill="url(#weightFill)" stroke="none" />
-        <path d={pathD} fill="none" stroke="url(#weightStroke)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" filter="url(#weightGlow)" />
-        {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={i === points.length - 1 ? 4 : 2.2} fill={i === points.length - 1 ? "#00E5C7" : "#7C5CFF"} />
+        {/* Pesate grezze: tratto sottile e più trasparente — è il dato reale, ma qui fa da
+            sfondo alla tendenza, non il contrario. */}
+        <path d={rawPathD} fill="none" stroke="url(#weightStroke)" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" opacity={hasTrendLine ? 0.35 : 1} />
+        {rawPoints.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={i === rawPoints.length - 1 && !hasTrendLine ? 4 : 2} fill="#7C5CFF" opacity={hasTrendLine ? 0.45 : 1} />
+        ))}
+        {/* Tendenza (media mobile adattiva): tratto pieno e in rilievo, quello che l'occhio
+            deve seguire per capire la direzione reale senza il rumore di ogni singola pesata. */}
+        {smoothedPathsD.map((d, i) => (
+          <path key={i} d={d} fill="none" stroke="#00E5C7" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" filter="url(#weightGlow)" />
         ))}
       </svg>
       <div className="mt-1 flex items-baseline justify-between">
@@ -64,9 +92,9 @@ export function WeightChart({ entries, goal }: { entries: WeightEntry[]; goal: n
           {current} <span className="text-sm text-ink-600">Kg</span>
         </span>
         {delta !== null && (
-          <span className={`text-xs ${delta <= 0 ? "text-aura-emerald" : "text-aura-pink"}`}>
+          <span className={`text-xs ${delta <= 0 ? "text-aura-emerald" : "text-aura-pink"}`} title="Tendenza recente rispetto al periodo precedente">
             {delta > 0 ? "+" : ""}
-            {delta.toFixed(1)} Kg
+            {delta.toFixed(1)} Kg · tendenza
           </span>
         )}
       </div>

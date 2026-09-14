@@ -4,6 +4,7 @@ import { useHousehold } from "@/lib/household-context";
 import { useAnimalHealth } from "@/lib/animal-health-context";
 import { ANIMAL_KINDS } from "@/lib/types";
 import { isHungry } from "@/lib/feeding";
+import { isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { todayIso } from "@/lib/date-format";
 import { WidgetStat, WidgetEmpty, WidgetList } from "../primitives";
 import { WidgetSize } from "@/lib/widgets/types";
@@ -20,10 +21,12 @@ export function NextVaccinationWidget({ size }: { size: WidgetSize }) {
   const { people } = useHousehold();
   const { vaccinations } = useAnimalHealth();
   const today = todayIso();
-  const due = [...vaccinations]
-    .filter((v) => v.nextDueDate)
+  // Solo vaccini già in preavviso o scaduti — vedi lo stesso ragionamento su
+  // NextRecurringDueWidget in cross-widgets.tsx.
+  const due = vaccinations
+    .filter((v) => v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today))
     .sort((a, b) => (a.nextDueDate as string).localeCompare(b.nextDueDate as string))[0];
-  if (!due) return <WidgetEmpty icon={Syringe} label="Nessun vaccino in programma" />;
+  if (!due) return <WidgetEmpty icon={Syringe} label="Nessuna scadenza imminente" />;
   const animal = people.find((p) => p.id === due.animalId);
   const overdue = (due.nextDueDate as string) <= today;
   return (
@@ -75,5 +78,5 @@ export function AnimalMedicationsWidget({ size }: { size: WidgetSize }) {
     const animal = people.find((p) => p.id === m.animalId);
     return { id: m.id, label: m.name, meta: animal?.firstName };
   });
-  return <WidgetList title="Farmaci in corso" icon={Pill} items={items} emptyLabel="Nessun farmaco in corso" />;
+  return <WidgetList title="Farmaci in corso" icon={Pill} items={items} totalCount={ongoing.length} emptyLabel="Nessun farmaco in corso" />;
 }

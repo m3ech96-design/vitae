@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, ListChecks, Copy, ClipboardPaste } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, ListChecks, Package, Copy, ClipboardPaste } from "lucide-react";
 import { useFood } from "@/lib/food-context";
 import { BASE_SLOTS, SNACK_SLOTS, MEAL_SLOT_LABELS, MealSlot, macroGramGoals } from "@/lib/food-types";
 import { entriesForDate, macroTotals, weeklyTotals, slotsWithEntries, carbsForDisplay } from "@/lib/food-stats";
@@ -58,12 +58,20 @@ export default function AlimentazionePage() {
           <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Alimentazione</p>
           <h1 className="mt-1 font-display text-2xl text-ink-100">Cosa hai mangiato oggi</h1>
         </div>
-        <button
-          onClick={() => router.push("/alimentazione/ingredienti")}
-          className="focus-ring mt-1 flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-emerald/50"
-        >
-          <ListChecks size={13} /> Ingredienti e ricette
-        </button>
+        <div className="mt-1 flex shrink-0 items-center gap-1.5">
+          <button
+            onClick={() => router.push("/alimentazione/dispensa")}
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-amber/50"
+          >
+            <Package size={13} /> Dispensa
+          </button>
+          <button
+            onClick={() => router.push("/alimentazione/ingredienti")}
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[11px] text-ink-300 transition hover:border-aura-emerald/50"
+          >
+            <ListChecks size={13} /> Ingredienti e ricette
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 flex items-center justify-between">

@@ -7,6 +7,8 @@ export interface DiaryMedia {
   key: string;
 }
 
+import { EntityLink } from "./entity-link";
+
 export interface DiaryEntry {
   id: string;
   date: string; // yyyy-mm-dd
@@ -16,6 +18,10 @@ export interface DiaryEntry {
   /** Stato d'animo di quel momento — facoltativo, uno solo, dallo stesso elenco usato in
    * tutta l'app (lib/mood-catalog.ts, anche gli stati creati dall'utente). */
   moodId?: string;
+  /** Collegamenti verso qualunque altra entità dell'app (vedi lib/entity-link.ts) — stesso
+   * modello generico usato da Liste e note, "linka tutto, ma proprio tutto" richiesto per
+   * il Diario in particolare. */
+  links: EntityLink[];
   createdAt: string;
   updatedAt?: string;
 }

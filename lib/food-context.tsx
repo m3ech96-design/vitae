@@ -1,12 +1,13 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { newId } from "./id";
-import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog } from "./food-types";
+import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, PantryEntry } from "./food-types";
 
 const INGREDIENTS_KEY = "vitae:food-ingredients";
 const ENTRIES_KEY = "vitae:food-entries";
 const WATER_KEY = "vitae:food-water";
 const GOALS_KEY = "vitae:food-goals";
+const PANTRY_KEY = "vitae:food-pantry";
 
 interface FoodContextValue {
   hydrated: boolean;
@@ -34,6 +35,11 @@ interface FoodContextValue {
    * origine da cui è stata copiata. */
   pasteMenu: (targetDate: string) => void;
   clearCopiedMenu: () => void;
+
+  pantryEntries: PantryEntry[];
+  addPantryEntry: (input: Omit<PantryEntry, "id">) => void;
+  markPantryEntryConsumed: (id: string, consumedDate: string) => void;
+  removePantryEntry: (id: string) => void;
 }
 
 const FoodContext = createContext<FoodContextValue | null>(null);
@@ -43,6 +49,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [waterLog, setWaterLogState] = useState<WaterLog>({});
   const [goals, setGoalsState] = useState<FoodGoals>(DEFAULT_FOOD_GOALS);
+  const [pantryEntries, setPantryEntries] = useState<PantryEntry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [copiedMenu, setCopiedMenu] = useState<FoodContextValue["copiedMenu"]>(null);
 
@@ -56,6 +63,8 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       if (w) setWaterLogState(JSON.parse(w));
       const g = window.localStorage.getItem(GOALS_KEY);
       if (g) setGoalsState({ ...DEFAULT_FOOD_GOALS, ...JSON.parse(g) });
+      const p = window.localStorage.getItem(PANTRY_KEY);
+      if (p) setPantryEntries(JSON.parse(p));
     } catch {
       // dati locali non leggibili: si riparte da zero
     } finally {
@@ -103,6 +112,18 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const persistPantry = useCallback((updater: PantryEntry[] | ((prev: PantryEntry[]) => PantryEntry[])) => {
+    setPantryEntries((prev) => {
+      const next = typeof updater === "function" ? (updater as (v: PantryEntry[]) => PantryEntry[])(prev) : updater;
+      try {
+        window.localStorage.setItem(PANTRY_KEY, JSON.stringify(next));
+      } catch {
+        // ignorato
+      }
+      return next;
+    });
+  }, []);
+
   // Le kcal arrivano già decise dal chiamante (di norma il wizard, che le calcola con
   // Atwater ma permette di sovrascriverle a mano): il context non le ricalcola più da
   // fat/carbs/protein, altrimenti un valore kcal inserito manualmente verrebbe silenziosamente
@@ -135,8 +156,9 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     (id: string) => {
       persistIngredients((prev) => prev.filter((ing) => ing.id !== id));
       persistEntries((prev) => prev.filter((e) => e.ingredientId !== id));
+      persistPantry((prev) => prev.filter((p) => p.ingredientId !== id));
     },
-    [persistIngredients, persistEntries]
+    [persistIngredients, persistEntries, persistPantry]
   );
 
   const addEntry = useCallback(
@@ -203,6 +225,18 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
 
   const clearCopiedMenu = useCallback(() => setCopiedMenu(null), []);
 
+  const addPantryEntry = useCallback(
+    (input: Omit<PantryEntry, "id">) => persistPantry((prev) => [...prev, { ...input, id: newId() }]),
+    [persistPantry]
+  );
+
+  const markPantryEntryConsumed = useCallback(
+    (id: string, consumedDate: string) => persistPantry((prev) => prev.map((p) => (p.id === id ? { ...p, consumedDate } : p))),
+    [persistPantry]
+  );
+
+  const removePantryEntry = useCallback((id: string) => persistPantry((prev) => prev.filter((p) => p.id !== id)), [persistPantry]);
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -222,6 +256,10 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       copyMenu,
       pasteMenu,
       clearCopiedMenu,
+      pantryEntries,
+      addPantryEntry,
+      markPantryEntryConsumed,
+      removePantryEntry,
     }),
     [
       hydrated,
@@ -241,6 +279,10 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       copyMenu,
       pasteMenu,
       clearCopiedMenu,
+      pantryEntries,
+      addPantryEntry,
+      markPantryEntryConsumed,
+      removePantryEntry,
     ]
   );
 

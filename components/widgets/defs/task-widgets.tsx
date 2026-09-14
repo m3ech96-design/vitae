@@ -64,25 +64,44 @@ export function TasksByTypeWidget({ size }: { size: WidgetSize }) {
 }
 
 export function ShoppingListWidget({ size }: { size: WidgetSize }) {
-  const { tasks } = useTasks();
+  const { tasks, toggleShoppingItem } = useTasks();
   const active = tasks.filter((t) => t.type === "spesa" && !t.completed && t.shoppingList.length > 0);
   const list = active[0];
   if (!list) return <WidgetEmpty icon={ShoppingCart} label="Nessuna lista della spesa attiva" />;
   const done = list.shoppingList.filter((i) => i.done).length;
-  const items = list.shoppingList
-    .filter((i) => !i.done)
-    .slice(0, 4)
-    .map((i) => ({ id: i.id, label: i.label }));
-  return <WidgetList title={`${list.title} · ${done}/${list.shoppingList.length}`} icon={ShoppingCart} items={items} emptyLabel="Lista completata!" />;
+  // Non fatte prima: se la lista supera lo spazio disponibile, quello che manca ancora da
+  // comprare deve avere sempre la priorità su quello già spuntato — altrimenti un "+N
+  // altre" rischierebbe di nascondere proprio gli articoli ancora da prendere dietro a
+  // voci già completate, il contrario di ciò che serve leggendo il widget al volo.
+  const ordered = [...list.shoppingList].sort((a, b) => Number(a.done) - Number(b.done));
+  const items = ordered.map((i) => ({ id: i.id, label: i.label, done: i.done }));
+  return (
+    <WidgetList
+      title={`${list.title} · ${done}/${list.shoppingList.length}`}
+      icon={ShoppingCart}
+      items={items}
+      totalCount={list.shoppingList.length}
+      emptyLabel="Lista completata!"
+      onItemToggle={(itemId) => toggleShoppingItem(list.id, itemId)}
+    />
+  );
 }
 
 export function RecurringTodayWidget({ size }: { size: WidgetSize }) {
-  const { tasks } = useTasks();
+  const { tasks, completeTask } = useTasks();
   const today = todayIso();
-  const items = tasks
-    .filter((t) => t.type === "quotidiana" && t.date === today && !t.completed)
-    .map((t) => ({ id: t.id, label: t.title, color: t.color }));
-  return <WidgetList title="Ricorrenti non ancora fatte" icon={Repeat} items={items} emptyLabel="Tutte fatte per oggi" />;
+  const pending = tasks.filter((t) => t.type === "quotidiana" && t.date === today && !t.completed);
+  const items = pending.map((t) => ({ id: t.id, label: t.title, color: t.color, disabled: t.subtasks.length > 0 }));
+  return (
+    <WidgetList
+      title="Ricorrenti non ancora fatte"
+      icon={Repeat}
+      items={items}
+      totalCount={pending.length}
+      emptyLabel="Tutte fatte per oggi"
+      onItemToggle={(taskId) => completeTask(taskId)}
+    />
+  );
 }
 
 export function QuickAddTaskWidget({ size }: { size: WidgetSize }) {

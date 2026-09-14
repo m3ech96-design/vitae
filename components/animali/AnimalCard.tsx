@@ -4,6 +4,7 @@ import { PawPrint } from "lucide-react";
 import { Person } from "@/lib/types";
 import { useAnimalHealth } from "@/lib/animal-health-context";
 import { isHungry } from "@/lib/feeding";
+import { isVaccinationReminderDue } from "@/lib/vaccination-reminder";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { GlassCard } from "../ui/GlassCard";
 
@@ -11,7 +12,7 @@ export function AnimalCard({ animal }: { animal: Person }) {
   const { forAnimal } = useAnimalHealth();
   const { vaccinations } = forAnimal(animal.id);
   const today = new Date().toISOString().slice(0, 10);
-  const vaccinationDue = vaccinations.some((v) => v.nextDueDate && v.nextDueDate <= today);
+  const vaccinationDue = vaccinations.some((v) => v.nextDueDate && isVaccinationReminderDue(v.nextDueDate, v.reminderDaysBefore, today));
   const hungry = isHungry(animal);
 
   return (

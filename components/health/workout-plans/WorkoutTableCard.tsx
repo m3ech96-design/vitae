@@ -8,11 +8,16 @@ import { WorkoutTableHeader } from "./WorkoutTableHeader";
 import { ExerciseRow } from "./ExerciseRow";
 import { ExerciseDetailSheet } from "./ExerciseDetailSheet";
 import { ExerciseFormSheet } from "./ExerciseFormSheet";
+import { ExerciseLogFormSheet } from "./ExerciseLogFormSheet";
 
-type Sheet = { kind: "add" } | { kind: "detail"; exerciseId: string } | { kind: "edit"; exerciseId: string };
+type Sheet =
+  | { kind: "add" }
+  | { kind: "detail"; exerciseId: string }
+  | { kind: "edit"; exerciseId: string }
+  | { kind: "log"; exerciseId: string };
 
 export function WorkoutTableCard({ planId, table }: { planId: string; table: WorkoutPlanTable }) {
-  const { addExercise, updateExercise, removeExercise } = useWorkoutPlans();
+  const { addExercise, updateExercise, removeExercise, addLogEntry, removeLogEntry } = useWorkoutPlans();
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
   const openExercise: WorkoutPlanExercise | undefined =
@@ -51,6 +56,8 @@ export function WorkoutTableCard({ planId, table }: { planId: string; table: Wor
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
+          onAddLogEntry={() => setSheet({ kind: "log", exerciseId: openExercise.id })}
+          onRemoveLogEntry={(entryId) => removeLogEntry(planId, table.id, openExercise.id, entryId)}
         />
       )}
 
@@ -63,6 +70,14 @@ export function WorkoutTableCard({ planId, table }: { planId: string; table: Wor
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
+        />
+      )}
+
+      {sheet?.kind === "log" && openExercise && (
+        <ExerciseLogFormSheet
+          exerciseName={openExercise.name}
+          onSave={(entry) => addLogEntry(planId, table.id, openExercise.id, entry)}
+          onClose={() => setSheet({ kind: "detail", exerciseId: openExercise.id })}
         />
       )}
     </GlassCard>

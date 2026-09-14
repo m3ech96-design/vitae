@@ -8,7 +8,6 @@ import { useHousehold } from "@/lib/household-context";
 import { todaySummary, isTodayEmpty } from "@/lib/today-summary";
 import { useCountUp } from "@/lib/use-count-up";
 import { personColor } from "@/lib/person-color";
-import { auraIntensity } from "@/lib/aura-intensity";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { GlassCard } from "../ui/GlassCard";
 
@@ -110,7 +109,7 @@ export function TodaySummaryCard() {
                   size={26}
                   ring="idle"
                   glowColor={personColor(p.id)}
-                  glowIntensity={auraIntensity(p, tasks, places)}
+                  glowIntensity={1}
                   deceased={p.deceased}
                   innerClassName="ring-2 ring-void-900"
                 />
