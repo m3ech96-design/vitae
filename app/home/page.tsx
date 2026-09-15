@@ -20,9 +20,6 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { LinkHomeCard } from "@/components/household/LinkHomeCard";
 import { AddToHouseholdMenu } from "@/components/household/AddToHouseholdMenu";
-import { VitaecomHouseholdAvatarCell } from "@/components/household/VitaecomHouseholdAvatarCell";
-import { vitaecomMemberIsHome } from "@/lib/vitaecom-household-presence";
-import { DEMO_ACCOUNTS } from "@/lib/vitaecom-demo-data";
 import { PersonWindow } from "@/components/persone/PersonWindow";
 import { HouseholdAvatarCell } from "@/components/household/HouseholdAvatarCell";
 import { HouseholdMessagesFeed } from "@/components/home/HouseholdMessagesFeed";
@@ -33,11 +30,9 @@ import { BackupSection } from "@/components/home/BackupSection";
 import { TaskCountdownLog } from "@/components/home/TaskCountdownLog";
 import { TodaySummaryCard } from "@/components/home/TodaySummaryCard";
 import { WeeklyNeedsCard } from "@/components/home/WeeklyNeedsCard";
-import { VitaecomNotificationsCard } from "@/components/home/VitaecomNotificationsCard";
 import { PersonalCardMenu } from "@/components/home/PersonalCardMenu";
 import { GlobalSearchSheet } from "@/components/home/GlobalSearchSheet";
 import { useMood } from "@/lib/mood-context";
-import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { moodBackgroundLayers, moodBackgroundOpacity } from "@/lib/mood-tone";
 
 function greetingForHour(hour: number) {
@@ -72,7 +67,6 @@ export default function HomePage() {
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
-  const { householdMembers } = useVitaecomSocial();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -105,12 +99,6 @@ export default function HomePage() {
   // Il Place "Casa" vero dell'utente, per l'icona badge quando si è dentro casa (vedi anche
   // HouseholdAvatarCell, stessa logica per ogni componente della famiglia).
   const homePlace = home ? places.find((p) => p.id === home.placeId) ?? null : null;
-  // La posizione di un account Vitaecom nel riquadro Famiglia è simulata (vedi
-  // lib/vitaecom-household-presence.ts) — ricalcolata a ogni minuto insieme al resto della
-  // Home (lo stesso `tick` già usato per far scorrere le altre presenze). Non più divisa in
-  // due elenchi Casa/Fuori Casa: il riquadro Famiglia mostra tutti i componenti insieme,
-  // ognuno con la propria icona di stato (meccanica già esistente, invariata).
-  const vitaecomFamilyAccounts = DEMO_ACCOUNTS.filter((a) => householdMembers.includes(a.id));
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
@@ -276,13 +264,6 @@ export default function HomePage() {
                 .map((p) => (
                   <HouseholdAvatarCell key={p.id} person={p} location={familyStatusOf(p)} onOpen={setOpenPerson} />
                 ))}
-              {vitaecomFamilyAccounts.map((a) => (
-                <VitaecomHouseholdAvatarCell
-                  key={a.id}
-                  account={a}
-                  location={vitaecomMemberIsHome(a.id) ? "casa" : "fuori-casa"}
-                />
-              ))}
               <AddToHouseholdMenu />
             </div>
             {trackingError && (
@@ -304,7 +285,6 @@ export default function HomePage() {
         <TodaySummaryCard />
         <TaskCountdownLog />
         <WeeklyNeedsCard />
-        <VitaecomNotificationsCard />
       </Reveal>
 
       <Reveal delay={0.18} className="mt-9">

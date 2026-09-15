@@ -23,7 +23,7 @@ export function PantryNotifier() {
     const statuses = pantryEntryStatuses(pantryEntries, ingredients, today);
 
     statuses
-      .filter((s) => s.status !== "fresco")
+      .filter((s) => s.status === "in-scadenza" || s.status === "scaduto")
       .forEach((s) => {
         const key = `dispensa-${s.entry.id}-${today}`;
         if (remindedRef.current.has(key)) return;

@@ -4,7 +4,6 @@ import { Plus, X, PowerOff } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { TRIGGER_CATALOG, TriggerCategory, MoodDefinition } from "@/lib/mood-catalog";
 import { Button } from "../ui/Button";
-import { Switch } from "../ui/Switch";
 
 const CATEGORY_ORDER: TriggerCategory[] = [
   "Task",
@@ -108,8 +107,6 @@ export function MoodWizardPanel() {
     activeMoodIntensity,
     setMoodManually,
     clearMood,
-    shareMoodOnVitaecom,
-    setShareMoodOnVitaecom,
   } = useMood();
   const [newMoodLabel, setNewMoodLabel] = useState("");
   const [addingMood, setAddingMood] = useState(false);
@@ -132,16 +129,6 @@ export function MoodWizardPanel() {
         Decidi Tu Quali Interazioni Dell&apos;App Possono Suggerirti Uno Stato — Nessuna Regola
         Fissa: Aggiungi, Togli, O Ignora Del Tutto Le Interazioni Che Non Ti Interessano.
       </p>
-
-      <label className="mt-5 flex items-center justify-between gap-3 rounded-xl2 border border-white/10 px-4 py-3.5">
-        <span>
-          <span className="block text-sm text-ink-200">Condividi stato d&apos;animo su Vitaecom</span>
-          <span className="mt-0.5 block text-[11px] text-ink-800">
-            Spenta, il tuo profilo mostra sempre &quot;Normale&quot;, qualunque cosa tu provi davvero.
-          </span>
-        </span>
-        <Switch checked={shareMoodOnVitaecom} onChange={setShareMoodOnVitaecom} />
-      </label>
 
       {current && (
         <div

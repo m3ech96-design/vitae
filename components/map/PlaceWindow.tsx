@@ -23,8 +23,8 @@ import { GoToAddressField } from "../ui/GoToAddressField";
 import { TextField } from "../ui/TextField";
 import { useMapAddressPick } from "@/lib/use-map-address-pick";
 import { useMood } from "@/lib/mood-context";
-import { useResolvedImage } from "@/lib/use-resolved-image";
 import { AddPlaceModal } from "./AddPlaceModal";
+import { PlaceGallery } from "./PlaceGallery";
 
 function isSameWeek(d: Date, ref: Date) {
   const start = new Date(ref);
@@ -45,7 +45,10 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
   const { people, home } = useHousehold();
   const { tasks } = useTasks();
   const meta = PLACE_TYPE_META[place.type];
-  const resolvedPhoto = useResolvedImage(place.photoUrl);
+  // Galleria vera se il luogo ne ha una salvata; altrimenti, se esiste solo la vecchia
+  // photoUrl singola (luoghi creati prima di questa funzionalità), la mostriamo comunque
+  // come un'unica slide invece di perderla.
+  const galleryPhotoKeys = place.photoKeys && place.photoKeys.length > 0 ? place.photoKeys : place.photoUrl ? [place.photoUrl] : [];
   const Icon = meta.icon;
   const [companions, setCompanions] = useState<string[]>([]);
   const [showRatingPrompt, setShowRatingPrompt] = useState(false);
@@ -142,10 +145,9 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
         transition={{ type: "spring", stiffness: 220, damping: 26 }}
         className="glass-strong flex max-h-[90dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
-        <div className="relative z-10 h-32 w-full shrink-0">
-          {resolvedPhoto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolvedPhoto} alt="" className="h-full w-full object-cover" />
+        <div className="relative z-10 w-full shrink-0" style={{ height: 176 }}>
+          {galleryPhotoKeys.length > 0 ? (
+            <PlaceGallery photoKeys={galleryPhotoKeys} height={176} />
           ) : (
             <div
               className="flex h-full w-full items-center justify-center"
@@ -156,7 +158,7 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
           )}
           <button
             onClick={onClose}
-            className="focus-ring absolute right-3 top-3 rounded-full bg-void-950/70 p-1.5 text-ink-100"
+            className="focus-ring absolute right-3 top-3 z-10 rounded-full bg-void-950/70 p-1.5 text-ink-100"
             aria-label="Chiudi"
           >
             <X size={16} />

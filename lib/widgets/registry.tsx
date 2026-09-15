@@ -69,12 +69,8 @@ import {
   FavoritePlaceSpendingWidget,
 } from "@/components/widgets/defs/map-widgets";
 import {
-  UnseenStoriesWidget,
-  LastPostWidget,
-  NewReactionsWidget,
-  LastReceivedMessageWidget,
   QuickMoodPickerWidget,
-} from "@/components/widgets/defs/vitaecom-widgets";
+} from "@/components/widgets/defs/mood-widgets";
 import {
   UpcomingBirthdaysWidget,
   TodayBirthdayWidget,
@@ -190,11 +186,7 @@ export const WIDGET_REGISTRY: WidgetCatalogEntry[] = [
   { id: "map-last-visit", title: "Ultima visita registrata", category: "Mappa", href: "/map", defaultSize: "half", allowedSizes: ["half", "square"], Component: LastVisitWidget },
   { id: "map-favorite-spending", title: "Spesa nel luogo preferito", category: "Mappa", href: "/map", defaultSize: "square", allowedSizes: ["square"], Component: FavoritePlaceSpendingWidget },
 
-  // --- Vitaecom ---
-  { id: "vitaecom-unseen-stories", title: "Storie non viste", category: "Vitaecom", href: "/vitaecom", defaultSize: "square", allowedSizes: ["square"], Component: UnseenStoriesWidget },
-  { id: "vitaecom-last-post", title: "Ultimo post pubblicato", category: "Vitaecom", href: "/vitaecom", defaultSize: "square", allowedSizes: ["square", "half"], Component: LastPostWidget },
-  { id: "vitaecom-new-reactions", title: "Reazioni e commenti nuovi", category: "Vitaecom", href: "/vitaecom", defaultSize: "square", allowedSizes: ["square"], Component: NewReactionsWidget },
-  { id: "vitaecom-last-message", title: "Ultimo messaggio ricevuto", category: "Vitaecom", href: "/vitaecom", defaultSize: "half", allowedSizes: ["half", "square"], Component: LastReceivedMessageWidget },
+  // --- Azioni rapide ---
   { id: "vitaecom-quick-mood", title: "Selettore rapido stato d'animo", category: "Azioni rapide", defaultSize: "square", allowedSizes: ["square", "half"], Component: QuickMoodPickerWidget },
 
   // --- Rapporti ---

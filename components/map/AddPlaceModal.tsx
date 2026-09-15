@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { PlaceType, CustomField, Place } from "@/lib/types";
 import { PLACE_TYPE_META, PLACE_TYPES } from "@/lib/places-meta";
@@ -14,7 +14,7 @@ import { useFeed } from "@/lib/feed-context";
 import { useMood } from "@/lib/mood-context";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
-import { ImageCropInput } from "../ui/ImageCropInput";
+import { MultiPhotoPicker } from "../hobby/MultiPhotoPicker";
 import { GoToAddressField } from "../ui/GoToAddressField";
 import { MapView } from "./MapView";
 import { DEFAULT_MAP_CENTER } from "@/lib/geo";
@@ -50,7 +50,9 @@ export function AddPlaceModal({
   const [name, setName] = useState(place?.name ?? initialName);
   const [address, setAddress] = useState(place?.address ?? initialAddress);
   const [type, setType] = useState<PlaceType>(place?.type ?? initialType);
-  const [photo, setPhoto] = useState<string | undefined>(place?.photoUrl);
+  const [photoKeys, setPhotoKeys] = useState<string[]>(
+    place?.photoKeys ?? (place?.photoUrl ? [place.photoUrl] : [])
+  );
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(place ? { lat: place.lat, lng: place.lng } : null);
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number; at: number } | null>(null);
   const [linkedPersonId, setLinkedPersonId] = useState<string>(place?.linkedPersonId ?? "user");
@@ -66,7 +68,8 @@ export function AddPlaceModal({
     if (place) {
       updatePlace(place.id, {
         name: finalName,
-        photoUrl: photo,
+        photoUrl: photoKeys[0],
+        photoKeys,
         type,
         address: address.trim(),
         lat: coords.lat,
@@ -82,7 +85,8 @@ export function AddPlaceModal({
 
     addPlace({
       name: finalName,
-      photoUrl: photo,
+      photoUrl: photoKeys[0],
+      photoKeys,
       type,
       address: address.trim(),
       lat: coords.lat,
@@ -174,20 +178,12 @@ export function AddPlaceModal({
             onChange={(e) => setAddress(e.target.value)}
           />
 
-          <ImageCropInput
-            shape="square"
-            onChange={(url) => setPhoto(url)}
-            trigger={(open) => (
-              <button
-                type="button"
-                onClick={open}
-                className="focus-ring flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-ink-600 hover:text-ink-200"
-              >
-                <ImagePlus size={14} />
-                {photo ? "Foto selezionata (tocca per ricentrare)" : "Aggiungi Foto (Facoltativo)"}
-              </button>
-            )}
-          />
+          <div>
+            <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">
+              Foto (facoltative)
+            </span>
+            <MultiPhotoPicker photoKeys={photoKeys} onChange={setPhotoKeys} />
+          </div>
 
           {needsOwner && (
             <label className="block">

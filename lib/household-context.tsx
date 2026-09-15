@@ -40,9 +40,6 @@ interface HouseholdContextValue {
      * come sempre. */
     relationshipScore?: number;
     isDemo?: boolean;
-    /** Il ponte Vitaecom↔Mondo — vedi ensurePersonForAccount in vitaecom-social-context.tsx.
-     * Assente per una Persona creata a mano, offline. */
-    vitaecomAccountId?: string;
   }) => string;
   updatePerson: (id: string, patch: Partial<Person>) => void;
   removePerson: (id: string) => void;

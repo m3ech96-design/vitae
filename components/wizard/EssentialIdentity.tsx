@@ -2,7 +2,6 @@
 import { useProfile } from "@/lib/profile-context";
 import { computeAge, capitalizeWords } from "@/lib/text";
 import { AvatarUploader } from "./AvatarUploader";
-import { NicknameField } from "../vitaecom/NicknameField";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { Reveal } from "../ui/Reveal";
@@ -56,13 +55,6 @@ export function EssentialIdentity({ onNext }: { onNext: () => void }) {
           placeholder="Es. Ferrari"
           value={profile.lastName}
           onChange={(e) => updateProfile({ lastName: capitalizeWords(e.target.value) })}
-        />
-      </Reveal>
-
-      <Reveal delay={0.26} className="mt-4">
-        <NicknameField
-          value={profile.nickname || ""}
-          onChange={(v) => updateProfile({ nickname: v })}
         />
       </Reveal>
 

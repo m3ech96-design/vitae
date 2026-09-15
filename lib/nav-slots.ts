@@ -7,7 +7,6 @@ import {
   Wallet,
   Sparkles,
   MapPinned,
-  Aperture,
   Newspaper,
   Dumbbell,
   Utensils,
@@ -33,7 +32,6 @@ export interface NavItemDef {
  * sincronizzata, è semplicemente questo stesso elenco meno gli href assegnati ai tre slot. */
 export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/task", label: "Task", icon: ListChecks },
-  { href: "/vitaecom", label: "Vitaecom", icon: Aperture },
   { href: "/mondo", label: "Mondo", icon: Users },
   { href: "/salute", label: "Salute", icon: HeartPulse },
   { href: "/attivita-peso", label: "Attività e peso", icon: Dumbbell },
@@ -50,7 +48,7 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/focus", label: "Focus", icon: Timer },
 ];
 
-export const DEFAULT_SLOTS = ["/task", "/vitaecom", "/mondo"];
+export const DEFAULT_SLOTS = ["/task", "/mondo", "/finanze"];
 
 /** I tre slot della fila principale della barra "offline" (dopo Home, prima di "Altro"),
  * personalizzabili uno per uno con una pressione lunga (vedi BottomNav.tsx). Persistiti in

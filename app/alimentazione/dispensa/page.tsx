@@ -19,7 +19,8 @@ import { StickyNote, ListChecks } from "lucide-react";
 const SHOPPING_LIST_TITLE = "Lista della spesa";
 
 function statusLabel(s: PantryEntryStatus): string {
-  if (s.status === "scaduto") return `Scaduto da ${Math.abs(s.daysRemaining)} ${Math.abs(s.daysRemaining) === 1 ? "giorno" : "giorni"}`;
+  if (s.status === "senza-scadenza") return "Nessuna scadenza registrata";
+  if (s.status === "scaduto") return `Scaduto da ${Math.abs(s.daysRemaining!)} ${Math.abs(s.daysRemaining!) === 1 ? "giorno" : "giorni"}`;
   if (s.daysRemaining === 0) return "Scade oggi";
   return `Scade tra ${s.daysRemaining} ${s.daysRemaining === 1 ? "giorno" : "giorni"}`;
 }
@@ -84,7 +85,8 @@ function PantryRow({
         <div className="min-w-0">
           <p className="truncate text-sm text-ink-100">{status.ingredientName}</p>
           <p className={`mt-0.5 text-[11px] ${color}`}>
-            {statusLabel(status)} · {formatDateShort(status.estimatedExpiryDate)}
+            {statusLabel(status)}
+            {status.expiryDate && ` · ${formatDateShort(status.expiryDate)}`}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -138,8 +140,9 @@ export default function DispensaPage() {
   const today = todayIso();
 
   const statuses = useMemo(() => pantryEntryStatuses(pantryEntries, ingredients, today), [pantryEntries, ingredients, today]);
-  const expiringOrOverdue = statuses.filter((s) => s.status !== "fresco");
+  const expiringOrOverdue = statuses.filter((s) => s.status === "in-scadenza" || s.status === "scaduto");
   const fresh = statuses.filter((s) => s.status === "fresco");
+  const withoutExpiry = statuses.filter((s) => s.status === "senza-scadenza");
 
   const computedItems = useMemo(() => generateShoppingList(entries, ingredients, pantryEntries, today), [entries, ingredients, pantryEntries, today]);
 
@@ -168,7 +171,8 @@ export default function DispensaPage() {
       <p className="mt-4 font-display text-xs uppercase tracking-[0.28em] text-ink-600">Alimentazione</p>
       <h1 className="mt-1 font-display text-2xl text-ink-100">Dispensa</h1>
       <p className="mt-2 text-xs leading-relaxed text-ink-600">
-        Segna solo cosa hai comprato e quando — la scadenza è stimata da sola in base alla categoria dell&apos;ingrediente.
+        Segna cosa hai comprato e quando — scrivi anche la scadenza stampata sulla confezione
+        per essere avvisato quando si avvicina.
       </p>
 
       <button
@@ -212,6 +216,23 @@ export default function DispensaPage() {
               <p className="mb-2.5 font-display text-sm text-ink-100">Ancora fresco</p>
               <div className="space-y-1.5">
                 {fresh.map((s) => (
+                  <PantryRow
+                    key={s.entry.id}
+                    status={s}
+                    ingredient={ingredients.find((i) => i.id === s.entry.ingredientId)}
+                    onConsume={() => markPantryEntryConsumed(s.entry.id, today)}
+                    onRemove={() => removePantryEntry(s.entry.id)}
+                    onAdjust={(value) => adjustPantryQuantity(s.entry.id, value)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {withoutExpiry.length > 0 && (
+            <div>
+              <p className="mb-2.5 font-display text-sm text-ink-100">Senza scadenza registrata</p>
+              <div className="space-y-1.5">
+                {withoutExpiry.map((s) => (
                   <PantryRow
                     key={s.entry.id}
                     status={s}

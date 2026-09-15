@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { newId } from "./id";
 import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, PantryEntry, MealSlot } from "./food-types";
-import { consumeFromPantry, restoreToPantry } from "./pantry";
+import { consumeFromPantry, restoreToPantry, hasExpiringPantryEntries } from "./pantry";
 import { todayIso } from "./date-format";
 
 const INGREDIENTS_KEY = "vitae:food-ingredients";
@@ -48,6 +48,11 @@ interface FoodContextValue {
    * mezzo litro per sbaglio". Un valore <= 0 marca l'entry consumata da sola, coerente con
    * lo svuotamento naturale via consumeFromPantry. */
   adjustPantryQuantity: (id: string, remainingQuantity: number) => void;
+  /** true se almeno un acquisto in dispensa non ancora consumato sta per scadere o è
+   * probabilmente già scaduto — pilota solo il puntino discreto sull'icona della scheda
+   * Alimentazione nella barra di navigazione (stesso principio di hasStalePlaces per la
+   * scheda Mappa), mai un banner altrove nell'app. */
+  hasExpiringPantryItems: boolean;
 }
 
 const FoodContext = createContext<FoodContextValue | null>(null);
@@ -81,7 +86,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /** Forma funzionale fin dal primo giorno — mai la causa di bug già vista più volte in
-   * questo progetto (household-context, health-context, vitaecom-social-context): due
+   * questo progetto (household-context, health-context): due
    * scritture di fila nello stesso gestore di evento non devono mai poter leggere lo stesso
    * stato non aggiornato. */
   const persistIngredients = useCallback((updater: Ingredient[] | ((prev: Ingredient[]) => Ingredient[])) => {
@@ -299,6 +304,14 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     [persistPantry]
   );
 
+  // Ricalcolato solo quando dispensa o ingredienti cambiano davvero, non a ogni minuto: una
+  // scadenza si muove in giorni, non ha senso rivalutarla più spesso di così — stesso
+  // principio già adottato da hasStalePlaces per i luoghi in lib/places-context.tsx.
+  const hasExpiringPantryItems = useMemo(
+    () => hasExpiringPantryEntries(pantryEntries, ingredients, todayIso()),
+    [pantryEntries, ingredients]
+  );
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -323,6 +336,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       markPantryEntryConsumed,
       removePantryEntry,
       adjustPantryQuantity,
+      hasExpiringPantryItems,
     }),
     [
       hydrated,
@@ -347,6 +361,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       markPantryEntryConsumed,
       removePantryEntry,
       adjustPantryQuantity,
+      hasExpiringPantryItems,
     ]
   );
 

@@ -8,8 +8,8 @@ import { DialoguePresentable, pickDialoguePhrase } from "@/lib/dialogue";
  * Le Azioni non passano più da qui: vivono come riga di testo nella card (vedi ActionLine).
  * Va usata solo dentro un contenitore che NON ha overflow-hidden, altrimenti viene tagliata.
  * Il parametro è la piccola interfaccia `DialoguePresentable` (solo i due campi letti
- * davvero), non `Person`: vale quindi anche per il tuo profilo e per un account Vitaecom
- * altrui, in entrambe le direzioni — chiunque abbia questi due campi comunque popolati.
+ * davvero), non `Person`: vale quindi anche per il tuo profilo,
+ * in entrambe le direzioni — chiunque abbia questi due campi comunque popolati.
  *
  * Ancoraggio: bug reale corretto — la punta doveva "coincidere con l'avatar, leggermente
  * sovrapposta" ma restava sospesa 4px sopra di lui. La punta (8x8px, ruotata 45°) sporge

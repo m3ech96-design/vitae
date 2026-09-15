@@ -2988,6 +2988,114 @@ del tutto separato, ora rimosso in blocco senza lasciare residui altrove; nessun
 a `genealog` rimasto in tutto il codice sorgente, confermato con una ricerca ad ampio raggio
 oltre che con una build di produzione ripulita da zero.
 
+**Vitaecom eliminato per intero** (primo intervento di un audit architetturale più ampio,
+condotto un'area alla volta): l'intero sotto-sistema social interno — 8 pagine
+(`app/vitaecom/`), la pagina di moderazione `app/segnalazioni/`, 30 componenti
+(`components/vitaecom/`), i 12 moduli di stato/logica (`lib/vitaecom-*`), la API route
+`app/api/vitaecom-caption/` (generava didascalie via AI per i post, senza più alcun
+chiamante), i 3 Provider React globali nel layout radice, la voce nella barra di
+navigazione e nel catalogo scorciatoie, il pallino di notifica dedicato, il ponte
+`vitaecomAccountId` tra una Persona e un account (rimosso da `Person`, da `Household` e dal
+filtro dedicato in Mondo), il campo `vitaecomShowcase` sul profilo utente, e l'interruttore
+"condividi il tuo stato d'animo su Vitaecom" in Umore. Con Vitaecom spariva anche l'unico
+motivo d'esistere di `NavSwitcher.tsx` (sceglieva tra barra offline/online): eliminato anche
+lui, sostituito da `BottomNav` diretto nel layout — un livello di indirezione in meno. Tre
+componenti UI genuinamente generici che vivevano per errore dentro `components/vitaecom/`
+(l'animazione di riempimento liquido usata dal tracciamento acqua, il selettore di umore
+usato anche da Diario e Bisogni settimanali, il campo nickname) sono stati identificati,
+salvati in `components/ui/` e ri-agganciati ai loro veri utilizzatori prima di procedere;
+il campo nickname stesso è stato eliminato insieme al suo step nel wizard di identità,
+perché esisteva solo per l'account Vitaecom. Il widget Home "Selettore rapido stato
+d'animo", l'unico dei 5 widget del vecchio file a non essere social, è stato spostato in un
+nuovo `components/widgets/defs/mood-widgets.tsx` mantenendo lo stesso id di sempre per non
+far sparire il widget a chi lo aveva già piazzato in Home. Il pulsante "condividi" sulle
+card di News è stato rimosso (non aveva più una destinazione), così come il badge
+"Vitaecom" su una Persona in Mondo. Il terzo slot di default della barra di navigazione
+(prima `/vitaecom`) è ora `/finanze` — cambia solo per chi non ha mai personalizzato la
+barra. Nessun riferimento a `vitaecom` rimasto nel codice sorgente salvo un id storico di
+widget (mai da cambiare, per compatibilità con i layout già salvati) e una nota di commento
+sul perché un campo del profilo si chiama `alias` invece di `nickname` — confermato con una
+ricerca ad ampio raggio, un type-check pulito e una build di produzione completa.
+
+**Galleria foto per i luoghi, rapporto d'aspetto libero nel ritaglio immagini, pasto
+multi-alimento per gli animali**: tre correzioni distinte.
+
+Un luogo in Mappa può ora avere più foto (`Place.photoKeys`, oltre alla `photoUrl` di
+copertina esistente, mantenuta come prima foto della galleria per i luoghi creati prima di
+questa modifica) — nessun limite al numero, aggiunte dallo stesso modulo "Aggiungi/Modifica
+luogo" con il selettore multi-foto già usato in Hobby. La finestra di un luogo mostra ora un
+carosello a scorrimento orizzontale con `scroll-snap` (una foto grande alla volta, 176px di
+altezza, stile "galleria" di Google Maps) al posto della vecchia foto singola in alto.
+
+Il ritaglio/zoom di un'immagine (`components/ui/ImageCropInput.tsx`) era sempre forzato a un
+output quadrato — chi scattava una foto verticale col telefono se la vedeva sistematicamente
+tagliata. Corretto su due piani: `lib/crop-image.ts` non forza più un canvas quadrato fisso,
+ma eredita le proporzioni reali dell'area ritagliata; il componente ha una nuova opzione
+`allowFreeAspect` (usata dal selettore multi-foto) che mostra quattro scelte di rapporto —
+Quadrato, Verticale, Orizzontale, Originale (calcolato dalle dimensioni vere dello scatto,
+non un valore fisso). Resta `aspect={1}` di serie ovunque `allowFreeAspect` non sia passato
+(avatar e gli altri usi esistenti), quindi nessun comportamento cambia dove un quadrato era
+già la scelta giusta.
+
+In Animali, dare da mangiare permetteva un solo prodotto per volta: il menu "cosa dargli da
+mangiare" chiudeva subito dopo il primo tocco, impedendo — per esempio — di dare sia
+crocchette che umido nello stesso pasto. La lista (`HungryBadge.tsx`) ora funziona a
+selezione multipla (un tocco spunta/rimuove un alimento, il menu resta aperto) con un
+pulsante "Dai da mangiare (N)" che conferma tutti gli alimenti scelti insieme: una porzione
+consumata per ciascuno, una voce di cronologia per ciascuno (il pasto composto resta
+tracciabile prodotto per prodotto), ma un solo aggiornamento di relazione/umore per l'intero
+pasto, non uno per alimento.
+
+**10 nuove categorie alimentari per la stima scadenze in dispensa**: prima della modifica il
+catalogo (`lib/food-category-catalog.ts`) copriva solo 9 categorie generiche (Latticini
+freschi, Carne e pesce freschi, Salumi, Verdura a foglia, Verdura/frutta dura, Pane fresco,
+Surgelati, Dispensa secca, Altro) — tutto il resto ricadeva forzatamente su "Altro" con 7
+giorni stimati, spesso lontani dalla realtà. Aggiunte 10 categorie scelte dopo una ricerca
+sui tempi di conservazione tipici (fonti: divulgazione basata su indicazioni del Ministero
+della Salute, U.Di.Con, tabelle Bennet), pensate per non sovrapporsi concettualmente a
+quelle già esistenti: Uova (25gg), Formaggi stagionati (30gg, distinti dai latticini
+freschi già presenti), Piatti pronti e avanzi cucinati (3gg — mancava del tutto una
+categoria per il cibo già cucinato in casa), Frutta secca e semi (180gg), Dolci e prodotti
+da forno confezionati (10gg), Bevande aperte (5gg), Caffè/tè/infusi (180gg), Yogurt e
+dessert al cucchiaio (10gg), Salse e condimenti aperti (30gg). "Altro" resta l'ultima voce
+dell'elenco, come richiede `foodCategoryOf` che la usa come ripiego automatico per qualunque
+categoria non riconosciuta.
+
+**Scadenza scritta a mano in dispensa, puntino di notifica sulla scheda Alimentazione**: due
+aggiunte collegate.
+
+Al momento di registrare un acquisto ("Nuovo acquisto" in Alimentazione → Dispensa) è ora
+possibile scrivere la scadenza esatta stampata sulla confezione (`PantryEntry.expiryDateOverride`),
+invece di affidarsi sempre alla stima automatica per categoria. Il campo resta facoltativo:
+lasciato vuoto, tutto si comporta esattamente come prima (stima da categoria); se compilato,
+quella data ha sempre la priorità — una scadenza reale letta dalla confezione è più
+affidabile di un valore tipico. `estimatedExpiryDate` in `lib/pantry.ts` controlla prima
+l'override e ripiega sulla stima per categoria solo in sua assenza.
+
+La scheda Alimentazione mostra ora un puntino discreto sulla propria icona nella barra di
+navigazione quando almeno un acquisto in dispensa non ancora consumato è in scadenza o
+probabilmente già scaduto — stesso identico meccanismo già usato dalla scheda Mappa per i
+luoghi non visitati da tempo (`hasStalePlaces`), qui `hasExpiringPantryItems` in
+`lib/food-context.tsx`, derivato con lo stesso principio di sobrietà: nessun banner in Home,
+si vede solo guardando la barra di navigazione. Colore ambra per distinguerlo dal ciano già
+usato per il puntino della Mappa. Le notifiche di sistema per gli acquisti in scadenza
+esistevano già (`PantryNotifier.tsx`, non toccato da questa modifica) — il puntino è un
+richiamo visivo aggiuntivo, non un sostituto.
+
+**Rimossa la stima automatica della scadenza in dispensa**: prima, in assenza di una data
+scritta a mano, un acquisto ricadeva su una stima per categoria dell'ingrediente
+(`typicalShelfLifeDays`). Ora quella stima è stata tolta del tutto — la scadenza esiste solo
+se scritta esplicitamente al momento dell'acquisto (`PantryEntry.expiryDateOverride`), letta
+dalla confezione vera. Un acquisto senza quella data non sparisce né si rompe: resta
+tracciato in dispensa normalmente (quantità, consumo), semplicemente con uno stato "Senza
+scadenza registrata" invece di un valore stimato che nessuno ha confermato. La vista
+Dispensa mostra ora tre gruppi anziché due (In scadenza, Ancora fresco, Senza scadenza
+registrata) e il puntino sull'icona Alimentazione conta solo le voci con una vera scadenza
+imminente o superata — mai le voci senza data. Il campo `typicalShelfLifeDays` è stato
+rimosso dal catalogo categorie (`lib/food-category-catalog.ts`) insieme alla logica che lo
+leggeva, dato che nessun altro punto dell'app lo usava più: le categorie restano comunque
+utili per classificare un ingrediente, solo scollegate dalla sua scadenza.
+
 ## Sviluppo in locale
 
 ```bash

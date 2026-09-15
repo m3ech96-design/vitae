@@ -21,9 +21,10 @@ export interface PersonalDetails {
   gender?: string;
   birthday?: string;
   /** Il "Soprannome" del wizard identità — un nomignolo informale (persona offline o il tuo
-   * stesso profilo). Chiave diversa da `UserProfile.nickname` apposta: prima si chiamava
-   * anche questo `nickname`, e siccome `UserProfile extends PersonalDetails` le due chiavi
-   * coincidevano — scrivere qui sovrascriveva il vero nickname Vitaecom (bug corretto). */
+   * stesso profilo). Chiave tenuta volutamente diversa da un vecchio campo `nickname` che
+   * esisteva un tempo su `UserProfile` (rimosso insieme a Vitaecom): dato che `UserProfile`
+   * estende `PersonalDetails`, le due chiavi coincidevano, e scrivere qui sovrascriveva
+   * quell'altro nickname (bug corretto all'epoca). */
   alias?: string;
   phone?: string;
   birthPlace?: string;
@@ -132,16 +133,6 @@ export interface UserProfile extends PersonalDetails {
   onboardingComplete: boolean;
   createdAt: string;
   updatedAt: string;
-  /** Il nome con cui esisti in Vitaecom — univoco (vedi lib/nickname-check.ts), mai
-   * obbligatorio al wizard: se lo lasci vuoto lì, te lo richiede Vitaecom stesso al primo
-   * accesso, e non entri finché non ne scegli uno libero. */
-  nickname?: string;
-  /** La Vetrina in cima al tuo profilo Vitaecom, visibile a chi ti visita — non un bio
-   * testuale generico: riferimenti (`"favoriteMovies:<id>"`, `"values:Empatia"`, ecc, vedi
-   * lib/vitaecom-showcase.ts) verso dati che hai già scritto altrove nel wizard (film, musica,
-   * valori, luoghi...), scelti a mano tra quelli esistenti invece di duplicare un campo testo
-   * a parte da tenere sincronizzato a mano. */
-  vitaecomShowcase: string[];
   /** Se false, il resoconto di benessere settimanale (vedi lib/wellbeing-report.ts) non
    * compare in Salute — l'utente può disattivarlo se lo trova invadente (richiesto
    * esplicitamente: il resoconto non deve mai essere imposto). Default `true`: comincia
@@ -162,7 +153,6 @@ export function createEmptyProfile(): UserProfile {
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,
-    vitaecomShowcase: [],
   };
 }
 
@@ -267,17 +257,8 @@ export interface Person extends PersonalDetails {
   kind: PersonKind;
   livesAtHome: boolean;
   /** Badge "Esempio" in Mondo, per non confondere una persona di prova con un contatto
-   * reale — indipendente da `vitaecomAccountId` qui sotto: una persona collegata a un
-   * account dimostrativo di Vitaecom eredita comunque questo badge (vedi
-   * ensurePersonForAccount in vitaecom-social-context.tsx), il campo resta anche per chi
-   * l'aveva creata a mano prima che il ponte Vitaecom↔Mondo esistesse. */
+   * reale. */
   isDemo?: boolean;
-  /** Il ponte Vitaecom↔Mondo: quando conosci un account su Vitaecom (vedi KnowPanel),
-   * questa stessa Persona viene creata automaticamente in Mondo — stesso wizard delle
-   * scoperte, stesso rapporto, stessa scheda di chiunque altro, non una copia parallela.
-   * Assente per una Persona creata a mano, offline. Univoco: al più una Persona per ogni
-   * account (vedi ensurePersonForAccount). */
-  vitaecomAccountId?: string;
   /** Impostato solo alla creazione, dal wizard — vedi AddPersonModal. Cambia il trattamento
    * dell'avatar ovunque compaia (desaturato, respiro che si assesta una volta sola) e fa
    * comparire "Defunto"/"Defunta" nella scheda della persona. */
@@ -354,6 +335,11 @@ export interface Place {
   name: string;
   originalName: string;
   photoUrl?: string;
+  /** Galleria del luogo — foto aggiuntive oltre a `photoUrl` (che resta la copertina
+   * mostrata come sfondo nella card e nell'intestazione). Nessun limite al numero di foto:
+   * ognuna è solo una chiave verso image-store.ts (IndexedDB), non una data URL diretta,
+   * quindi non c'è un vincolo pratico di quota come ci sarebbe stato in localStorage. */
+  photoKeys?: string[];
   type: PlaceType;
   address: string;
   lat: number;

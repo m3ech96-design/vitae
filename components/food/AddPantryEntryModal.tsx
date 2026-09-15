@@ -13,9 +13,14 @@ import { Button } from "../ui/Button";
 /**
  * Registrare un acquisto è deliberatamente più leggero di registrare un pasto: solo
  * ingrediente e data (default oggi) — nessuna quantità obbligatoria, perché lo scopo qui
- * non è il conteggio calorico ma solo stimare quando quella confezione scadrà (vedi
+ * non è il conteggio calorico ma solo tracciare quando quella confezione scadrà (vedi
  * lib/pantry.ts). Aggiungere più attrito di questo avrebbe vanificato lo scopo del punto 1:
- * una scadenza automatica non deve costare più della singola scelta dell'ingrediente.
+ * tracciare una scadenza non deve costare più della singola scelta dell'ingrediente.
+ *
+ * Corretto secondo le istruzioni: la scadenza non è più stimata automaticamente dalla
+ * categoria dell'ingrediente — deve essere scritta a mano, letta dalla confezione vera.
+ * Un acquisto senza questa data resta comunque tracciato in dispensa (quantità, consumo),
+ * semplicemente senza uno stato di scadenza da monitorare.
  */
 export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
   const { ingredients, addPantryEntry } = useFood();
@@ -23,6 +28,7 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [purchasedDate, setPurchasedDate] = useState(todayIso());
   const [quantity, setQuantity] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
@@ -33,7 +39,12 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
   const submit = () => {
     if (!selected) return;
     const initialQuantity = quantity.trim() ? Math.max(0, parseFloat(quantity.replace(",", "."))) : undefined;
-    addPantryEntry({ ingredientId: selected.id, purchasedDate, initialQuantity });
+    addPantryEntry({
+      ingredientId: selected.id,
+      purchasedDate,
+      initialQuantity,
+      expiryDateOverride: expiryDate || undefined,
+    });
     onClose();
   };
 
@@ -62,11 +73,9 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
             <div className="flex items-center justify-between rounded-xl2 border border-aura-emerald/30 bg-aura-emerald/[0.06] px-4 py-3">
               <div>
                 <p className="text-sm text-ink-100">{selected.name}</p>
-                <p className="mt-0.5 text-[11px] text-ink-800">
-                  {selected.categoryId
-                    ? `${foodCategoryOf(selected.categoryId).label} · ~${foodCategoryOf(selected.categoryId).typicalShelfLifeDays}gg`
-                    : "Nessuna categoria — scadenza stimata su un default generico"}
-                </p>
+                {selected.categoryId && (
+                  <p className="mt-0.5 text-[11px] text-ink-800">{foodCategoryOf(selected.categoryId).label}</p>
+                )}
               </div>
               <button onClick={() => setSelected(null)} className="focus-ring text-ink-800 hover:text-aura-pink" aria-label="Cambia ingrediente">
                 <X size={14} />
@@ -104,6 +113,14 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
           )}
 
           <TextField label="Comprato il" type="date" value={purchasedDate} onChange={(e) => setPurchasedDate(e.target.value)} />
+
+          <TextField
+            label="Scadenza (facoltativa — stampata sulla confezione)"
+            type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            hint="Senza questa data l'acquisto resta in dispensa ma non comparirà mai tra le scadenze imminenti."
+          />
 
           {selected && (
             <TextField

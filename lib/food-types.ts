@@ -208,10 +208,10 @@ export function macroGramGoals(goals: FoodGoals): { carbs: number; protein: numb
   };
 }
 
-/** Un acquisto/inserimento in dispensa — l'unico dato manuale richiesto per stimare una
- * scadenza (ingrediente + quando l'hai messo in dispensa), niente quantità obbligatoria e
- * nessuna data di scadenza da scrivere a mano: quella si deriva da sola sommando questa
- * data ai giorni tipici della categoria dell'ingrediente (vedi estimatedExpiryDate). */
+/** Un acquisto/inserimento in dispensa — ingrediente, quando l'hai messo in dispensa, e
+ * facoltativamente la scadenza scritta a mano dalla confezione (vedi expiryDateOverride qui
+ * sotto): senza quella data l'acquisto resta tracciato in dispensa ma non ha una scadenza
+ * da monitorare, nessuna stima automatica di ripiego. */
 export interface PantryEntry {
   id: string;
   ingredientId: string;
@@ -228,9 +228,16 @@ export interface PantryEntry {
   initialQuantity?: number;
   /** Quanto resta ora — scala da sola quando un pasto registrato in un giorno del menù usa
    * un ingrediente collegato a questa entry (FIFO: si intacca prima l'entry con scadenza
-   * stimata più vicina, vedi consumeFromPantry in lib/pantry.ts), oppure modificabile a
+   * più vicina, vedi consumeFromPantry in lib/pantry.ts), oppure modificabile a
    * mano per una correzione ("ho versato via mezzo litro per sbaglio"). Quando tocca 0,
    * `consumedDate` si imposta da solo — stesso comportamento di spuntarla a mano. Assente
    * se `initialQuantity` è assente (tracking disattivato per questa entry). */
   remainingQuantity?: number;
+  /** Scadenza scritta a mano al momento dell'acquisto (quella stampata sulla confezione),
+   * facoltativa. Corretto secondo le istruzioni: non esiste più una stima automatica di
+   * ripiego dalla categoria dell'ingrediente — questa data, quando presente, è l'unico modo
+   * in cui un acquisto ha una scadenza tracciata (vedi pantryEntryStatuses in
+   * lib/pantry.ts). Un acquisto senza questa data resta in dispensa normalmente, solo senza
+   * uno stato di scadenza da monitorare. */
+  expiryDateOverride?: string;
 }

@@ -11,7 +11,7 @@ import { TextArea } from "../ui/TextField";
 import { ImageCropInput } from "../ui/ImageCropInput";
 import { VideoPickerInput } from "../ui/VideoPickerInput";
 import { VoiceRecorderInput } from "./VoiceRecorderInput";
-import { MoodPicker } from "../vitaecom/MoodPicker";
+import { MoodPicker } from "../ui/MoodPicker";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { EntityLinksSection } from "../ui/EntityLinksSection";
 

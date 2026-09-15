@@ -31,6 +31,7 @@ export function MultiPhotoPicker({ photoKeys, onChange, label }: { photoKeys: st
         ))}
         <ImageCropInput
           shape="square"
+          allowFreeAspect
           onChange={(key) => onChange([...photoKeys, key])}
           trigger={(open) => (
             <button

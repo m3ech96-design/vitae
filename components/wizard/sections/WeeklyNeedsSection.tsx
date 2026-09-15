@@ -4,7 +4,7 @@ import { Plus, X } from "lucide-react";
 import { useNeeds } from "@/lib/needs-context";
 import { useMood } from "@/lib/mood-context";
 import { NEED_SUGGESTIONS } from "@/lib/needs-catalog";
-import { MoodPicker } from "@/components/vitaecom/MoodPicker";
+import { MoodPicker } from "@/components/ui/MoodPicker";
 
 /**
  * "Quando ho voglia" — nessun bisogno è mai obbligatorio né decade con un fallimento da

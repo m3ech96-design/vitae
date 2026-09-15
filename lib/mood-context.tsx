@@ -8,7 +8,6 @@ import { newId } from "./id";
 const MOODS_KEY = "vitae:custom-moods";
 const TRIGGER_MAP_KEY = "vitae:mood-trigger-map";
 const ACTIVE_MOOD_KEY = "vitae:active-mood";
-const SHARE_ON_VITAECOM_KEY = "vitae:share-mood-vitaecom";
 
 /** Dura 12 ore reali — dopo si spegne da sola e si ricade su "Normale", non serve azzerarla
  * a mano. Prima era un'ora: troppo poco per uno stato che, nella pratica, resta valido per
@@ -52,12 +51,6 @@ interface MoodContextValue {
   /** 1 = appena scelto, scende linearmente a 0 nell'arco delle 12 ore — usato per il bloom e
    * per quanto la tinta è marcata su card e barra di navigazione. */
   activeMoodIntensity: number;
-  /** "Condividi Stato D'Animo Su Vitaecom" (vedi il pop-up "Ti Senti Così?") — se spenta, il
-   * profilo Vitaecom mostra sempre "Normale" invece dello stato reale, indipendentemente da
-   * cosa succede nel resto dell'app. Acceso di serie: la scelta di nascondersi è esplicita,
-   * non il contrario. */
-  shareMoodOnVitaecom: boolean;
-  setShareMoodOnVitaecom: (value: boolean) => void;
 }
 
 const MoodContext = createContext<MoodContextValue | null>(null);
@@ -78,7 +71,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [activeMood, setActiveMood] = useState<ActiveMood | null>(null);
   const [pendingSuggestion, setPendingSuggestion] = useState<PendingSuggestion | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [shareMoodOnVitaecom, setShareMoodOnVitaecomState] = useState(true);
 
   useEffect(() => {
     const loadedMoods = loadJson<MoodDefinition[]>(MOODS_KEY, []);
@@ -91,14 +83,11 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     const seededMap =
       loadedMap ?? Object.fromEntries(TRIGGER_CATALOG.map((t) => [t.key, [] as string[]]));
     const loadedActive = loadJson<ActiveMood | null>(ACTIVE_MOOD_KEY, null);
-    const loadedShare = loadJson<boolean>(SHARE_ON_VITAECOM_KEY, true);
-
     setCustomMoods(loadedMoods);
     setTriggerMapState(seededMap);
     if (loadedActive && Date.now() - new Date(loadedActive.startedAt).getTime() < MOOD_DURATION_MS) {
       setActiveMood(loadedActive);
     }
-    setShareMoodOnVitaecomState(loadedShare);
     setHydrated(true);
   }, []);
 
@@ -222,15 +211,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
 
   const clearMood = useCallback(() => persistActive(null), [persistActive]);
 
-  const setShareMoodOnVitaecom = useCallback((value: boolean) => {
-    setShareMoodOnVitaecomState(value);
-    try {
-      window.localStorage.setItem(SHARE_ON_VITAECOM_KEY, JSON.stringify(value));
-    } catch {
-      // storage non disponibile: continua solo in memoria
-    }
-  }, []);
-
   const activeMoodIntensity = useMemo(() => {
     if (!activeMood) return 0;
     const elapsed = now - new Date(activeMood.startedAt).getTime();
@@ -254,8 +234,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
       clearMood,
       activeMood,
       activeMoodIntensity,
-      shareMoodOnVitaecom,
-      setShareMoodOnVitaecom,
     }),
     [
       hydrated,
@@ -273,8 +251,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
       clearMood,
       activeMood,
       activeMoodIntensity,
-      shareMoodOnVitaecom,
-      setShareMoodOnVitaecom,
     ]
   );
 

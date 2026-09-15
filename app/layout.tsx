@@ -23,12 +23,9 @@ import { QuickInteractionProvider } from "@/lib/quick-interaction-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
-import { VitaecomSocialProvider } from "@/lib/vitaecom-social-context";
-import { VitaecomChatProvider } from "@/lib/vitaecom-chat-context";
-import { VitaecomDraftProvider } from "@/lib/vitaecom-draft-context";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DayRhythm } from "@/components/DayRhythm";
-import { NavSwitcher } from "@/components/NavSwitcher";
+import { BottomNav } from "@/components/BottomNav";
 import { NearbyPlacePrompt } from "@/components/household/NearbyPlacePrompt";
 import { EngagementNotifier } from "@/components/persone/EngagementNotifier";
 import { TaskNotifier } from "@/components/task/TaskNotifier";
@@ -92,11 +89,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
-                          <VitaecomSocialProvider>
-                            <VitaecomChatProvider>
-                            <VitaecomDraftProvider>
                             {children}
-                            <NavSwitcher />
+                            <BottomNav />
                             <NearbyPlacePrompt />
                             <EngagementNotifier />
                             <TaskNotifier />
@@ -106,9 +100,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <PantryNotifier />
                             <MoodSuggestionPrompt />
                             <FloatingFocusTimer />
-                          </VitaecomDraftProvider>
-                          </VitaecomChatProvider>
-                          </VitaecomSocialProvider>
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>

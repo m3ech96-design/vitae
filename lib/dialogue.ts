@@ -1,9 +1,9 @@
 import { ActionPhrase, RecurringPhrase } from "./types";
 
 /** Solo i campi davvero letti qui — non l'intero `PersonalDetails` — perché lo stesso
- * meccanismo deve valere anche per un `VitaecomAccount` altrui (dimostrativo o, un giorno,
- * vero), che non ha né avrà mai il resto del profilo. Facoltativi apposta: la maggior parte
- * degli account (e alcune persone) non li avranno mai impostati. */
+ * meccanismo deve valere anche per il profilo utente, non solo per una Persona in Mondo.
+ * Facoltativi apposta: la maggior parte
+ * delle persone non li avranno mai impostati. */
 export interface DialoguePresentable {
   dialogModeEnabled?: boolean;
   recurringPhrases?: RecurringPhrase[];
@@ -36,8 +36,8 @@ function actionIsActiveNow(a: ActionPhrase): boolean {
 }
 
 /** Solo le Frasi Ricorrenti (Modalità Dialogo) — mostrate nella nuvoletta sopra l'avatar.
- * Simmetrico in entrambe le direzioni: vale per il tuo profilo, per una Persona in Mondo, e
- * per un account Vitaecom altrui — chiunque abbia questi due campi, comunque popolati. */
+ * Simmetrico in entrambe le direzioni: vale per il tuo profilo e per una Persona in Mondo —
+ * chiunque abbia questi due campi, comunque popolati. */
 export function pickDialoguePhrase(person: DialoguePresentable): string | null {
   if (!person.dialogModeEnabled || !person.recurringPhrases || person.recurringPhrases.length === 0) return null;
   const chosen = person.recurringPhrases[Math.floor(Math.random() * person.recurringPhrases.length)];

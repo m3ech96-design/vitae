@@ -15,15 +15,27 @@ function createImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Ritaglia l'immagine nell'area scelta e la disegna su un canvas. Prima l'output era sempre
+ * un quadrato fisso (`outputSize x outputSize`): qualunque area di ritaglio, anche
+ * rettangolare, veniva schiacciata o stirata dentro quel quadrato, tagliando parte
+ * dell'immagine invece di rispettarne il rapporto scelto. Ora il canvas eredita le
+ * dimensioni reali dell'area ritagliata (`crop.width` x `crop.height`, scalate per restare
+ * entro `maxOutputSize` sul lato più lungo) — un ritaglio verticale produce un'immagine
+ * verticale, uno orizzontale un'immagine orizzontale, nessuna deformazione.
+ */
 export async function getCroppedImage(
   imageSrc: string,
   crop: PixelCrop,
-  outputSize = 512
+  maxOutputSize = 1024
 ): Promise<string> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
-  canvas.width = outputSize;
-  canvas.height = outputSize;
+  const scale = Math.min(1, maxOutputSize / Math.max(crop.width, crop.height));
+  const outputWidth = Math.round(crop.width * scale);
+  const outputHeight = Math.round(crop.height * scale);
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Impossibile creare il contesto canvas");
 
@@ -35,8 +47,8 @@ export async function getCroppedImage(
     crop.height,
     0,
     0,
-    outputSize,
-    outputSize
+    outputWidth,
+    outputHeight
   );
 
   return canvas.toDataURL("image/png", 0.92);

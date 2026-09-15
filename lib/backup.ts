@@ -10,7 +10,7 @@ const KEY_PREFIX = "vitae:";
 /**
  * Corretto secondo le istruzioni: qui c'era prima un elenco fisso (DATA_KEYS) scritto a mano,
  * e ogni volta che una nuova sezione introduceva una propria chiave localStorage (mood,
- * medical, needs, i vari vitaecom-*, nav-slots, e più recenti come body-measurements o
+ * medical, needs, nav-slots, e più recenti come body-measurements o
  * weekly-activity-goal) bisognava ricordarsi di aggiungerla qui — 41 chiavi erano rimaste
  * fuori, mai aggiunte quando quei moduli furono costruiti. Un elenco da mantenere a mano è
  * per natura destinato a restare indietro rispetto al codice.
@@ -22,8 +22,8 @@ const KEY_PREFIX = "vitae:";
  * sezione aggiunga la propria chiave con questo stesso prefisso finisce nel backup
  * automaticamente, dal primo giorno.
  *
- * Include deliberatamente anche i piccoli flag interni "già mostrato/già seminato" (es.
- * vitae:vitaecom-know-seeded) invece di escluderli come dati "non veri": ripristinando un
+ * Include deliberatamente anche i piccoli flag interni "già mostrato/già seminato" invece
+ * di escluderli come dati "non veri": ripristinando un
  * backup su un dispositivo nuovo senza quei flag, l'app rigenererebbe da capo le notifiche
  * dimostrative già viste e gestite, facendole ricomparire come fossero nuove — un backup
  * fedele deve riportare lo stato esatto di prima, non solo i dati che sembrano "importanti".

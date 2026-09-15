@@ -6,8 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Home as HomeIcon, MoreHorizontal, X, Check, ArrowLeftRight } from "lucide-react";
 import clsx from "clsx";
 import { useMood } from "@/lib/mood-context";
-import { useVitaecomSocial } from "@/lib/vitaecom-social-context";
 import { usePlaces } from "@/lib/places-context";
+import { useFood } from "@/lib/food-context";
 import { useLongPress } from "@/lib/use-long-press";
 import { ALL_NAV_ITEMS, useNavSlots, NavItemDef } from "@/lib/nav-slots";
 
@@ -123,8 +123,8 @@ export function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
-  const { hasUnreadNotification } = useVitaecomSocial();
   const { hasStalePlaces } = usePlaces();
+  const { hasExpiringPantryItems } = useFood();
   const { slots, hydrated, setSlot, swapSlots } = useNavSlots();
   if (HIDDEN_ON.includes(pathname) || HIDDEN_PREFIX_ON.some((prefix) => pathname.startsWith(prefix))) return null;
 
@@ -142,7 +142,6 @@ export function BottomNav() {
 
   const moreActive = moreItems.some((m) => pathname.startsWith(m.href));
   const mood = activeMood ? allMoods.find((m) => m.id === activeMood.moodId) : null;
-  const notifDotColor = mood?.color ?? "#B79A6B";
 
   return (
     <>
@@ -171,16 +170,16 @@ export function BottomNav() {
             slotItems.map((item, index) => (
               <span key={item.href} className="relative">
                 <NavButton item={item} active={pathname.startsWith(item.href)} onLongPress={() => setPickingSlot(index)} />
-                {item.href === "/vitaecom" && hasUnreadNotification && (
-                  <span
-                    className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
-                    style={{ background: notifDotColor }}
-                  />
-                )}
                 {item.href === "/map" && hasStalePlaces && (
                   <span
                     className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
                     style={{ background: "#00E5C7" }}
+                  />
+                )}
+                {item.href === "/alimentazione" && hasExpiringPantryItems && (
+                  <span
+                    className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
+                    style={{ background: "#FFB454" }}
                   />
                 )}
               </span>

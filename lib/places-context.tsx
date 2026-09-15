@@ -12,6 +12,7 @@ const PLACES_KEY = "vitae:places";
 interface NewPlaceInput {
   name: string;
   photoUrl?: string;
+  photoKeys?: string[];
   type: PlaceType;
   address: string;
   lat: number;
@@ -74,6 +75,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         name: input.name,
         originalName: input.name,
         photoUrl: input.photoUrl,
+        photoKeys: input.photoKeys,
         type: input.type,
         address: input.address,
         lat: input.lat,
@@ -92,15 +94,28 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
 
   const updatePlace = useCallback(
     (id: string, patch: Partial<Place>) => {
+      // Se la modifica sostituisce la galleria foto, le chiavi rimosse rispetto a quelle
+      // attuali vanno ripulite da IndexedDB — altrimenti restano immagini orfane che nessuna
+      // voce dell'app referenzia più più (stesso principio già applicato in removePlace).
+      if (patch.photoKeys) {
+        const current = places.find((p) => p.id === id);
+        const removed = (current?.photoKeys ?? []).filter((k) => !patch.photoKeys!.includes(k));
+        removed.forEach((k) => {
+          if (!isDataUrl(k)) deleteImage(k);
+        });
+      }
       persist((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     },
-    [persist]
+    [persist, places]
   );
 
   const removePlace = useCallback(
     (id: string) => {
       const place = places.find((p) => p.id === id);
       if (place?.photoUrl && !isDataUrl(place.photoUrl)) deleteImage(place.photoUrl);
+      place?.photoKeys?.forEach((k) => {
+        if (!isDataUrl(k)) deleteImage(k);
+      });
       persist((prev) => prev.filter((p) => p.id !== id));
     },
     [places, persist]

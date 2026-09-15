@@ -10,7 +10,8 @@ import { Place } from "./types";
  * Vive solo nella scheda Mappa, deliberatamente — un suggerimento analogo per le persone
  * (vedi checkpoint 87 nello storico del progetto) era stato eliminato del tutto perché
  * intrusivo nella vita quotidiana dell'utente; per i luoghi la stessa idea resta, ma confinata
- * a un puntino discreto sull'icona della scheda Mappa (come già fa Vitaecom per le notifiche),
+ * a un puntino discreto sull'icona della scheda Mappa (lo stesso linguaggio visivo già usato
+ * altrove nell'app per una notifica non invasiva),
  * mai un banner in Home o altrove: si vede solo aprendo la Mappa, non si impone.
  */
 const STALE_DAYS = 30;

@@ -67,7 +67,7 @@ function buildVapors(perEdge: number): Vapor[] {
 
 /**
  * Aloni di colore sfumati lungo i quattro margini che si mescolano tra loro come vapore — da
- * usare in ogni visualizzazione immagine a schermo intero dell'app (Vitaecom, Storie, Diario),
+ * usare in ogni visualizzazione immagine a schermo intero dell'app (Diario e non solo),
  * non solo in una. Animazione in puro CSS (`@keyframes` + `animation-iteration-count:
  * infinite`), non guidata da JavaScript: un loop `Infinity` su un motore di animazione JS può
  * fermarsi o saltare quando il browser sospende a lungo i timer (schermo bloccato, scheda in

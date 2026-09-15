@@ -1,12 +1,15 @@
 import { PantryEntry, Ingredient } from "./food-types";
-import { foodCategoryOf } from "./food-category-catalog";
 
 export interface PantryEntryStatus {
   entry: PantryEntry;
   ingredientName: string;
-  estimatedExpiryDate: string;
-  daysRemaining: number;
-  status: "fresco" | "in-scadenza" | "scaduto";
+  /** Assente se l'acquisto non ha una scadenza scritta a mano — vedi il commento sopra
+   * PantryEntry.expiryDateOverride in lib/food-types.ts: non esiste più una stima
+   * automatica di ripiego, quindi senza quella data questo campo non ha semplicemente un
+   * valore, invece di mostrarne uno inventato. */
+  expiryDate?: string;
+  daysRemaining: number | null;
+  status: "senza-scadenza" | "fresco" | "in-scadenza" | "scaduto";
 }
 
 /** Sotto questa soglia di giorni residui un acquisto passa da "fresco" a "in scadenza" —
@@ -15,18 +18,18 @@ export interface PantryEntryStatus {
  * dell'ultimo secondo. */
 const WARNING_WINDOW_DAYS = 2;
 
-export function estimatedExpiryDate(purchasedDate: string, ingredient: Pick<Ingredient, "categoryId">): string {
-  const category = foodCategoryOf(ingredient.categoryId);
-  const purchased = new Date(purchasedDate);
-  purchased.setDate(purchased.getDate() + category.typicalShelfLifeDays);
-  return purchased.toISOString().slice(0, 10);
-}
-
 /**
  * Stato di ogni acquisto ancora non consumato — pensato per la vista dispensa e per il
- * notificatore: entrambi hanno bisogno esattamente di questi stessi tre numeri (scadenza
- * stimata, giorni residui, categoria di stato), calcolati nello stesso modo per non
- * rischiare che i due punti dell'app dicano cose leggermente diverse sulla stessa voce.
+ * notificatore: entrambi hanno bisogno esattamente di questi stessi numeri (scadenza,
+ * giorni residui, categoria di stato), calcolati nello stesso modo per non rischiare che i
+ * due punti dell'app dicano cose leggermente diverse sulla stessa voce.
+ *
+ * Corretto secondo le istruzioni: prima, in assenza di una scadenza scritta a mano
+ * (`expiryDateOverride`), si ricorreva a una stima automatica per categoria dell'ingrediente
+ * (`typicalShelfLifeDays` in lib/food-category-catalog.ts). Quella stima è stata rimossa del
+ * tutto: la scadenza di un acquisto ora esiste solo se l'utente l'ha scritta, letta dalla
+ * confezione vera. Un acquisto senza quella data non ha scadenza tracciata — status
+ * "senza-scadenza", mai un valore inventato spacciato per una data reale.
  */
 export function pantryEntryStatuses(entries: PantryEntry[], ingredients: Ingredient[], today: string): PantryEntryStatus[] {
   const todayMs = new Date(today).getTime();
@@ -35,19 +38,45 @@ export function pantryEntryStatuses(entries: PantryEntry[], ingredients: Ingredi
     .filter((e) => !e.consumedDate)
     .map((entry) => {
       const ingredient = ingredients.find((i) => i.id === entry.ingredientId);
-      const expiry = estimatedExpiryDate(entry.purchasedDate, ingredient ?? {});
+      const expiry = entry.expiryDateOverride;
+      if (!expiry) {
+        return {
+          entry,
+          ingredientName: ingredient?.name ?? "Ingrediente eliminato",
+          expiryDate: undefined,
+          daysRemaining: null,
+          status: "senza-scadenza" as const,
+        };
+      }
       const daysRemaining = Math.round((new Date(expiry).getTime() - todayMs) / 86400000);
       const status: PantryEntryStatus["status"] =
         daysRemaining < 0 ? "scaduto" : daysRemaining <= WARNING_WINDOW_DAYS ? "in-scadenza" : "fresco";
       return {
         entry,
         ingredientName: ingredient?.name ?? "Ingrediente eliminato",
-        estimatedExpiryDate: expiry,
+        expiryDate: expiry,
         daysRemaining,
         status,
       };
     })
-    .sort((a, b) => a.estimatedExpiryDate.localeCompare(b.estimatedExpiryDate));
+    // Le voci con scadenza vera vengono prima, ordinate dalla più vicina; quelle senza
+    // scadenza restano in fondo, ordinate per data di acquisto (non hanno una scadenza con
+    // cui ordinarle, ma un ordine stabile è comunque meglio di uno arbitrario).
+    .sort((a, b) => {
+      if (a.expiryDate && b.expiryDate) return a.expiryDate.localeCompare(b.expiryDate);
+      if (a.expiryDate) return -1;
+      if (b.expiryDate) return 1;
+      return a.entry.purchasedDate.localeCompare(b.entry.purchasedDate);
+    });
+}
+
+/** true se almeno un acquisto non ancora consumato è "in-scadenza" o "scaduto" — pilota
+ * solo il puntino discreto sull'icona della scheda Alimentazione nella barra di
+ * navigazione (stesso principio già usato da hasStalePlaces per la scheda Mappa in
+ * lib/stale-places.ts), mai un banner altrove nell'app. Le voci "senza-scadenza" non
+ * contano: senza una data reale non c'è nulla da segnalare come imminente. */
+export function hasExpiringPantryEntries(entries: PantryEntry[], ingredients: Ingredient[], today: string): boolean {
+  return pantryEntryStatuses(entries, ingredients, today).some((s) => s.status === "in-scadenza" || s.status === "scaduto");
 }
 
 /**

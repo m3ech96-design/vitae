@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Newspaper, Share2, ExternalLink, Settings2 } from "lucide-react";
+import { Newspaper, ExternalLink, Settings2 } from "lucide-react";
 import { NewsItem } from "@/app/api/news/route";
 import { useNews } from "@/lib/use-news";
-import { ShareNewsComposer } from "@/components/news/ShareNewsComposer";
 import { Button } from "@/components/ui/Button";
 
 function timeAgo(iso?: string): string {
@@ -17,7 +16,7 @@ function timeAgo(iso?: string): string {
   return `${Math.floor(hours / 24)}g fa`;
 }
 
-function NewsCard({ item, onShare }: { item: NewsItem; onShare: () => void }) {
+function NewsCard({ item }: { item: NewsItem }) {
   const [expanded, setExpanded] = useState(false);
   const longDescription = item.description.length > 110;
 
@@ -46,9 +45,6 @@ function NewsCard({ item, onShare }: { item: NewsItem; onShare: () => void }) {
             {item.sourceName} · {timeAgo(item.pubDate)}
           </p>
           <div className="flex items-center gap-3">
-            <button onClick={onShare} className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Condividi su Vitaecom">
-              <Share2 size={15} />
-            </button>
             <a href={item.link} target="_blank" rel="noopener noreferrer" className="focus-ring text-ink-600 hover:text-ink-200" aria-label="Apri l'articolo">
               <ExternalLink size={15} />
             </a>
@@ -63,7 +59,6 @@ export default function NewsPage() {
   const router = useRouter();
   const { categories, error, hasSelection } = useNews();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [sharingItem, setSharingItem] = useState<NewsItem | null>(null);
 
   // Imposta la prima categoria come attiva non appena i dati arrivano — l'hook condiviso può
   // già avere una cache pronta al primo render (altro consumer l'ha già popolata), quindi
@@ -132,13 +127,11 @@ export default function NewsPage() {
 
           <div className="mt-5 space-y-4">
             {active?.items.map((item) => (
-              <NewsCard key={item.link} item={item} onShare={() => setSharingItem(item)} />
+              <NewsCard key={item.link} item={item} />
             ))}
           </div>
         </>
       )}
-
-      {sharingItem && <ShareNewsComposer item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
   );
 }

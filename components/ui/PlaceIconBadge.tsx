@@ -11,7 +11,7 @@ import { PLACE_TYPE_META } from "@/lib/places-meta";
 const WORLD_COLOR = "#5EC8FF";
 
 /** Stesso caldo neutro già usato altrove nell'app per segnare "un'altra identità, non la
- * tua" (vedi il badge "Esempio" e il glow degli account Vitaecom in famiglia) — qui indica
+ * tua" (vedi il badge "Esempio") — qui indica
  * "una casa, ma non la tua": stesso linguaggio di colore, significato coerente. */
 const OTHER_HOME_COLOR = "#B79A6B";
 

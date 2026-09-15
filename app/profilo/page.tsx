@@ -90,7 +90,7 @@ export default function ProfiloPage() {
             <SwitchVisual checked={Boolean(profile.dialogModeEnabled)} />
           </button>
           <p className="mb-3 mt-2 text-xs text-ink-800">
-            Frasi ricorrenti che compaiono a caso vicino al tuo avatar, ben visibili su Vitaecom.
+            Frasi ricorrenti che compaiono a caso vicino al tuo avatar, ben visibili nell'app.
           </p>
           <PhraseEditor phrases={profile.recurringPhrases} onChange={(recurringPhrases) => onUpdate({ recurringPhrases })} />
         </div>
@@ -106,7 +106,7 @@ export default function ProfiloPage() {
             <SwitchVisual checked={Boolean(profile.liveModeEnabled)} />
           </button>
           <p className="mb-3 mt-2 text-xs text-ink-800">
-            Cosa stai facendo, in certi orari o a caso — sempre aggiornata, visibile a tutti su Vitaecom.
+            Cosa stai facendo, in certi orari o a caso — sempre aggiornata, visibile ovunque nell'app.
           </p>
           <ActionEditor action={profile.actionPhrase} onChange={(actionPhrase) => onUpdate({ actionPhrase })} />
         </div>

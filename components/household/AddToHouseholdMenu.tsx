@@ -2,15 +2,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Aperture, User, PawPrint } from "lucide-react";
+import { Plus, User, PawPrint } from "lucide-react";
 import { AddPersonModal } from "@/components/persone/AddPersonModal";
-import { VitaecomHouseholdPicker } from "./VitaecomHouseholdPicker";
 import { flippedMenuTop } from "@/lib/dropdown-position";
 
 const MENU_WIDTH = 200;
-// Intestazione più tre voci (Vitaecom/offline/animali): stima per eccesso, vedi
+// Intestazione più due voci (offline/animali): stima per eccesso, vedi
 // lib/dropdown-position.ts.
-const MENU_HEIGHT_ESTIMATE = 190;
+const MENU_HEIGHT_ESTIMATE = 150;
 
 /**
  * Il tasto "+" del riquadro Casa, evoluto: non apre più direttamente il wizard di una
@@ -22,7 +21,7 @@ export function AddToHouseholdMenu() {
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [modal, setModal] = useState<"vitaecom" | "offline" | "animali" | null>(null);
+  const [modal, setModal] = useState<"offline" | "animali" | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +58,7 @@ export function AddToHouseholdMenu() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  const choose = (which: "vitaecom" | "offline" | "animali") => {
+  const choose = (which: "offline" | "animali") => {
     setOpen(false);
     setModal(which);
   };
@@ -88,12 +87,6 @@ export function AddToHouseholdMenu() {
               >
                 <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-ink-800">Aggiungi:</p>
                 <button
-                  onClick={() => choose("vitaecom")}
-                  className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-ink-200 hover:bg-white/[0.05]"
-                >
-                  <Aperture size={15} className="text-[#B79A6B]" /> Da Vitaecom
-                </button>
-                <button
                   onClick={() => choose("offline")}
                   className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-ink-200 hover:bg-white/[0.05]"
                 >
@@ -111,7 +104,6 @@ export function AddToHouseholdMenu() {
           document.body
         )}
 
-      {modal === "vitaecom" && <VitaecomHouseholdPicker onClose={() => setModal(null)} />}
       {modal === "offline" && <AddPersonModal onClose={() => setModal(null)} title="Aggiungi alla casa" lockLivesAtHome />}
       {modal === "animali" && <AddPersonModal onClose={() => setModal(null)} title="Aggiungi animale alla casa" lockLivesAtHome forceAnimal />}
     </>

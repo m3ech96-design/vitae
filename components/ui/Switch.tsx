@@ -2,8 +2,8 @@
 
 /**
  * Interruttore a scorrimento — prima la stessa coppia "traccia + pallina" era scritta a mano
- * in cinque punti diversi dell'app (Vive Con Te e Defunto/a in AddPersonModal, Condividi
- * Stato D'Animo Su Vitaecom in due punti), sempre con lo stesso difetto: la pallina si
+ * in più punti diversi dell'app (Vive Con Te e Defunto/a in AddPersonModal, tra gli altri),
+ * sempre con lo stesso difetto: la pallina si
  * spostava con un `translate-x` calcolato sulla sua posizione "naturale" nel flusso invece
  * che con `position: absolute` ancorata alla traccia — bastava un padding o un bordo di
  * default del contenitore (un `<button>` non azzerato, per esempio) per farla scivolare

@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import { useMood } from "@/lib/mood-context";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
-import { Switch } from "@/components/ui/Switch";
 import { MoodWizardPanel } from "./MoodWizardPanel";
 
 /**
@@ -13,8 +12,7 @@ import { MoodWizardPanel } from "./MoodWizardPanel";
  * scelto per QUESTA interazione specifica, dalla scheda di gestione.
  */
 export function MoodSuggestionPrompt() {
-  const { pendingSuggestion, allMoods, confirmMood, dismissSuggestion, shareMoodOnVitaecom, setShareMoodOnVitaecom } =
-    useMood();
+  const { pendingSuggestion, allMoods, confirmMood, dismissSuggestion } = useMood();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -126,11 +124,6 @@ export function MoodSuggestionPrompt() {
               <Settings size={12} /> Impostazioni
             </button>
           </div>
-
-          <label className="mt-5 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
-            <span className="text-xs text-ink-600">Condividi stato d&apos;animo su Vitaecom</span>
-            <Switch checked={shareMoodOnVitaecom} onChange={setShareMoodOnVitaecom} disabled={Boolean(confirmingId)} />
-          </label>
         </motion.div>
       </motion.div>
     </AnimatePresence>

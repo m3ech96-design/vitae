@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Droplet, Minus, Plus } from "lucide-react";
 import { useFood } from "@/lib/food-context";
 import { GlassCard } from "../ui/GlassCard";
-import { LiquidFill } from "../vitaecom/LiquidFill";
+import { LiquidFill } from "../ui/LiquidFill";
 
 const STEP = 0.25;
 const AURA_SKY = "#5EC8FF";
@@ -11,7 +11,7 @@ const AURA_SKY = "#5EC8FF";
 /** Corretto secondo le istruzioni: non più una barra orizzontale sottile, ma una barra
  * verticale e più larga — abbastanza da ospitare la vera animazione del liquido (bollicine,
  * onda in superficie, gradiente che si mescola) invece di un semplice riempimento a colore
- * piatto. Stessa identica animazione del riquadro profilo di Vitaecom (vedi LiquidFill.tsx),
+ * piatto. Stessa identica animazione già usata altrove nell'app (vedi components/ui/LiquidFill.tsx),
  * qui semplicemente dentro un contenitore verticale invece che nella barra in alto. */
 export function WaterTracker({ date }: { date: string }) {
   const { waterLog, setWater, goals } = useFood();
