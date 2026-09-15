@@ -12,7 +12,7 @@ import { useLongPress } from "@/lib/use-long-press";
 import { ALL_NAV_ITEMS, useNavSlots, NavItemDef } from "@/lib/nav-slots";
 
 const HOME_ITEM: NavItemDef = { href: "/home", label: "Home", icon: HomeIcon };
-const HIDDEN_ON = ["/", "/wizard"];
+const HIDDEN_ON = ["/", "/wizard", "/benvenuto"];
 const HIDDEN_PREFIX_ON: string[] = [];
 
 /** L'alone viola dietro la scheda attiva — un solo elemento condiviso (stesso `layoutId` in

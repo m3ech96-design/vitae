@@ -9,7 +9,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    router.replace(profile.onboardingComplete ? "/home" : "/wizard");
+    router.replace(profile.onboardingComplete ? "/home" : "/benvenuto");
   }, [hydrated, profile.onboardingComplete, router]);
 
   return (

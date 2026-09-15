@@ -3096,6 +3096,21 @@ rimosso dal catalogo categorie (`lib/food-category-catalog.ts`) insieme alla log
 leggeva, dato che nessun altro punto dell'app lo usava più: le categorie restano comunque
 utili per classificare un ingrediente, solo scollegate dalla sua scadenza.
 
+**Pagina di benvenuto prima del wizard**: `app/benvenuto/page.tsx`, nuova schermata che
+compare al primo avvio dell'app (quando `profile.onboardingComplete` è ancora `false`) prima
+del wizard di identità, non più il wizard subito — `app/page.tsx` ora reindirizza lì invece
+che a `/wizard` direttamente. Due scelte, entrambe legittime al primo avvio su un
+dispositivo nuovo: "Crea utente" (porta al wizard esistente, invariato) oppure "Importa
+backup" — stessa identica funzione `importBackup` già usata in Home → Impostazioni
+(`BackupSection.tsx`), non una copia parallela della logica, con la stessa conferma
+esplicita prima di scrivere e lo stesso ricaricamento della pagina a importazione riuscita.
+Se il backup importato aveva `onboardingComplete: true` (il caso normale, un profilo già in
+uso su un altro dispositivo), il ricaricamento fa arrivare l'utente dritto in Home,
+saltando il wizard da solo — nessuna logica in più necessaria per quel salto, la stessa
+condizione in `app/page.tsx` lo gestisce già. Aggiunta `/benvenuto` all'elenco di route dove
+la barra di navigazione resta nascosta (`HIDDEN_ON` in `BottomNav.tsx`), stesso trattamento
+già riservato a `/wizard`.
+
 ## Sviluppo in locale
 
 ```bash
