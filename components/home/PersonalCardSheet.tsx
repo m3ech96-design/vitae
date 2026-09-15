@@ -43,9 +43,9 @@ import { X } from "lucide-react";
  * una volta per tutti i sei punti che lo usano, non solo dove il doppio-apri è stato notato. */
 /**
  * Corretto secondo le istruzioni: crash reale ("Application error: a client-side exception
- * has occurred") in almeno due punti dell'app — l'albero genealogico (`GenealogyPersonSheet`)
- * e la Wishlist (`WishlistItemSheet`) — entrambi passano a `title` un `<div>` con dentro un
- * `<button>` (per il nome + un'icona "modifica" accanto). Il titolo qui sotto era racchiuso in
+ * has occurred") in almeno un punto dell'app — la Wishlist (`WishlistItemSheet`) — che
+ * passa a `title` un `<div>` con dentro un `<button>` (per il nome + un'icona "modifica"
+ * accanto). Il titolo qui sotto era racchiuso in
  * un `<p>`: HTML non valido (un `<div>`, come un `<button>`, non può stare dentro un `<p>` —
  * solo "contenuto fraseggiabile"), che il parser del browser risolve chiudendo il `<p>` PRIMA
  * di quei due elementi. L'albero DOM reale finisce così diverso da quello che React crede di

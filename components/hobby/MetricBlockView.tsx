@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import { Plus, Settings, Trophy, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Settings, Trophy, TrendingUp, TrendingDown, Timer } from "lucide-react";
 import { MetricBlock } from "@/lib/hobby-types";
 import { metricCurrentValue, metricPersonalRecord, metricPeriodComparison } from "@/lib/hobby-stats";
 import { formatDateShort } from "@/lib/date-format";
+import { usePomodoro } from "@/lib/pomodoro-context";
 import { MiniLineChart } from "../medical/MiniLineChart";
 import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
@@ -15,6 +16,7 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
+  const { activeRun, startRun } = usePomodoro();
 
   const current = metricCurrentValue(block);
   const record = metricPersonalRecord(block);
@@ -31,6 +33,15 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
         subtitle={`${block.aggregation === "cumulativa" ? "Totale" : "Ultimo valore"} · ${block.entries.length} voci`}
         extra={
           <>
+            {block.isTimeBased && !activeRun && (
+              <button
+                onClick={() => startRun({ kind: "metrica", hobbyId, blockId: block.id })}
+                className="focus-ring text-ink-800 hover:text-ink-200"
+                aria-label="Avvia sessione Focus per questa metrica"
+              >
+                <Timer size={13} />
+              </button>
+            )}
             <button onClick={() => setConfigOpen(true)} className="focus-ring text-ink-800 hover:text-ink-200" aria-label="Impostazioni metrica">
               <Settings size={13} />
             </button>

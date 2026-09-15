@@ -1,16 +1,17 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Plus, MapPin, LocateFixed, Locate } from "lucide-react";
+import { Plus, MapPin, LocateFixed, Locate, Sparkles, X } from "lucide-react";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
 import { PLACE_TYPE_META } from "@/lib/places-meta";
 import { MapView } from "@/components/map/MapView";
 import { AddPlaceModal } from "@/components/map/AddPlaceModal";
 import { PlaceWindow } from "@/components/map/PlaceWindow";
-import { Place } from "@/lib/types";
+import { Place, PlaceType } from "@/lib/types";
 import { ratingLabel, ratingColor } from "@/lib/rating";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { DEFAULT_MAP_CENTER } from "@/lib/geo";
+import { stalePlaces } from "@/lib/stale-places";
 
 function PlaceIcon({ place }: { place: Place }) {
   const meta = PLACE_TYPE_META[place.type];
@@ -48,11 +49,20 @@ export default function MapPage() {
   const [sort, setSort] = useState<SortMode>("rating-desc");
   const [flyToPlace, setFlyToPlace] = useState<{ lat: number; lng: number; at: number } | null>(null);
   const [recenterOnUserAt, setRecenterOnUserAt] = useState<number | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<PlaceType | null>(null);
 
   const center = home ? { lat: home.lat, lng: home.lng } : DEFAULT_MAP_CENTER;
 
+  // Solo le categorie che hanno almeno un luogo — niente chip per un tipo di luogo che
+  // l'utente non ha mai registrato, sarebbe un filtro che non filtra mai niente.
+  const usedCategories = useMemo(() => {
+    const set = new Set<PlaceType>();
+    places.forEach((p) => set.add(p.type));
+    return [...set];
+  }, [places]);
+
   const sorted = useMemo(() => {
-    const arr = [...places];
+    const arr = [...places].filter((p) => !categoryFilter || p.type === categoryFilter);
     arr.sort((a, b) => {
       if (sort === "rating-desc") return (b.rating ?? -1) - (a.rating ?? -1);
       if (sort === "rating-asc") return (a.rating ?? 101) - (b.rating ?? 101);
@@ -61,9 +71,12 @@ export default function MapPage() {
     });
     arr.sort((a, b) => (b.currentVisitStartedAt ? 1 : 0) - (a.currentVisitStartedAt ? 1 : 0));
     return arr;
-  }, [places, sort]);
+  }, [places, sort, categoryFilter]);
 
   const openPlace: Place | undefined = sorted.find((p) => p.id === openPlaceId);
+
+  const stale = useMemo(() => stalePlaces(places), [places]);
+  const [staleDismissed, setStaleDismissed] = useState(false);
 
   if (!hydrated) return null;
 
@@ -77,6 +90,7 @@ export default function MapPage() {
           showUserLocation
           flyToPlace={flyToPlace}
           recenterOnUserRequestAt={recenterOnUserAt}
+          categoryFilter={categoryFilter}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 pt-[max(env(safe-area-inset-top),16px)]">
           <div className="glass pointer-events-auto rounded-full px-4 py-2">
@@ -104,8 +118,37 @@ export default function MapPage() {
 
       <div className="glass-strong relative -mt-5 flex min-h-0 flex-1 flex-col rounded-t-xl3 border-t border-white/10 px-5 pt-5">
         <div className="shrink-0 relative z-10 mx-auto mb-4 h-1 w-10 rounded-full bg-white/15" />
+        {stale.length > 0 && !staleDismissed && (
+          <div className="shrink-0 relative z-10 mb-4 rounded-xl2 border border-aura-cyan/25 bg-aura-cyan/[0.06] p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <p className="flex items-center gap-1.5 text-xs text-ink-100">
+                <Sparkles size={13} className="shrink-0 text-aura-cyan" />
+                {stale.length === 1
+                  ? `Non vai a "${stale[0].place.name}" da ${stale[0].daysSinceLastVisit} giorni`
+                  : `${stale.length} luoghi che ami ma non visiti da un po'`}
+              </p>
+              <button onClick={() => setStaleDismissed(true)} className="focus-ring shrink-0 text-ink-600 hover:text-ink-200" aria-label="Chiudi">
+                <X size={13} />
+              </button>
+            </div>
+            {stale.length > 1 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {stale.slice(0, 4).map(({ place, daysSinceLastVisit }) => (
+                  <button
+                    key={place.id}
+                    onClick={() => setOpenPlaceId(place.id)}
+                    className="focus-ring rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-ink-300 hover:border-aura-cyan/50"
+                  >
+                    {place.name} · {daysSinceLastVisit}gg
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="shrink-0 relative z-10 mb-4 flex items-center justify-between gap-3">
-          <p className="shrink-0 font-display text-sm text-ink-100">{places.length} luoghi</p>
+          <p className="shrink-0 font-display text-sm text-ink-100">{sorted.length} luoghi</p>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
             {(Object.keys(SORT_LABEL) as SortMode[]).map((s) => (
               <button
@@ -122,6 +165,36 @@ export default function MapPage() {
             ))}
           </div>
         </div>
+
+        {usedCategories.length > 1 && (
+          <div className="shrink-0 relative z-10 mb-4 flex gap-1.5 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setCategoryFilter(null)}
+              className={`focus-ring shrink-0 rounded-full border px-3 py-1.5 text-[11px] transition ${
+                categoryFilter === null ? "border-aura-cyan/60 bg-aura-cyan/15 text-ink-100" : "border-white/10 text-ink-800"
+              }`}
+            >
+              Tutti
+            </button>
+            {usedCategories.map((type) => {
+              const meta = PLACE_TYPE_META[type];
+              return (
+                <button
+                  key={type}
+                  onClick={() => setCategoryFilter(categoryFilter === type ? null : type)}
+                  className="focus-ring flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition"
+                  style={
+                    categoryFilter === type
+                      ? { borderColor: `${meta.color}99`, background: `${meta.color}22`, color: "#F4F5FA" }
+                      : { borderColor: "rgba(255,255,255,0.1)", color: "#565B77" }
+                  }
+                >
+                  <meta.icon size={11} /> {meta.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex-1 space-y-2.5 overflow-y-auto pb-28">
           {sorted.length === 0 && (

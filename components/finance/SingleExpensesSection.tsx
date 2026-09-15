@@ -13,6 +13,15 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Switch } from "../ui/Switch";
 import { CategoryPicker } from "./CategoryPicker";
 
+/** Una spesa singola resta visibile qui solo nelle prime 24 ore da quando è stata inserita
+ * (non da `date`, che l'utente può impostare nel passato o nel futuro a piacere — è
+ * `createdAt`, il vero momento dell'inserimento, a decidere quando sparisce da questa
+ * sezione). Dopo, la spesa non si perde: è già sempre stata inclusa in `allExpenseItems`
+ * (vedi lib/finance.ts), quindi resta consultabile nella Cronologia — qui semplicemente non
+ * la ripete più, per non tenere per sempre "aperta" una sezione pensata per l'inserimento
+ * recente. */
+const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 export function SingleExpensesSection() {
   const { singleExpenses, addSingleExpense, removeSingleExpense } = useFinance();
   const { fireTrigger } = useMood();
@@ -23,7 +32,11 @@ export function SingleExpensesSection() {
   const [chargedToBudget, setChargedToBudget] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
-  const recent = [...singleExpenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  const now = Date.now();
+  const recent = [...singleExpenses]
+    .filter((e) => now - new Date(e.createdAt).getTime() < RECENT_WINDOW_MS)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 8);
 
   const submit = () => {
     const n = parseFloat(amount.replace(",", "."));
@@ -41,7 +54,11 @@ export function SingleExpensesSection() {
         <Receipt size={14} className="text-aura-pink" /> Spese singole
       </p>
       <div className="space-y-2">
-        {recent.length === 0 && <p className="text-xs text-ink-800">Nessuna spesa singola registrata a mano.</p>}
+        {recent.length === 0 && (
+          <p className="text-xs text-ink-800">
+            Nessuna spesa singola nelle ultime 24 ore. Quelle più vecchie restano in Cronologia.
+          </p>
+        )}
         {recent.map((e) => {
           const meta = EXPENSE_CATEGORY_META[e.category];
           return (
@@ -100,7 +117,8 @@ export function SingleExpensesSection() {
 
       <p className="mt-3 text-[11px] text-ink-800">
         Le spese registrate completando una Task o uscendo da un Luogo entrano già in automatico nel totale
-        del mese — qui aggiungi solo quelle non passate da lì.
+        del mese — qui aggiungi solo quelle non passate da lì. Restano visibili in questa sezione per 24
+        ore, poi si trovano solo in Cronologia qui sotto.
       </p>
     </div>
   );

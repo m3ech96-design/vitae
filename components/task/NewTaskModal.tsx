@@ -56,9 +56,22 @@ function draftFromTask(task: Task): TaskDraftFields {
   };
 }
 
-export function NewTaskModal({ onClose, task }: { onClose: () => void; task?: Task }) {
+export function NewTaskModal({
+  onClose,
+  task,
+  initialDraft,
+}: {
+  onClose: () => void;
+  task?: Task;
+  /** Precompila i campi di una NUOVA task (mai usato insieme a `task`, che è per la
+   * modifica di una task esistente) — usata per esempio dalla lista della spesa
+   * automatica di Alimentazione, che arriva già con tipo "spesa" e `shoppingList`
+   * pronta: l'utente sceglie solo nome e quando, non deve ricopiare gli ingredienti a
+   * mano in un secondo passaggio. */
+  initialDraft?: Partial<TaskDraftFields>;
+}) {
   const { addTask, updateTask } = useTasks();
-  const [draft, setDraft] = useState<TaskDraftFields>(task ? draftFromTask(task) : EMPTY);
+  const [draft, setDraft] = useState<TaskDraftFields>(task ? draftFromTask(task) : { ...EMPTY, ...initialDraft });
 
   const patch = (p: Partial<TaskDraftFields>) => setDraft((d) => ({ ...d, ...p }));
 

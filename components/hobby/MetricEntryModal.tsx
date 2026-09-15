@@ -11,6 +11,7 @@ import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { ImageCropInput } from "../ui/ImageCropInput";
 import { useResolvedImage } from "@/lib/use-resolved-image";
+import { MetricTimer } from "./MetricTimer";
 
 function PhotoPreview({ photoKey }: { photoKey: string }) {
   const url = useResolvedImage(photoKey);
@@ -70,6 +71,10 @@ export function MetricEntryModal({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          {block.isTimeBased && !entry && (
+            <MetricTimer onFinish={(minutes) => setValue(String(minutes))} />
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Data" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <TextField label={`Valore (${block.unit || "unità"})`} type="number" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />

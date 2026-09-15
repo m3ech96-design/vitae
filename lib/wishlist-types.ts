@@ -24,6 +24,13 @@ export interface WishlistItem {
   siteName?: string;
   siteUrl?: string;
   price: number | null;
+  /** Margine di sicurezza da accantonare oltre al prezzo prima di poter esaudire — prima
+   * era un valore fisso identico per ogni articolo (1000€), ora modificabile prodotto per
+   * prodotto (vedi unlockThreshold): un regalo da 30€ e un elettrodomestico da 800€ non
+   * hanno alcuna ragione di condividere lo stesso margine di sicurezza. `undefined` per gli
+   * articoli creati prima di questo campo — DEFAULT_SAFETY_MARGIN ne prende il posto, così
+   * il comportamento di sempre resta invariato finché l'utente non lo personalizza. */
+  safetyMargin?: number;
   /** Storico dei prezzi rilevati nel tempo — popolato SOLO da un aggiornamento reale
    * (manuale via "Aggiorna prezzo ora", vedi WishlistPriceHistorySection.tsx), mai da una
    * modifica del prezzo fatta a mano nel form: quella è una correzione dell'utente, non
@@ -83,17 +90,25 @@ export function isFulfilled(item: WishlistItem): boolean {
   return item.fulfilledAt !== undefined;
 }
 
+/** Margine di sicurezza applicato quando l'articolo non ne ha ancora scelto uno proprio —
+ * lo stesso valore fisso di sempre, ora solo un punto di partenza personalizzabile invece
+ * di un tetto obbligato per tutti gli articoli. */
+export const DEFAULT_SAFETY_MARGIN = 1000;
+
 /** La soglia REALE da raggiungere per poter esaudire l'articolo — non il suo prezzo, ma
- * il prezzo più un margine fisso di sicurezza (1000€): un articolo da 500€ richiede 1500€
- * accantonati prima di sbloccare "Esaudisci", non 500€. Il prezzo "nudo" (`item.price`)
- * resta il prezzo di listino mostrato com'è (etichetta articolo, form di modifica): è
- * SOLO la quota di risparmio — anello, percentuale, tetto di accantonamento — a doversi
- * riempire rispetto a questa soglia più alta, mai rispetto al prezzo da solo.
+ * il prezzo più un margine di sicurezza (`item.safetyMargin`, o DEFAULT_SAFETY_MARGIN se
+ * l'articolo non l'ha ancora personalizzato): un articolo da 500€ con margine 1000€
+ * richiede 1500€ accantonati prima di sbloccare "Esaudisci", non 500€ — ma un altro
+ * articolo può avere un margine diverso, modificabile prodotto per prodotto. Il prezzo
+ * "nudo" (`item.price`) resta il prezzo di listino mostrato com'è (etichetta articolo,
+ * form di modifica): è SOLO la quota di risparmio — anello, percentuale, tetto di
+ * accantonamento — a doversi riempire rispetto a questa soglia più alta, mai rispetto al
+ * prezzo da solo.
  * `null` se l'articolo non ha ancora un prezzo impostato (stesso caso già gestito da chi
  * chiama, vedi `savingsPct`). */
 export function unlockThreshold(item: WishlistItem): number | null {
   if (item.price === null || item.price <= 0) return null;
-  return item.price + 1000;
+  return item.price + (item.safetyMargin ?? DEFAULT_SAFETY_MARGIN);
 }
 
 /** La percentuale mostrata nell'anello — calcolata su `fulfilledAmount` se l'articolo è

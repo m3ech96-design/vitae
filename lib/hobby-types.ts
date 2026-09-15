@@ -76,6 +76,13 @@ export interface MetricBlock extends BlockBase {
   aggregation: MetricAggregation;
   goalValue?: number;
   goalDeadline?: string;
+  /** Se true, il blocco mostra un timer per cronometrare l'attività e popolare da solo il
+   * valore della prossima voce (in minuti) invece di doverlo scrivere a mano — utile quando
+   * l'unità della metrica è temporale (es. "minuti", "ore"). Riconoscimento esplicito, non
+   * dedotto dal testo libero di `unit`: l'utente scrive quell'unità come vuole ("min", "ore",
+   * "minuti di lettura"...), un'euristica sul testo sarebbe fragile e imprevedibile — questo
+   * flag, impostato una volta in configurazione, non lo è mai. */
+  isTimeBased?: boolean;
   entries: MetricEntry[];
 }
 

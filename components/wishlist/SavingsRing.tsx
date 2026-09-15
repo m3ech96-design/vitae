@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Target, PiggyBank, Link2, Unlink, PartyPopper, RotateCcw } from "lucide-react";
-import { WishlistItem, savingsPct, isFulfilled, unlockThreshold } from "@/lib/wishlist-types";
+import { WishlistItem, savingsPct, isFulfilled, unlockThreshold, DEFAULT_SAFETY_MARGIN } from "@/lib/wishlist-types";
 import { SavingsGoal } from "@/lib/types";
 import { useCountUp } from "@/lib/use-count-up";
 import { Button } from "../ui/Button";
@@ -27,10 +27,12 @@ import { LinkSavingsGoalSheet } from "./LinkSavingsGoalSheet";
  * al 100% ha `savedAmount === unlockThreshold(item)` per costruzione, mai più della propria
  * soglia, quindi esaudirlo non tocca mai più di quanto gli spettasse davvero.
  *
- * La soglia da raggiungere per il 100% è il prezzo PIÙ un margine fisso di 1000€ (vedi
- * `unlockThreshold` in wishlist-types.ts) — non il prezzo da solo. L'etichetta sotto
- * l'anello mostra quindi questa soglia, non il prezzo nudo: altrimenti l'anello segnerebbe
- * 100% con l'articolo ancora irraggiungibile (mancano 1000€ veri).
+ * La soglia da raggiungere per il 100% è il prezzo PIÙ un margine di sicurezza (vedi
+ * `unlockThreshold` in wishlist-types.ts) — non il prezzo da solo. Il margine è modificabile
+ * prodotto per prodotto (`item.safetyMargin`, con DEFAULT_SAFETY_MARGIN come default per gli
+ * articoli che non l'hanno ancora personalizzato). L'etichetta sotto l'anello mostra quindi
+ * questa soglia, non il prezzo nudo: altrimenti l'anello segnerebbe 100% con l'articolo
+ * ancora irraggiungibile (manca il margine vero).
  *
  * Tre stati, mai insieme:
  * - Non collegato a nulla: quota ferma a 0, invito a collegare una destinazione.
@@ -108,7 +110,7 @@ export function SavingsRing({
       </div>
       {!fulfilled && (
         <p className="text-center text-[11px] text-ink-800">
-          Prezzo {item.price!.toLocaleString("it-IT")}€ + margine di 1.000€ per poter esaudire
+          Prezzo {item.price!.toLocaleString("it-IT")}€ + margine di {(item.safetyMargin ?? DEFAULT_SAFETY_MARGIN).toLocaleString("it-IT")}€ per poter esaudire
         </p>
       )}
 

@@ -221,4 +221,16 @@ export interface PantryEntry {
    * sparire, così eliminare una voce di dispensa non richiede mai di perdere il log. */
   consumedDate?: string;
   notes?: string;
+  /** Quantità iniziale, nella stessa unità dell'ingrediente collegato (g/ml/unità "altro")
+   * — facoltativa: se assente, questa entry si comporta esattamente come prima (si marca
+   * "consumata" tutta insieme con uno switch), nessun tracking di quanto ne resta. Se
+   * presente, entra in gioco `remainingQuantity` qui sotto. */
+  initialQuantity?: number;
+  /** Quanto resta ora — scala da sola quando un pasto registrato in un giorno del menù usa
+   * un ingrediente collegato a questa entry (FIFO: si intacca prima l'entry con scadenza
+   * stimata più vicina, vedi consumeFromPantry in lib/pantry.ts), oppure modificabile a
+   * mano per una correzione ("ho versato via mezzo litro per sbaglio"). Quando tocca 0,
+   * `consumedDate` si imposta da solo — stesso comportamento di spuntarla a mano. Assente
+   * se `initialQuantity` è assente (tracking disattivato per questa entry). */
+  remainingQuantity?: number;
 }

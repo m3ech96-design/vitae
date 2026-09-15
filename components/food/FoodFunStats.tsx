@@ -62,20 +62,19 @@ export function FoodFunStats() {
           <Moon size={16} className="text-aura-violet" />
           <p className="mt-2 text-[11px] text-ink-600">Digiuno più lungo</p>
           {fast ? (
-            <p className="mt-0.5 font-display text-sm text-ink-100">
-              {Math.floor(fast.hours)}h {Math.round((fast.hours % 1) * 60)}m
-            </p>
+            <>
+              <p className="mt-0.5 font-display text-sm text-ink-100">
+                {Math.floor(fast.hours)}h {Math.round((fast.hours % 1) * 60)}m
+              </p>
+              <p className="mt-1 text-[10px] leading-snug text-ink-800">
+                Tra {fast.fromLabel} e {fast.toLabel}.
+              </p>
+            </>
           ) : (
             <p className="mt-0.5 text-xs text-ink-800">—</p>
           )}
         </GlassCard>
       </div>
-
-      {fast && (
-        <p className="mt-2 text-[11px] text-ink-800">
-          Tra {fast.fromLabel} e {fast.toLabel}.
-        </p>
-      )}
 
       {bingeOpen && binge && (
         <PersonalCardSheet title={`Menu del ${binge.date.slice(8, 10)}/${binge.date.slice(5, 7)}/${binge.date.slice(0, 4)}`} onClose={() => setBingeOpen(false)}>

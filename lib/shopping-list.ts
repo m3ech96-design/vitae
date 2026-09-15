@@ -66,11 +66,16 @@ function expandToBaseIngredients(
 }
 
 /**
- * Lista della spesa per i prossimi `daysAhead` giorni (oggi escluso: quello che mangi oggi
- * lo hai già in casa, quello che manca è il menù futuro) — finestra mobile da oggi, non una
- * settimana di calendario fissa, stessa scelta già fatta altrove nell'app (vedi
- * weekOverWeek in activity-stats.ts) perché è quello che conta davvero indipendentemente
- * dal giorno della settimana in cui la si consulta.
+ * Lista della spesa per una finestra di `daysBehind` giorni passati e `daysAhead` giorni
+ * futuri (oggi escluso da entrambi i lati: quello che mangi oggi lo hai già in casa) —
+ * finestra mobile da oggi, non una settimana di calendario fissa, stessa scelta già fatta
+ * altrove nell'app (vedi weekOverWeek in activity-stats.ts) perché è quello che conta
+ * davvero indipendentemente dal giorno della settimana in cui la si consulta.
+ *
+ * I giorni passati contano quanto quelli futuri: un ingrediente mangiato spesso nell'ultima
+ * settimana (non pianificato in anticipo, solo registrato di volta in volta) segnala un
+ * consumo abituale reale tanto quanto una voce già scritta nel menù di domani — prima la
+ * lista guardava solo avanti e perdeva completamente questo segnale.
  *
  * Sottrae quanto già presente in dispensa e non ancora consumato (vedi PantryEntry in
  * food-types.ts) SOLO per unità "altro" con conteggio intero, dove "ne ho già 2 quindi
@@ -84,16 +89,21 @@ export function generateShoppingList(
   ingredients: Ingredient[],
   pantryEntries: PantryEntry[],
   today: string,
-  daysAhead: number = 7
+  daysAhead: number = 7,
+  daysBehind: number = 7
 ): ShoppingListItem[] {
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate() + daysAhead);
-  const cutoffIso = cutoff.toISOString().slice(0, 10);
+  const cutoffAhead = new Date(today);
+  cutoffAhead.setDate(cutoffAhead.getDate() + daysAhead);
+  const cutoffAheadIso = cutoffAhead.toISOString().slice(0, 10);
 
-  const futureEntries = entries.filter((e) => e.date > today && e.date <= cutoffIso);
+  const cutoffBehind = new Date(today);
+  cutoffBehind.setDate(cutoffBehind.getDate() - daysBehind);
+  const cutoffBehindIso = cutoffBehind.toISOString().slice(0, 10);
+
+  const windowEntries = entries.filter((e) => e.date >= cutoffBehindIso && e.date <= cutoffAheadIso && e.date !== today);
 
   const totals = new Map<string, number>();
-  futureEntries.forEach((entry) => {
+  windowEntries.forEach((entry) => {
     const expanded = expandToBaseIngredients(entry.ingredientId, entry.quantity, ingredients);
     expanded.forEach(({ ingredientId, quantity }) => {
       totals.set(ingredientId, (totals.get(ingredientId) ?? 0) + quantity);
@@ -101,7 +111,7 @@ export function generateShoppingList(
   });
 
   const occurrences = new Map<string, number>();
-  futureEntries.forEach((entry) => {
+  windowEntries.forEach((entry) => {
     occurrences.set(entry.ingredientId, (occurrences.get(entry.ingredientId) ?? 0) + 1);
   });
 

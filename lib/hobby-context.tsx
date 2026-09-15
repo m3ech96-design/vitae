@@ -59,7 +59,7 @@ interface HobbyContextValue {
   removeBlock: (hobbyId: string, blockId: string) => void;
   renameBlock: (hobbyId: string, blockId: string, title: string) => void;
   setMatchesBlockPhoto: (hobbyId: string, blockId: string, photoKey: string | undefined) => void;
-  updateMetricConfig: (hobbyId: string, blockId: string, patch: Partial<Pick<MetricBlock, "unit" | "direction" | "aggregation" | "goalValue" | "goalDeadline">>) => void;
+  updateMetricConfig: (hobbyId: string, blockId: string, patch: Partial<Pick<MetricBlock, "unit" | "direction" | "aggregation" | "goalValue" | "goalDeadline" | "isTimeBased">>) => void;
 
   addChecklistItem: (hobbyId: string, blockId: string, input: Omit<ChecklistItem, "id" | "createdAt">) => void;
   updateChecklistItem: (hobbyId: string, blockId: string, itemId: string, patch: Partial<Omit<ChecklistItem, "id" | "createdAt">>) => void;
@@ -184,7 +184,7 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateMetricConfig = useCallback(
-    (hobbyId: string, blockId: string, patch: Partial<Pick<MetricBlock, "unit" | "direction" | "aggregation" | "goalValue" | "goalDeadline">>) =>
+    (hobbyId: string, blockId: string, patch: Partial<Pick<MetricBlock, "unit" | "direction" | "aggregation" | "goalValue" | "goalDeadline" | "isTimeBased">>) =>
       persist((prev) => withBlock<MetricBlock>(prev, hobbyId, blockId, (b) => ({ ...b, ...patch }))),
     [persist, withBlock]
   );

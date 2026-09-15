@@ -85,7 +85,7 @@ function normalizePerson(p: Partial<Person> & { id: string }): Person {
 }
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }) {
-  const { places, checkIn } = usePlaces();
+  const { places, checkIn, checkOut } = usePlaces();
   const [people, setPeople] = useState<Person[]>([]);
   const [trackingEnabled, setTrackingEnabledState] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -212,8 +212,10 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   }, [nearbyPlaceId]);
 
   // Rilevamento automatico di prossimità: entro 100m da un luogo registrato,
-  // il sistema chiede "Sei Attualmente A [Luogo]?" — l'ingresso è automatico,
-  // solo l'uscita resta manuale (dalla sezione Mappa, pulsante "Esci").
+  // il sistema chiede "Sei Attualmente A [Luogo]?" — l'ingresso è automatico. L'uscita è
+  // automatica a sua volta oltre 200m dal luogo con visita in corso (vedi più sotto), ma
+  // resta comunque disponibile anche a mano dalla sezione Mappa, pulsante "Esci", per chi
+  // vuole chiudere la visita prima di essersi davvero allontanato.
   // Usa lo stesso `watchPosition` condiviso del pallino "Sei Qui" sulle mappe (vedi
   // use-live-location.ts), invece di aprirne uno per conto proprio.
   const { position: livePosition, error: liveError, permissionDenied: trackingPermissionDenied } = useLiveLocation(trackingEnabled);
@@ -246,7 +248,17 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     const checkedIn = currentPlaces.find((p) => p.currentVisitStartedAt);
     if (checkedIn) {
       const d = distanceMeters(here, checkedIn);
-      setCurrentPlaceIconId(d <= PLACE_ICON_CLEAR_THRESHOLD_METERS ? checkedIn.id : null);
+      if (d > PLACE_ICON_CLEAR_THRESHOLD_METERS) {
+        // Uscita automatica dal luogo: oltre 200m la visita si chiude da sola, con la
+        // durata reale registrata in visitsHistory — prima restava agganciata per sempre
+        // finché non si premeva "Esci" a mano dalla Mappa, anche ore o giorni dopo essersene
+        // andati. Nessuna persona presente viene registrata qui (non ha senso chiederlo in
+        // automatico): resta modificabile a mano nello storico se serve.
+        checkOut(checkedIn.id, []);
+        setCurrentPlaceIconId(null);
+      } else {
+        setCurrentPlaceIconId(checkedIn.id);
+      }
     } else {
       setCurrentPlaceIconId(null);
     }
@@ -259,7 +271,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
         .sort((a, b) => a.d - b.d)[0];
       setNearbyPlaceId(candidate ? candidate.place.id : null);
     }
-  }, [trackingEnabled, livePosition, home]);
+  }, [trackingEnabled, livePosition, home, checkOut]);
 
   const nearbyPlace = nearbyPlaceId ? places.find((p) => p.id === nearbyPlaceId) ?? null : null;
   const currentPlaceIcon = currentPlaceIconId ? places.find((p) => p.id === currentPlaceIconId) ?? null : null;

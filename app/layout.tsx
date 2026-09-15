@@ -12,9 +12,9 @@ import { FoodProvider } from "@/lib/food-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { DiaryProvider } from "@/lib/diary-context";
 import { HobbyProvider } from "@/lib/hobby-context";
+import { PomodoroProvider } from "@/lib/pomodoro-context";
 import { AnimalHealthProvider } from "@/lib/animal-health-context";
 import { AnimalFoodProvider } from "@/lib/animal-food-context";
-import { GenealogyProvider } from "@/lib/genealogy-context";
 import { NewsSourcesProvider } from "@/lib/news-sources-context";
 import { HouseholdMessagesProvider } from "@/lib/household-messages-context";
 import { WidgetsProvider } from "@/lib/widgets/widgets-context";
@@ -37,6 +37,7 @@ import { VaccinationNotifier } from "@/components/medical/VaccinationNotifier";
 import { AnimalNotifier } from "@/components/animali/AnimalNotifier";
 import { PantryNotifier } from "@/components/food/PantryNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
+import { FloatingFocusTimer } from "@/components/pomodoro/FloatingFocusTimer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -80,9 +81,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <WishlistProvider>
                     <DiaryProvider>
                     <HobbyProvider>
+                    <PomodoroProvider>
                     <AnimalHealthProvider>
                     <AnimalFoodProvider>
-                    <GenealogyProvider>
                     <NewsSourcesProvider>
                     <HouseholdMessagesProvider>
                     <WidgetsProvider>
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <AnimalNotifier />
                             <PantryNotifier />
                             <MoodSuggestionPrompt />
+                            <FloatingFocusTimer />
                           </VitaecomDraftProvider>
                           </VitaecomChatProvider>
                           </VitaecomSocialProvider>
@@ -115,9 +117,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </WidgetsProvider>
                     </HouseholdMessagesProvider>
                     </NewsSourcesProvider>
-                    </GenealogyProvider>
                     </AnimalFoodProvider>
                     </AnimalHealthProvider>
+                    </PomodoroProvider>
                     </HobbyProvider>
                     </DiaryProvider>
                     </WishlistProvider>

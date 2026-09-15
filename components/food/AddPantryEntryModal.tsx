@@ -22,6 +22,7 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
   const [selected, setSelected] = useState<Ingredient | null>(null);
   const [query, setQuery] = useState("");
   const [purchasedDate, setPurchasedDate] = useState(todayIso());
+  const [quantity, setQuantity] = useState("");
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
@@ -31,7 +32,8 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
 
   const submit = () => {
     if (!selected) return;
-    addPantryEntry({ ingredientId: selected.id, purchasedDate });
+    const initialQuantity = quantity.trim() ? Math.max(0, parseFloat(quantity.replace(",", "."))) : undefined;
+    addPantryEntry({ ingredientId: selected.id, purchasedDate, initialQuantity });
     onClose();
   };
 
@@ -102,6 +104,17 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
           )}
 
           <TextField label="Comprato il" type="date" value={purchasedDate} onChange={(e) => setPurchasedDate(e.target.value)} />
+
+          {selected && (
+            <TextField
+              label={`Quantità (${selected.unit === "altro" ? selected.unitLabel ?? "unità" : selected.unit}) — facoltativa`}
+              type="number"
+              inputMode="decimal"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="Lascia vuoto per non tracciare il residuo"
+            />
+          )}
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">

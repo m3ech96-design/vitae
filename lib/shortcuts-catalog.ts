@@ -11,7 +11,6 @@ import {
   Newspaper,
   MapPin,
   PawPrint,
-  GitBranch,
   Globe2,
   Utensils,
   LucideIcon,
@@ -46,7 +45,6 @@ export const SHORTCUT_CATALOG: ShortcutDefinition[] = [
   { href: "/news", icon: Newspaper, label: "News", desc: "Notizie dalle tue fonti" },
   { href: "/map", icon: MapPin, label: "Mappa", desc: "Luoghi salvati" },
   { href: "/animali", icon: PawPrint, label: "Animali", desc: "Cura e salute" },
-  { href: "/albero-genealogico", icon: GitBranch, label: "Albero genealogico", desc: "La tua famiglia" },
   { href: "/vitaecom", icon: Globe2, label: "Vitaeworld", desc: "Il tuo social" },
 ];
 

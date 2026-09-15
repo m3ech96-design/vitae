@@ -55,6 +55,27 @@ export function createAuraDivIcon(
 }
 
 /**
+ * Icona del cluster (più luoghi vicini raggruppati, vedi react-leaflet-cluster in
+ * LeafletMap.tsx) — stesso linguaggio visivo aura degli altri marker invece del cerchio
+ * verde/giallo/rosso di default della libreria, che stonerebbe con l'estetica dark/glow del
+ * resto dell'app. Il numero al centro è l'unica informazione che serve: quanti luoghi
+ * contiene, non quali — si scopre aprendo lo zoom.
+ */
+export function createClusterDivIcon(cluster: { getChildCount: () => number }) {
+  const count = cluster.getChildCount();
+  const size = count >= 10 ? 44 : 36;
+  const html = `
+    <div class="${ICON_WRAPPER_CLASS}" style="width:${size}px;height:${size}px;">
+      <span class="absolute inset-[-7px] rounded-full blur-md ${PULSE_CLASS}" style="background:#7C5CFF;opacity:0.4;"></span>
+      <span class="relative flex items-center justify-center rounded-full border border-white/60 font-sans text-white" style="width:${size}px;height:${size}px;background:linear-gradient(135deg, #7C5CFF, #5B3FE0); box-shadow:0 0 16px #7C5CFFaa, inset 0 1px 2px rgba(255,255,255,0.45); font-size:${count >= 10 ? 15 : 13}px; font-weight:600;">
+        ${count}
+      </span>
+    </div>
+  `;
+  return L.divIcon({ html, className: "aura-marker", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+}
+
+/**
  * Pallino "Sei Qui": colore e stile deliberatamente diversi dai marker Aura dei Luoghi
  * (nessun tipo di Luogo usa questo blu), per non essere scambiato per un Luogo registrato.
  */

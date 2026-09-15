@@ -18,7 +18,39 @@ import { NextRequest, NextResponse } from "next/server";
  * Se nessuno dei tre è presente, la risposta è onestamente "non trovato" — nessun tentativo
  * di indovinare un numero dal testo libero della pagina, che darebbe falsi risultati più
  * spesso di quanto aiuterebbe.
+ *
+ * ECCEZIONE NECESSARIA — Amazon: le pagine prodotto di Amazon non pubblicano nessuno dei tre
+ * standard sopra (niente JSON-LD Product/Offer con prezzo, niente meta OG price) — è un
+ * fatto del suo markup, non un caso limite raro, quindi senza un estrattore dedicato ogni
+ * URL Amazon fallisce sempre, sistematicamente, con "prezzo non trovato". Amazon espone il
+ * prezzo in classi proprietarie stabili nel tempo (`a-price-whole`/`a-price-fraction` per le
+ * due metà del prezzo, `a-offscreen` come stringa unica di riserva per la lettura da
+ * screen-reader) — vedi extractAmazonPrice più sotto, provato solo quando il dominio è
+ * Amazon e solo dopo aver già cercato invano gli standard universali.
  */
+
+function isAmazonHost(hostname: string): boolean {
+  return /(^|\.)amazon\.[a-z.]+$/i.test(hostname);
+}
+
+function extractAmazonPrice(html: string): number | null {
+  // Preferita: whole + frazione separati (il formato più comune sulle pagine prodotto).
+  const whole = html.match(/class=["'][^"']*\ba-price-whole\b[^"']*["'][^>]*>\s*([\d.,]+)/i);
+  if (whole) {
+    const fraction = html.match(/class=["'][^"']*\ba-price-fraction\b[^"']*["'][^>]*>\s*(\d+)/i);
+    const wholePart = whole[1].replace(/[.,]/g, "");
+    const price = parseFloat(fraction ? `${wholePart}.${fraction[1]}` : wholePart);
+    if (!Number.isNaN(price) && price > 0) return price;
+  }
+  // Riserva: la stringa unica pensata per screen-reader, es. "€19,99" o "$19.99".
+  const offscreenMatches = html.matchAll(/class=["'][^"']*\ba-offscreen\b[^"']*["'][^>]*>\s*[^\d]*([\d.,]+)/gi);
+  for (const m of offscreenMatches) {
+    const normalized = m[1].includes(",") && m[1].lastIndexOf(",") > m[1].lastIndexOf(".") ? m[1].replace(/\./g, "").replace(",", ".") : m[1].replace(/,/g, "");
+    const price = parseFloat(normalized);
+    if (!Number.isNaN(price) && price > 0) return price;
+  }
+  return null;
+}
 
 function extractJsonLdPrice(html: string): number | null {
   const scriptMatches = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
@@ -67,17 +99,25 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(parsedUrl.toString(), {
       headers: {
-        // Molti siti negano la pagina a richieste senza uno User-Agent "da browser" —
-        // non è un tentativo di mascherare la natura della richiesta, solo evitare un
-        // blocco banale rivolto ai bot senza alcuno User-Agent affatto.
-        "User-Agent": "Mozilla/5.0 (compatible; VitaeApp/1.0)",
+        // Molti siti negano la pagina a richieste senza uno User-Agent "da browser" — non è
+        // un tentativo di mascherare la natura della richiesta, solo evitare un blocco banale
+        // rivolto ai bot senza alcuno User-Agent affatto. Amazon in particolare è più severo
+        // di altri siti e un header troppo scarno (privo di Accept-Language) rende più
+        // probabile ricevere una pagina di verifica anti-bot invece del prodotto vero.
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return NextResponse.json({ error: "pagina non raggiungibile" }, { status: 502 });
 
     const html = await res.text();
-    const price = extractJsonLdPrice(html) ?? extractMetaPrice(html, "product:price:amount") ?? extractMetaPrice(html, "og:price:amount");
+    const price =
+      extractJsonLdPrice(html) ??
+      extractMetaPrice(html, "product:price:amount") ??
+      extractMetaPrice(html, "og:price:amount") ??
+      (isAmazonHost(parsedUrl.hostname) ? extractAmazonPrice(html) : null);
 
     if (price === null) return NextResponse.json({ error: "prezzo non trovato nella pagina" }, { status: 404 });
     return NextResponse.json({ price });

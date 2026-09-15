@@ -1,7 +1,9 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { newId } from "./id";
-import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, PantryEntry } from "./food-types";
+import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, PantryEntry, MealSlot } from "./food-types";
+import { consumeFromPantry, restoreToPantry } from "./pantry";
+import { todayIso } from "./date-format";
 
 const INGREDIENTS_KEY = "vitae:food-ingredients";
 const ENTRIES_KEY = "vitae:food-entries";
@@ -23,23 +25,29 @@ interface FoodContextValue {
   removeEntry: (id: string) => void;
   setWater: (date: string, liters: number) => void;
   setGoals: (patch: Partial<FoodGoals>) => void;
-  /** Menù copiato (voci di un intero giorno), pronto per essere incollato su un altro
-   * giorno — vive solo in memoria per la sessione corrente, non su localStorage: è un
-   * appunto "in mano" tra un copia e un incolla nella stessa visita, non qualcosa da
-   * ritrovare riaprendo l'app un altro giorno. */
-  copiedMenu: { sourceDate: string; entries: Pick<FoodEntry, "slot" | "ingredientId" | "quantity" | "time">[] } | null;
-  copyMenu: (date: string) => void;
-  /** Incolla il menù copiato sul giorno indicato, aggiungendosi alle voci già presenti
-   * quel giorno (non le sostituisce): ogni voce copiata diventa una nuova voce con id
-   * proprio, così modificarla o eliminarla dopo non tocca in alcun modo il giorno di
-   * origine da cui è stata copiata. */
-  pasteMenu: (targetDate: string) => void;
+  /** Voci copiate di un SINGOLO pasto (uno slot di un giorno), pronte per essere incollate
+   * su un altro giorno nello stesso slot — vive solo in memoria per la sessione corrente,
+   * non su localStorage: è un appunto "in mano" tra un copia e un incolla nella stessa
+   * visita, non qualcosa da ritrovare riaprendo l'app un altro giorno. Pasto per pasto e
+   * non l'intero menù di una giornata: si copia "la colazione di martedì", non "tutto
+   * martedì" — un'incolla su un giorno che ha già altri pasti suoi non li tocca. */
+  copiedMenu: { sourceDate: string; slot: MealSlot; entries: Pick<FoodEntry, "slot" | "ingredientId" | "quantity" | "time">[] } | null;
+  copyMeal: (date: string, slot: MealSlot) => void;
+  /** Incolla le voci copiate sul giorno indicato, nello STESSO slot da cui sono state
+   * copiate — aggiungendosi alle voci già presenti quel pasto (non le sostituisce): ogni
+   * voce copiata diventa una nuova voce con id proprio, così modificarla o eliminarla dopo
+   * non tocca in alcun modo il pasto di origine da cui è stata copiata. */
+  pasteMeal: (targetDate: string) => void;
   clearCopiedMenu: () => void;
 
   pantryEntries: PantryEntry[];
   addPantryEntry: (input: Omit<PantryEntry, "id">) => void;
   markPantryEntryConsumed: (id: string, consumedDate: string) => void;
   removePantryEntry: (id: string) => void;
+  /** Correzione manuale del residuo di un'entry con tracking attivo — es. "ho versato via
+   * mezzo litro per sbaglio". Un valore <= 0 marca l'entry consumata da sola, coerente con
+   * lo svuotamento naturale via consumeFromPantry. */
+  adjustPantryQuantity: (id: string, remainingQuantity: number) => void;
 }
 
 const FoodContext = createContext<FoodContextValue | null>(null);
@@ -165,18 +173,45 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     (input: Omit<FoodEntry, "id" | "createdAt">) => {
       const entry: FoodEntry = { ...input, id: newId(), createdAt: new Date().toISOString() };
       persistEntries((prev) => [...prev, entry]);
+      // Scala la dispensa (solo le entry con tracking quantità attivo — vedi
+      // consumeFromPantry): registrare un pasto è anche "consumare" quell'ingrediente da
+      // qualche parte, se ne teniamo traccia lì.
+      persistPantry((prev) => consumeFromPantry(prev, entry.ingredientId, entry.quantity, todayIso()));
       return entry;
     },
-    [persistEntries]
+    [persistEntries, persistPantry]
   );
 
   const updateEntry = useCallback(
-    (id: string, patch: Partial<Omit<FoodEntry, "id" | "createdAt">>) =>
-      persistEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e))),
-    [persistEntries]
+    (id: string, patch: Partial<Omit<FoodEntry, "id" | "createdAt">>) => {
+      const previous = entries.find((e) => e.id === id);
+      persistEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+      // Se cambia l'ingrediente o la quantità, il consumo precedente sulla dispensa non è
+      // più corretto: si ripristina prima quello vecchio, poi si applica il nuovo — stesso
+      // ingrediente o no, l'operazione resta corretta perché restoreToPantry e
+      // consumeFromPantry sono ciascuna specifica al proprio ingredientId.
+      if (previous && (patch.ingredientId !== undefined || patch.quantity !== undefined)) {
+        const nextIngredientId = patch.ingredientId ?? previous.ingredientId;
+        const nextQuantity = patch.quantity ?? previous.quantity;
+        persistPantry((prev) => {
+          const restored = restoreToPantry(prev, previous.ingredientId, previous.quantity);
+          return consumeFromPantry(restored, nextIngredientId, nextQuantity, todayIso());
+        });
+      }
+    },
+    [persistEntries, persistPantry, entries]
   );
 
-  const removeEntry = useCallback((id: string) => persistEntries((prev) => prev.filter((e) => e.id !== id)), [persistEntries]);
+  const removeEntry = useCallback(
+    (id: string) => {
+      const removed = entries.find((e) => e.id === id);
+      persistEntries((prev) => prev.filter((e) => e.id !== id));
+      if (removed) {
+        persistPantry((prev) => restoreToPantry(prev, removed.ingredientId, removed.quantity));
+      }
+    },
+    [persistEntries, persistPantry, entries]
+  );
 
   const setWater = useCallback(
     (date: string, liters: number) => persistWater((prev) => ({ ...prev, [date]: Math.max(0, liters) })),
@@ -195,18 +230,19 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const copyMenu = useCallback(
-    (date: string) => {
-      const dayEntries = entries.filter((e) => e.date === date);
+  const copyMeal = useCallback(
+    (date: string, slot: MealSlot) => {
+      const slotEntries = entries.filter((e) => e.date === date && e.slot === slot);
       setCopiedMenu({
         sourceDate: date,
-        entries: dayEntries.map((e) => ({ slot: e.slot, ingredientId: e.ingredientId, quantity: e.quantity, time: e.time })),
+        slot,
+        entries: slotEntries.map((e) => ({ slot: e.slot, ingredientId: e.ingredientId, quantity: e.quantity, time: e.time })),
       });
     },
     [entries]
   );
 
-  const pasteMenu = useCallback(
+  const pasteMeal = useCallback(
     (targetDate: string) => {
       setCopiedMenu((menu) => {
         if (!menu) return menu;
@@ -226,7 +262,17 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   const clearCopiedMenu = useCallback(() => setCopiedMenu(null), []);
 
   const addPantryEntry = useCallback(
-    (input: Omit<PantryEntry, "id">) => persistPantry((prev) => [...prev, { ...input, id: newId() }]),
+    (input: Omit<PantryEntry, "id">) =>
+      persistPantry((prev) => [
+        ...prev,
+        {
+          ...input,
+          id: newId(),
+          // Alla creazione, il residuo parte sempre pieno quanto l'iniziale — non ha senso
+          // che l'utente possa dichiararli diversi il primo giorno di una confezione.
+          remainingQuantity: input.initialQuantity !== undefined ? input.initialQuantity : undefined,
+        },
+      ]),
     [persistPantry]
   );
 
@@ -236,6 +282,22 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removePantryEntry = useCallback((id: string) => persistPantry((prev) => prev.filter((p) => p.id !== id)), [persistPantry]);
+
+  const adjustPantryQuantity = useCallback(
+    (id: string, remainingQuantity: number) =>
+      persistPantry((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                remainingQuantity: Math.max(0, remainingQuantity),
+                consumedDate: remainingQuantity <= 0 ? new Date().toISOString().slice(0, 10) : undefined,
+              }
+            : p
+        )
+      ),
+    [persistPantry]
+  );
 
   const value = useMemo(
     () => ({
@@ -253,13 +315,14 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       setWater,
       setGoals,
       copiedMenu,
-      copyMenu,
-      pasteMenu,
+      copyMeal,
+      pasteMeal,
       clearCopiedMenu,
       pantryEntries,
       addPantryEntry,
       markPantryEntryConsumed,
       removePantryEntry,
+      adjustPantryQuantity,
     }),
     [
       hydrated,
@@ -276,13 +339,14 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       setWater,
       setGoals,
       copiedMenu,
-      copyMenu,
-      pasteMenu,
+      copyMeal,
+      pasteMeal,
       clearCopiedMenu,
       pantryEntries,
       addPantryEntry,
       markPantryEntryConsumed,
       removePantryEntry,
+      adjustPantryQuantity,
     ]
   );
 

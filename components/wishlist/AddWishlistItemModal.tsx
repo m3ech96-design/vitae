@@ -5,7 +5,7 @@ import { X, ImagePlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";
-import { WishlistItem } from "@/lib/wishlist-types";
+import { WishlistItem, DEFAULT_SAFETY_MARGIN } from "@/lib/wishlist-types";
 import { CustomField } from "@/lib/types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
@@ -35,6 +35,9 @@ export function AddWishlistItemModal({ item, onClose }: { item?: WishlistItem; o
   const [siteName, setSiteName] = useState(item?.siteName ?? "");
   const [siteUrl, setSiteUrl] = useState(item?.siteUrl ?? "");
   const [price, setPrice] = useState(item?.price !== null && item?.price !== undefined ? String(item.price) : "");
+  const [safetyMargin, setSafetyMargin] = useState(
+    item?.safetyMargin !== undefined ? String(item.safetyMargin) : String(DEFAULT_SAFETY_MARGIN)
+  );
   const [estimatedPeriod, setEstimatedPeriod] = useState(item?.estimatedPeriod ?? "");
 
   const canSave = name.trim().length > 0;
@@ -53,6 +56,7 @@ export function AddWishlistItemModal({ item, onClose }: { item?: WishlistItem; o
       siteName: siteName.trim() || undefined,
       siteUrl: siteUrl.trim() || undefined,
       price: price.trim() ? Math.max(0, parseFloat(price.replace(",", "."))) : null,
+      safetyMargin: safetyMargin.trim() ? Math.max(0, parseFloat(safetyMargin.replace(",", "."))) : DEFAULT_SAFETY_MARGIN,
       estimatedPeriod: estimatedPeriod.trim() || undefined,
     };
     if (item) updateItem(item.id, payload);
@@ -103,7 +107,20 @@ export function AddWishlistItemModal({ item, onClose }: { item?: WishlistItem; o
             </div>
           </div>
 
-          <TextField label="Prezzo (€)" type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Prezzo (€)" type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <TextField
+              label="Margine di sicurezza (€)"
+              type="number"
+              inputMode="decimal"
+              value={safetyMargin}
+              onChange={(e) => setSafetyMargin(e.target.value)}
+              placeholder={String(DEFAULT_SAFETY_MARGIN)}
+            />
+          </div>
+          <p className="-mt-3 text-[11px] text-ink-800">
+            Oltre al prezzo, quanto accantonare in più prima di poter esaudire l&apos;articolo.
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Nome del sito" value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Es. Amazon" />

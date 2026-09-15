@@ -8,6 +8,7 @@ import { MetricBlock, MetricDirection, MetricAggregation } from "@/lib/hobby-typ
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { Chip } from "../ui/Chip";
+import { Switch } from "../ui/Switch";
 
 export function MetricConfigModal({ hobbyId, block, onClose }: { hobbyId: string; block: MetricBlock; onClose: () => void }) {
   const { updateMetricConfig } = useHobby();
@@ -16,6 +17,7 @@ export function MetricConfigModal({ hobbyId, block, onClose }: { hobbyId: string
   const [aggregation, setAggregation] = useState<MetricAggregation>(block.aggregation);
   const [goalValue, setGoalValue] = useState(block.goalValue !== undefined ? String(block.goalValue) : "");
   const [goalDeadline, setGoalDeadline] = useState(block.goalDeadline ?? "");
+  const [isTimeBased, setIsTimeBased] = useState(block.isTimeBased ?? false);
 
   const submit = () => {
     updateMetricConfig(hobbyId, block.id, {
@@ -24,6 +26,7 @@ export function MetricConfigModal({ hobbyId, block, onClose }: { hobbyId: string
       aggregation,
       goalValue: goalValue.trim() ? parseFloat(goalValue.replace(",", ".")) : undefined,
       goalDeadline: goalDeadline || undefined,
+      isTimeBased,
     });
     onClose();
   };
@@ -71,6 +74,16 @@ export function MetricConfigModal({ hobbyId, block, onClose }: { hobbyId: string
             <TextField label="Obiettivo" type="number" inputMode="decimal" value={goalValue} onChange={(e) => setGoalValue(e.target.value)} />
             <TextField label="Entro il" type="date" value={goalDeadline} onChange={(e) => setGoalDeadline(e.target.value)} />
           </div>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl2 border border-white/10 bg-white/[0.03] px-3.5 py-3">
+            <span className="min-w-0">
+              <span className="block text-xs text-ink-100">Metrica basata sul tempo</span>
+              <span className="block text-[10px] text-ink-800">
+                Mostra un timer per cronometrare l&apos;attività — il tempo impiegato riempie da solo il valore della prossima voce
+              </span>
+            </span>
+            <Switch checked={isTimeBased} onChange={setIsTimeBased} tone="violet" />
+          </label>
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">

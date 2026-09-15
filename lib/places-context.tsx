@@ -5,6 +5,7 @@ import { newId } from "./id";
 import { SPENDING_PLACE_TYPES } from "./places-meta";
 import { deleteImage, isDataUrl } from "./image-store";
 import { capArray } from "./cap-array";
+import { stalePlaces } from "./stale-places";
 
 const PLACES_KEY = "vitae:places";
 
@@ -31,6 +32,10 @@ interface PlacesContextValue {
   logTaskVisit: (id: string, withPersonIds: string[]) => void;
   setLastVisitSpentAmount: (id: string, amount: number, chargedToBudget?: boolean) => void;
   setLastVisitSpentBreakdown: (id: string, breakdown: { category: string; amount: number }[], chargedToBudget?: boolean) => void;
+  /** true se almeno un luogo con rating alto non viene visitato da tempo (vedi
+   * lib/stale-places.ts) — pilota solo il puntino discreto sull'icona della scheda Mappa
+   * nella barra di navigazione, mai un banner altrove nell'app. */
+  hasStalePlaces: boolean;
 }
 
 const PlacesContext = createContext<PlacesContextValue | null>(null);
@@ -198,6 +203,8 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
     [persist]
   );
 
+  const hasStalePlaces = useMemo(() => stalePlaces(places).length > 0, [places]);
+
   const value = useMemo(
     () => ({
       hydrated,
@@ -211,6 +218,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
       logTaskVisit,
       setLastVisitSpentAmount,
       setLastVisitSpentBreakdown,
+      hasStalePlaces,
     }),
     [
       hydrated,
@@ -224,6 +232,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
       logTaskVisit,
       setLastVisitSpentAmount,
       setLastVisitSpentBreakdown,
+      hasStalePlaces,
     ]
   );
 

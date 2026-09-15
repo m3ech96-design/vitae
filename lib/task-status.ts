@@ -30,24 +30,34 @@ export function taskDueDateTime(task: Pick<Task, "type" | "dueDate" | "dueTime">
 }
 
 /** Il momento in cui scatta l'avviso anticipato: prima dell'inizio (Evento/Appuntamento) o
- * prima della scadenza (Promemoria/Obiettivo/Spesa). */
+ * prima della scadenza (Promemoria/Obiettivo/Spesa) — con un fallback sulla data di inizio
+ * quando la scadenza non è stata compilata (è un campo facoltativo nel form): senza questo
+ * fallback l'avviso anticipato di Promemoria/Obiettivo/Spesa senza `dueDate` non aveva mai
+ * un ancoraggio a cui appoggiarsi e restava silenziosamente inattivo per sempre, anche con
+ * un `reminderOffset` scelto esplicitamente dall'utente. */
 export function taskReminderDateTime(
   task: Pick<Task, "type" | "date" | "time" | "endTime" | "dueDate" | "dueTime" | "reminderOffset">
 ): Date | null {
   const minutes = REMINDER_OFFSET_MINUTES[task.reminderOffset];
   if (minutes === null || minutes === undefined) return null;
   const group = taskGroup(task.type);
-  const anchor = group === "tempo" ? toDateTime(task.date, task.time) : taskDueDateTime(task);
+  const anchor =
+    group === "tempo" ? toDateTime(task.date, task.time) : taskDueDateTime(task) ?? toDateTime(task.date, task.time || "23:59");
   if (!anchor) return null;
   return new Date(anchor.getTime() - minutes * 60000);
 }
 
-/** L'istante a cui punta il countdown: inizio per Evento/Appuntamento, scadenza per gli altri. */
+/** L'istante a cui punta il countdown: inizio per Evento/Appuntamento, scadenza per gli
+ * altri — con lo stesso fallback sulla data di inizio di `taskReminderDateTime` quando la
+ * scadenza non è compilata. Senza questo fallback l'avviso anticipato sarebbe scattato
+ * correttamente (con l'ancoraggio corretto in taskReminderDateTime) ma il countdown in Home
+ * sarebbe restato invisibile per le stesse task, perché `tasksInReminderWindow` richiede
+ * anche un `anchor` valido — le due funzioni devono restare coerenti fra loro. */
 export function taskAnchorDateTime(
   task: Pick<Task, "type" | "date" | "time" | "dueDate" | "dueTime">
 ): Date | null {
   const group = taskGroup(task.type);
-  return group === "tempo" ? toDateTime(task.date, task.time) : taskDueDateTime(task);
+  return group === "tempo" ? toDateTime(task.date, task.time) : taskDueDateTime(task) ?? toDateTime(task.date, task.time || "23:59");
 }
 
 /** Task il cui avviso è scattato ma il momento di riferimento non è ancora arrivato — per il

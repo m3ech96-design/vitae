@@ -71,7 +71,8 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
   // "Esaudisci" — SOLO quando l'articolo è già al 100% (garantito dalla UI, vedi
   // SavingsRing: il pulsante compare solo con `pct >= 1`; la guardia qui sotto è una difesa
   // in profondità, non un doppione decorativo). Essendo saturo, `item.savedAmount` coincide
-  // per costruzione con `unlockThreshold(item)` (prezzo + margine fisso di 1000€) — mai di
+  // per costruzione con `unlockThreshold(item)` (prezzo + margine di sicurezza, modificabile
+  // prodotto per prodotto) — mai di
   // più, anche quando altri articoli condividono la stessa destinazione (vedi il commento in
   // SavingsRing.tsx sul perché più articoli possono mostrare lo stesso saldo senza un
   // riparto tra loro): prelevare esattamente `item.savedAmount` non tocca mai più di quanto

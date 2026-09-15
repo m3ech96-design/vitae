@@ -23,7 +23,7 @@ export interface WeeklyDashboard {
 /**
  * Un solo posto che aggrega "la settimana" da OGNI modulo che ha davvero qualcosa di
  * significativo da dire su base settimanale — non tutti i moduli dell'app ce l'hanno
- * (l'albero genealogico, per dire, non ha un ritmo settimanale, quindi non compare qui).
+ * (la Mappa, per dire, non ha un ritmo settimanale, quindi non compare qui).
  * Ogni funzione di calcolo già esistente nel proprio modulo viene riusata così com'è
  * (weeklyTotals, weekOverWeek, completionBreakdown, allExpenseItems) — questo file
  * orchestra, non ricalcola la logica di dominio di ciascun modulo da capo.

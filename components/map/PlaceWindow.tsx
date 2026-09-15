@@ -9,6 +9,8 @@ import { spendCategoriesFor } from "@/lib/spending-categories";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
+import { distanceMeters } from "@/lib/geo";
+import { MiniLineChart } from "../medical/MiniLineChart";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { MultiPersonPicker } from "../ui/MultiPersonPicker";
 import { personColor } from "@/lib/person-color";
@@ -40,7 +42,7 @@ function isSameYear(d: Date, ref: Date) {
 export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => void }) {
   const { checkIn, checkOut, setRating, removePlace, setLastVisitSpentBreakdown, updatePlace, places } = usePlaces();
   const { fireTrigger } = useMood();
-  const { people } = useHousehold();
+  const { people, home } = useHousehold();
   const { tasks } = useTasks();
   const meta = PLACE_TYPE_META[place.type];
   const resolvedPhoto = useResolvedImage(place.photoUrl);
@@ -87,6 +89,29 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
       total: dates.length,
     };
   }, [place.visitsHistory]);
+
+  /** Tempo medio di permanenza (derivato da `visitsHistory`, non stimato) e distanza da
+   * casa — due statistiche che erano già ricavabili dai dati esistenti ma non ancora
+   * mostrate da nessuna parte della finestra del luogo. */
+  const avgDurationMinutes = useMemo(() => {
+    if (place.visitsHistory.length === 0) return null;
+    const total = place.visitsHistory.reduce((sum, v) => sum + v.durationMinutes, 0);
+    return Math.round(total / place.visitsHistory.length);
+  }, [place.visitsHistory]);
+
+  const distanceFromHomeKm = useMemo(() => {
+    if (!home || place.isPrimaryHome) return null;
+    return distanceMeters(home, place) / 1000;
+  }, [home, place]);
+
+  const visitsTrend = useMemo(
+    () =>
+      [...place.visitsHistory]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-20)
+        .map((v) => ({ date: v.date.slice(0, 10), value: v.durationMinutes })),
+    [place.visitsHistory]
+  );
 
   const doCheckOut = () => {
     const { promptRating, askSpent } = checkOut(place.id, companions);
@@ -215,6 +240,34 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
                   <p className="text-[10px] text-ink-800">{label}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!isHome && (avgDurationMinutes !== null || distanceFromHomeKm !== null) && (
+            <div className="grid grid-cols-2 gap-2 text-center">
+              {avgDurationMinutes !== null && (
+                <div className="rounded-xl2 border border-white/10 bg-white/[0.02] py-2.5">
+                  <p className="font-display text-base text-ink-100">
+                    {avgDurationMinutes >= 60 ? `${Math.floor(avgDurationMinutes / 60)}h ${avgDurationMinutes % 60}m` : `${avgDurationMinutes}m`}
+                  </p>
+                  <p className="text-[10px] text-ink-800">Permanenza media</p>
+                </div>
+              )}
+              {distanceFromHomeKm !== null && (
+                <div className="rounded-xl2 border border-white/10 bg-white/[0.02] py-2.5">
+                  <p className="font-display text-base text-ink-100">
+                    {distanceFromHomeKm < 1 ? `${Math.round(distanceFromHomeKm * 1000)} m` : `${distanceFromHomeKm.toFixed(1)} km`}
+                  </p>
+                  <p className="text-[10px] text-ink-800">Da casa</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isHome && visitsTrend.length > 1 && (
+            <div>
+              <p className="mb-1.5 text-[11px] text-ink-600">Durata delle visite nel tempo</p>
+              <MiniLineChart points={visitsTrend} unit="min" />
             </div>
           )}
 

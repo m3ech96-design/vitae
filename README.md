@@ -2902,6 +2902,92 @@ condividono il bug.
 
 Build di produzione e `tsc --noEmit` verificati dopo l'intero checkpoint.
 
+## Checkpoint 97 — Focus/Pomodoro, dispensa con quantità, Mappa arricchita, Albero Genealogico eliminato
+
+Blocco ampio di richieste, verificato con build di produzione dopo ogni gruppo di modifiche
+(non solo alla fine):
+
+**Timer nel blocco Metrica (Hobby)**: un blocco Metrica può ora dichiararsi "basato sul
+tempo" (`MetricBlock.isTimeBased`, impostato in configurazione) — quando lo è, il modal di
+nuova voce mostra un cronometro (`MetricTimer.tsx`) che calcola da solo i minuti trascorsi e
+li versa nel campo valore, pronti da confermare o correggere a mano.
+
+**Nuovo modulo Focus (Pomodoro)**: scheda dedicata `/focus` con cicli di lavoro/pausa
+personalizzabili (durate, pausa lunga ogni N cicli, auto-avanzamento, suono), un timer
+flottante persistente visibile su tutte le schede mentre una sessione è attiva, e uno storico
+con streak, heatmap di costanza e grafico minuti-per-giorno. Una sessione può collegarsi a una
+Task esistente o a un blocco Metrica di un Hobby (ogni ciclo di lavoro completato diventa una
+voce in quella metrica) oppure restare "libera" con una semplice etichetta.
+
+**Finanze**: la Cronologia è ora una tendina chiusa di serie (prima occupava sempre tutto lo
+schermo sotto le Spese Singole). Le Spese Singole restano nella loro sezione solo nelle prime
+24 ore da quando sono state inserite (`createdAt`, non la data della spesa) — passata quella
+finestra si trovano solo in Cronologia, che le include già da sempre: nessun duplicato, solo
+due filtri diversi sullo stesso dato.
+
+**Wishlist**: il margine di sicurezza per poter esaudire un articolo (prima fisso a 1000€
+per tutti) è ora modificabile per prodotto (`WishlistItem.safetyMargin`, con lo stesso 1000€
+di sempre come default per chi non lo personalizza).
+
+**Fix aggiornamento prezzo Amazon**: le pagine prodotto Amazon non pubblicano nessuno degli
+standard universali che l'endpoint cercava (JSON-LD Product/Offer, meta Open Graph price) —
+aggiunto un estrattore dedicato al suo markup proprietario (`a-price-whole`/`a-price-fraction`,
+con `a-offscreen` come riserva), provato solo quando il dominio è Amazon e solo dopo aver già
+cercato invano gli standard universali.
+
+**Fix avviso anticipato**: per Promemoria/Obiettivo/Spesa, la Data di scadenza è un campo
+facoltativo — se non compilata, l'avviso anticipato non aveva alcun ancoraggio a cui
+appoggiarsi e restava silenziosamente inattivo per sempre, anche con un `reminderOffset`
+scelto esplicitamente. Corretto con un fallback sulla data di inizio, applicato sia al
+meccanismo di notifica reale (`taskReminderDateTime`) sia al countdown mostrato in Home
+(`taskAnchorDateTime`) — dovevano restare coerenti fra loro, non bastava correggerne uno solo.
+
+**Uscita automatica dai luoghi**: la soglia dei 200m esisteva già ma controllava solo se
+mostrare l'icona "sei qui" — non chiudeva mai davvero la visita. Ora oltre i 200m la visita
+si chiude da sola (`checkOut`), con la durata reale registrata in cronologia; restava
+comunque disponibile anche il pulsante manuale "Esci" per chi vuole chiuderla prima.
+
+**Dispensa con quantità residua**: ogni voce di dispensa può ora dichiarare una quantità
+iniziale opzionale (`PantryEntry.initialQuantity`/`remainingQuantity`) — se presente, registrare
+un pasto che usa quell'ingrediente scala automaticamente il residuo (FIFO per scadenza più
+vicina, a cascata su più confezioni se una non basta), con ripristino automatico se il pasto
+viene poi modificato o eliminato, oltre alla correzione manuale. Verificato che il sistema
+della pappa animali (`animal-food-context.tsx`) aveva già un modello equivalente e più maturo
+(porzioni, soglia di scorta, esaurimento automatico): non serviva alcuna estensione lì.
+
+**Lista della spesa automatica**: ora guarda anche i 7 giorni passati oltre ai 7 successivi
+(prima solo questi ultimi) — un ingrediente mangiato spesso di recente segnala un consumo
+abituale reale quanto una voce già scritta nel menù di domani. Generarla ora chiede prima se
+la lista va in "Liste e note" (si aggiorna, quello già spuntato resta) oppure in una nuova
+Task di tipo Spesa già precompilata con gli articoli, lasciando scegliere solo nome e quando.
+
+**"Copia questo menù"**: reso pasto per pasto invece che sull'intera giornata — si copia "la
+colazione di martedì", non "tutto martedì"; il pulsante Incolla compare solo nella sezione
+dello stesso pasto da cui si è copiato.
+
+**Frase del digiuno**: la frase "Tra [pasto] e [pasto]" compariva sotto tutte e quattro le
+card delle statistiche curiose di Alimentazione — spostata dentro la sola card "Digiuno più
+lungo" a cui appartiene.
+
+**Mappa arricchita**: statistiche per singolo luogo (tempo medio di permanenza, distanza da
+casa, mini-grafico della durata delle visite nel tempo), filtro per categoria (chip che
+filtrano sia i marker sulla mappa sia la lista sotto), cluster automatico dei marker vicini
+(`react-leaflet-cluster`, stile coerente con i marker "aura" esistenti invece del
+verde/giallo/rosso di libreria) e un suggerimento "non vai qui da tempo" per luoghi con
+rating alto (≥80) non visitati da 30+ giorni — confinato alla sola scheda Mappa (mai un
+banner in Home, per lo stesso motivo per cui un avviso analogo sulle persone era stato
+eliminato in passato), con un puntino discreto sulla sua icona di navigazione quando c'è
+qualcosa da vedere, stesso linguaggio visivo già usato da Vitaecom per le notifiche.
+
+**Albero Genealogico eliminato per intero**: cartelle `app/albero-genealogico/`,
+`components/genealogia/`, i cinque file `lib/genealogy-*.ts`, il provider dal layout radice,
+la voce dalla barra di navigazione e dal catalogo scorciatoie, la regola dedicata che
+nascondeva la barra sulla sua vista espansa. Verificato che `Person` (il modello condiviso di
+Mondo/Rapporti) non aveva alcun campo usato solo da lì — l'albero aveva un proprio modello dati
+del tutto separato, ora rimosso in blocco senza lasciare residui altrove; nessun riferimento
+a `genealog` rimasto in tutto il codice sorgente, confermato con una ricerca ad ampio raggio
+oltre che con una build di produzione ripulita da zero.
+
 ## Sviluppo in locale
 
 ```bash

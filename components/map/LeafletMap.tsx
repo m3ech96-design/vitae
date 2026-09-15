@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { Place } from "@/lib/types";
 import { PLACE_TYPE_META } from "@/lib/places-meta";
-import { createAuraDivIcon, createUserLocationDivIcon } from "@/lib/aura-marker";
+import { createAuraDivIcon, createUserLocationDivIcon, createClusterDivIcon } from "@/lib/aura-marker";
 import { useLiveLocation, LiveLocation } from "@/lib/use-live-location";
 
 function ClickCatcher({ onPick }: { onPick: (lat: number, lng: number) => void }) {
@@ -119,6 +122,7 @@ export function LeafletMap({
   recenterOnUserLocation = false,
   flyToPlace,
   recenterOnUserRequestAt,
+  categoryFilter,
 }: {
   places: Place[];
   center: { lat: number; lng: number };
@@ -137,8 +141,16 @@ export function LeafletMap({
   /** Cambia (un token) per ricentrare sulla posizione live dell'utente su richiesta —
    * richiede `showUserLocation`. */
   recenterOnUserRequestAt?: number | null;
+  /** Se presente, mostra solo i marker dei luoghi con questo tipo — il filtro categoria
+   * della vista Mappa, applicato qui (non a monte in places-context) perché lo stato del
+   * filtro è una preferenza di visualizzazione della sola mappa, non un dato dei luoghi. */
+  categoryFilter?: Place["type"] | null;
 }) {
   const draftIcon = useMemo(() => createAuraDivIcon("#00E5C7", { shape: "circle", size: 30 }), []);
+  const visiblePlaces = useMemo(
+    () => (categoryFilter ? places.filter((p) => p.type === categoryFilter) : places),
+    [places, categoryFilter]
+  );
 
   return (
     <MapContainer
@@ -152,23 +164,33 @@ export function LeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> Contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {places.map((p) => {
-        const meta = PLACE_TYPE_META[p.type];
-        const icon = createAuraDivIcon(meta.color, {
-          shape: meta.shape,
-          active: Boolean(p.currentVisitStartedAt),
-          icon: meta.icon,
-        });
-        return (
-          <Marker
-            key={p.id}
-            position={[p.lat, p.lng]}
-            icon={icon}
-            title={`${p.name} — ${meta.label}${p.currentVisitStartedAt ? " — sei qui" : ""}`}
-            eventHandlers={{ click: () => onMarkerClick?.(p) }}
-          />
-        );
-      })}
+      <MarkerClusterGroup
+        chunkedLoading
+        maxClusterRadius={50}
+        // Oltre questo livello di zoom, i marker vicini sono già abbastanza distinguibili
+        // sullo schermo — un cluster qui nasconderebbe due luoghi vicini invece di aiutare.
+        disableClusteringAtZoom={17}
+        showCoverageOnHover={false}
+        iconCreateFunction={createClusterDivIcon}
+      >
+        {visiblePlaces.map((p) => {
+          const meta = PLACE_TYPE_META[p.type];
+          const icon = createAuraDivIcon(meta.color, {
+            shape: meta.shape,
+            active: Boolean(p.currentVisitStartedAt),
+            icon: meta.icon,
+          });
+          return (
+            <Marker
+              key={p.id}
+              position={[p.lat, p.lng]}
+              icon={icon}
+              title={`${p.name} — ${meta.label}${p.currentVisitStartedAt ? " — sei qui" : ""}`}
+              eventHandlers={{ click: () => onMarkerClick?.(p) }}
+            />
+          );
+        })}
+      </MarkerClusterGroup>
       {draftMarker && (
         <Marker position={[draftMarker.lat, draftMarker.lng]} icon={draftIcon} title="Punto selezionato sulla mappa" />
       )}
