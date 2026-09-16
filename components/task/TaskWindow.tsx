@@ -16,19 +16,16 @@ import { taskCategory } from "@/lib/task-status";
 import { useTasks } from "@/lib/tasks-context";
 import { useHousehold } from "@/lib/household-context";
 import { usePlaces } from "@/lib/places-context";
-import { usePomodoro } from "@/lib/pomodoro-context";
 import { AuraAvatar } from "../ui/AuraAvatar";
 import { personColor } from "@/lib/person-color";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { NewTaskModal } from "./NewTaskModal";
-import { Timer } from "lucide-react";
 
 export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void }) {
   const { toggleSubtask, toggleShoppingItem, removeTask, tasks } = useTasks();
   const { people } = useHousehold();
   const { places } = usePlaces();
-  const { activeRun, startRun } = usePomodoro();
   const place = task.linkedPlaceId ? places.find((p) => p.id === task.linkedPlaceId) : undefined;
   const tint = PRIORITY_TINT[task.priority];
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -190,17 +187,6 @@ export function TaskWindow({ task, onClose }: { task: Task; onClose: () => void 
                 ))}
               </div>
             </div>
-          )}
-
-          {!task.completed && !activeRun && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-center"
-              onClick={() => startRun({ kind: "task", taskId: task.id })}
-            >
-              <Timer size={13} /> Avvia sessione Focus
-            </Button>
           )}
 
           <Button

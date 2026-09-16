@@ -164,7 +164,7 @@ export function AddIngredientModal({
 
           <div>
             <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">
-              Categoria <span className="normal-case text-ink-800">(opzionale — serve solo a stimare la scadenza quando lo metti in dispensa)</span>
+              Categoria <span className="normal-case text-ink-800">(opzionale — usata dal Resoconto benessere settimanale per porzioni di frutta/verdura, bilanciamento proteico e varietà della dieta)</span>
             </p>
             <div className="flex flex-wrap gap-2">
               {FOOD_CATEGORIES.map((c) => (

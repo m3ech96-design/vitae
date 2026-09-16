@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Package, Check, Trash2, AlertTriangle, ShoppingCart, Pencil } from "lucide-react";
 import { useFood } from "@/lib/food-context";
 import { useNotes } from "@/lib/notes-context";
-import { pantryEntryStatuses, PantryEntryStatus } from "@/lib/pantry";
+import { pantryEntryStatuses, PantryEntryStatus, isIngredientLowStock, ingredientStockStatuses } from "@/lib/pantry";
 import { generateShoppingList, formatShoppingListItem } from "@/lib/shopping-list";
 import { formatDateShort, todayIso } from "@/lib/date-format";
 import { Ingredient } from "@/lib/food-types";
@@ -62,12 +62,14 @@ function AdjustQuantitySheet({
 function PantryRow({
   status,
   ingredient,
+  lowStock,
   onConsume,
   onRemove,
   onAdjust,
 }: {
   status: PantryEntryStatus;
   ingredient?: Ingredient;
+  lowStock: boolean;
   onConsume: () => void;
   onRemove: () => void;
   onAdjust: (value: number) => void;
@@ -109,12 +111,19 @@ function PantryRow({
           <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${pct}%`, background: pct <= 20 ? "#FF6B9D" : "#7C5CFF" }}
+              style={{ width: `${pct}%`, background: lowStock ? "#FF6B9D" : "#7C5CFF" }}
             />
           </div>
-          <p className="mt-1 text-[10px] text-ink-800">
-            {entry.remainingQuantity} / {entry.initialQuantity} {unitLabel} residui
-          </p>
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-[10px] text-ink-800">
+              {entry.remainingQuantity} / {entry.initialQuantity} {unitLabel} residui
+            </p>
+            {lowStock && (
+              <span className="flex items-center gap-1 text-[10px] text-aura-pink">
+                <AlertTriangle size={10} /> In esaurimento
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -143,6 +152,15 @@ export default function DispensaPage() {
   const expiringOrOverdue = statuses.filter((s) => s.status === "in-scadenza" || s.status === "scaduto");
   const fresh = statuses.filter((s) => s.status === "fresco");
   const withoutExpiry = statuses.filter((s) => s.status === "senza-scadenza");
+
+  // Aggregato per ingrediente (non per singola entry, vedi ingredientStockStatuses in
+  // lib/pantry.ts): due confezioni tracciate dello stesso ingrediente contano come un'unica
+  // scorta, quindi il badge "In esaurimento" va acceso o spento sull'ingrediente nel suo
+  // insieme, non su una entry isolata.
+  const lowStockIngredientIds = useMemo(
+    () => new Set(ingredientStockStatuses(pantryEntries, ingredients).filter(isIngredientLowStock).map((s) => s.ingredientId)),
+    [pantryEntries, ingredients]
+  );
 
   const computedItems = useMemo(() => generateShoppingList(entries, ingredients, pantryEntries, today), [entries, ingredients, pantryEntries, today]);
 
@@ -179,10 +197,10 @@ export default function DispensaPage() {
         onClick={() => setChoosingListDestination(true)}
         className="focus-ring mt-4 flex w-full items-center justify-center gap-2 rounded-xl2 border border-aura-cyan/30 bg-aura-cyan/[0.06] py-3 text-sm text-ink-100 transition hover:border-aura-cyan/60"
       >
-        <ShoppingCart size={15} className="text-aura-cyan" /> Genera lista della spesa dal menù
+        <ShoppingCart size={15} className="text-aura-cyan" /> Genera lista della spesa
       </button>
       <p className="mt-1.5 text-[11px] text-ink-800">
-        Guarda i 7 giorni di menù passati e i 7 successivi rispetto a oggi.
+        Guarda i 7 giorni di menù passati e i 7 successivi rispetto a oggi, più ogni ingrediente la cui scorta tracciata sta finendo.
       </p>
 
       {statuses.length === 0 ? (
@@ -203,6 +221,7 @@ export default function DispensaPage() {
                     key={s.entry.id}
                     status={s}
                     ingredient={ingredients.find((i) => i.id === s.entry.ingredientId)}
+                    lowStock={lowStockIngredientIds.has(s.entry.ingredientId)}
                     onConsume={() => markPantryEntryConsumed(s.entry.id, today)}
                     onRemove={() => removePantryEntry(s.entry.id)}
                     onAdjust={(value) => adjustPantryQuantity(s.entry.id, value)}
@@ -220,6 +239,7 @@ export default function DispensaPage() {
                     key={s.entry.id}
                     status={s}
                     ingredient={ingredients.find((i) => i.id === s.entry.ingredientId)}
+                    lowStock={lowStockIngredientIds.has(s.entry.ingredientId)}
                     onConsume={() => markPantryEntryConsumed(s.entry.id, today)}
                     onRemove={() => removePantryEntry(s.entry.id)}
                     onAdjust={(value) => adjustPantryQuantity(s.entry.id, value)}
@@ -237,6 +257,7 @@ export default function DispensaPage() {
                     key={s.entry.id}
                     status={s}
                     ingredient={ingredients.find((i) => i.id === s.entry.ingredientId)}
+                    lowStock={lowStockIngredientIds.has(s.entry.ingredientId)}
                     onConsume={() => markPantryEntryConsumed(s.entry.id, today)}
                     onRemove={() => removePantryEntry(s.entry.id)}
                     onAdjust={(value) => adjustPantryQuantity(s.entry.id, value)}
@@ -258,7 +279,9 @@ export default function DispensaPage() {
           >
             <p className="mb-1 font-display text-lg text-ink-100">Dove vuoi la lista?</p>
             <p className="mb-5 text-xs text-ink-600">
-              {computedItems.length} {computedItems.length === 1 ? "articolo" : "articoli"} calcolati dal menù degli ultimi e prossimi 7 giorni.
+              {computedItems.length} {computedItems.length === 1 ? "articolo" : "articoli"} —
+              dal menù degli ultimi e prossimi 7 giorni
+              {computedItems.some((i) => i.fromLowStock) && " e dagli ingredienti in esaurimento"}.
             </p>
             <div className="space-y-2.5">
               <button

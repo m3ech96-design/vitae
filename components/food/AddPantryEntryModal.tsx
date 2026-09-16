@@ -5,7 +5,6 @@ import { X, Search, Package } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
 import { Ingredient } from "@/lib/food-types";
-import { foodCategoryOf } from "@/lib/food-category-catalog";
 import { todayIso } from "@/lib/date-format";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
@@ -73,9 +72,6 @@ export function AddPantryEntryModal({ onClose }: { onClose: () => void }) {
             <div className="flex items-center justify-between rounded-xl2 border border-aura-emerald/30 bg-aura-emerald/[0.06] px-4 py-3">
               <div>
                 <p className="text-sm text-ink-100">{selected.name}</p>
-                {selected.categoryId && (
-                  <p className="mt-0.5 text-[11px] text-ink-800">{foodCategoryOf(selected.categoryId).label}</p>
-                )}
               </div>
               <button onClick={() => setSelected(null)} className="focus-ring text-ink-800 hover:text-aura-pink" aria-label="Cambia ingrediente">
                 <X size={14} />

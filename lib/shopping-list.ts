@@ -1,4 +1,5 @@
 import { Ingredient, FoodEntry, RecipeIngredientLine, baseQuantity, PantryEntry } from "./food-types";
+import { ingredientStockStatuses, isIngredientLowStock } from "./pantry";
 
 export interface ShoppingListItem {
   ingredientId: string;
@@ -11,18 +12,28 @@ export interface ShoppingListItem {
   unit: Ingredient["unit"];
   unitLabel?: string;
   /** Quante voci di menù distinte hanno contribuito — solo informativo (es. "usato in 3
-   * pasti"), non incide sul calcolo. */
+   * pasti"), non incide sul calcolo. 0 per un articolo aggiunto solo perché in esaurimento
+   * (vedi `fromLowStock` sotto), senza che sia comparso nel menù della finestra osservata. */
   occurrences: number;
+  /** true se l'articolo è in lista (anche) perché la scorta tracciata in dispensa è sotto
+   * soglia (vedi ingredientStockStatuses/isIngredientLowStock in lib/pantry.ts) — un
+   * ingrediente può comparire per questo motivo anche senza comparire affatto nel menù
+   * della finestra osservata: un condimento usato di rado ma quasi finito va ricomprato
+   * comunque, indipendentemente da quante volte è stato cucinato di recente. */
+  fromLowStock?: boolean;
 }
 
 export function formatShoppingListItem(item: ShoppingListItem): string {
-  if (item.unit === "g") return `${item.ingredientName} · ${Math.ceil(item.quantity)} g`;
-  if (item.unit === "ml") return `${item.ingredientName} · ${Math.ceil(item.quantity)} ml`;
-  // Niente pluralizzazione automatica dell'unità (es. "uovo" → "uova" non è una semplice
-  // regola meccanica in italiano) — mostriamo il conteggio e l'etichetta singolare così
-  // com'è stata scritta dall'utente, onesto anche se a volte grammaticalmente imperfetto.
-  const unitLabel = item.unitLabel || "unità";
-  return `${item.ingredientName} · ${Math.ceil(item.quantity)} × ${unitLabel}`;
+  const base =
+    item.unit === "g"
+      ? `${item.ingredientName} · ${Math.ceil(item.quantity)} g`
+      : item.unit === "ml"
+      ? `${item.ingredientName} · ${Math.ceil(item.quantity)} ml`
+      : // Niente pluralizzazione automatica dell'unità (es. "uovo" → "uova" non è una semplice
+        // regola meccanica in italiano) — mostriamo il conteggio e l'etichetta singolare così
+        // com'è stata scritta dall'utente, onesto anche se a volte grammaticalmente imperfetto.
+        `${item.ingredientName} · ${Math.ceil(item.quantity)} × ${item.unitLabel || "unità"}`;
+  return item.fromLowStock ? `${base} · sta finendo` : base;
 }
 
 /**
@@ -83,6 +94,13 @@ function expandToBaseIngredients(
  * acquisto esiste, non quanti grammi restano di preciso, quindi lì la lista mostra la
  * quantità pianificata per intero — è comunque un punto di partenza da rivedere con
  * un'occhiata al frigo, non un conteggio a scorta zero.
+ *
+ * Aggiunge inoltre, indipendentemente dal menù della finestra osservata, ogni ingrediente
+ * la cui scorta tracciata in dispensa è sotto soglia (vedi ingredientStockStatuses/
+ * isIngredientLowStock in lib/pantry.ts, stesso principio già in uso per il cibo animali) —
+ * marcato `fromLowStock: true` sull'item, con quantità proposta pari a quanto manca per
+ * tornare alla capacità nota. Un ingrediente già incluso dal calcolo sul menù non viene
+ * duplicato: riceve semplicemente lo stesso flag se la sua scorta è anch'essa sotto soglia.
  */
 export function generateShoppingList(
   entries: FoodEntry[],
@@ -121,6 +139,9 @@ export function generateShoppingList(
     .forEach((p) => inPantryCount.set(p.ingredientId, (inPantryCount.get(p.ingredientId) ?? 0) + 1));
 
   const items: ShoppingListItem[] = [];
+  const includedIds = new Set<string>();
+  const lowStockByIngredient = new Map(ingredientStockStatuses(pantryEntries, ingredients).map((s) => [s.ingredientId, s]));
+
   totals.forEach((quantity, ingredientId) => {
     const ingredient = ingredients.find((i) => i.id === ingredientId);
     if (!ingredient) return;
@@ -135,6 +156,8 @@ export function generateShoppingList(
     }
     if (adjustedQuantity <= 0) return;
 
+    includedIds.add(ingredientId);
+    const stock = lowStockByIngredient.get(ingredientId);
     items.push({
       ingredientId,
       ingredientName: ingredient.name,
@@ -142,6 +165,31 @@ export function generateShoppingList(
       unit: ingredient.unit,
       unitLabel: ingredient.unitLabel,
       occurrences: occurrences.get(ingredientId) ?? 0,
+      fromLowStock: stock ? isIngredientLowStock(stock) : false,
+    });
+  });
+
+  // --- Scorta in esaurimento: aggiunge gli ingredienti sotto soglia (vedi
+  // ingredientStockStatuses/isIngredientLowStock in lib/pantry.ts) che il menù della
+  // finestra osservata non ha già portato in lista — un ingrediente usato di rado (un
+  // condimento, una spezia) può star finendo senza comparire affatto negli ultimi/prossimi
+  // 7 giorni di menù, e altrimenti non verrebbe mai segnalato qui.
+  lowStockByIngredient.forEach((stock, ingredientId) => {
+    if (includedIds.has(ingredientId) || !isIngredientLowStock(stock)) return;
+    const ingredient = ingredients.find((i) => i.id === ingredientId);
+    if (!ingredient || ingredient.recipe) return;
+    // Quantità proposta: quanto manca per tornare alla capacità nota (l'ultimo acquisto
+    // tracciato) — "ricomprane abbastanza da tornare pieno", non un valore arbitrario.
+    const missing = Math.max(0, stock.capacity - stock.remaining);
+    if (missing <= 0) return;
+    items.push({
+      ingredientId,
+      ingredientName: ingredient.name,
+      quantity: missing,
+      unit: ingredient.unit,
+      unitLabel: ingredient.unitLabel,
+      occurrences: 0,
+      fromLowStock: true,
     });
   });
 

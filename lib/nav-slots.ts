@@ -15,7 +15,6 @@ import {
   Palette,
   PawPrint,
   StickyNote,
-  Timer,
 } from "lucide-react";
 
 const SLOTS_KEY = "vitae:nav-slots";
@@ -45,7 +44,6 @@ export const ALL_NAV_ITEMS: NavItemDef[] = [
   { href: "/map", label: "Mappa", icon: MapPinned },
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/liste-note", label: "Liste e note", icon: StickyNote },
-  { href: "/focus", label: "Focus", icon: Timer },
 ];
 
 export const DEFAULT_SLOTS = ["/task", "/mondo", "/finanze"];

@@ -1,28 +1,38 @@
 "use client";
 import { useState } from "react";
 import { Plus, Settings, Trophy, TrendingUp, TrendingDown, Timer } from "lucide-react";
+import { useHobby } from "@/lib/hobby-context";
 import { MetricBlock } from "@/lib/hobby-types";
 import { metricCurrentValue, metricPersonalRecord, metricPeriodComparison } from "@/lib/hobby-stats";
-import { formatDateShort } from "@/lib/date-format";
-import { usePomodoro } from "@/lib/pomodoro-context";
+import { formatDateShort, formatMinutesDuration, todayIso } from "@/lib/date-format";
 import { MiniLineChart } from "../medical/MiniLineChart";
 import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
 import { HeatmapGrid } from "./HeatmapGrid";
 import { MetricEntryModal } from "./MetricEntryModal";
 import { MetricConfigModal } from "./MetricConfigModal";
+import { MetricTimer } from "./MetricTimer";
 
 export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: MetricBlock }) {
+  const { addMetricEntry } = useHobby();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
-  const { activeRun, startRun } = usePomodoro();
+  const [timerOpen, setTimerOpen] = useState(false);
 
   const current = metricCurrentValue(block);
   const record = metricPersonalRecord(block);
   const comparison = metricPeriodComparison(block, 7);
   const editEntry = block.entries.find((e) => e.id === editId);
   const goalPct = block.goalValue ? Math.min(100, Math.round((current / block.goalValue) * 100)) : null;
+
+  /** Somma di tutti i cronometraggi registrati in questo blocco (in minuti, come li salva
+   * MetricTimer) — indipendente dal tipo di aggregazione scelto per l'obiettivo (cumulativa
+   * o puntuale): qui vogliamo sempre il totale del tempo dedicato, non l'ultimo valore. */
+  const totalTrackedMinutes = block.entries.reduce((sum, e) => sum + e.value, 0);
+  const lastEntry = block.isTimeBased && block.entries.length > 0
+    ? [...block.entries].sort((a, b) => b.date.localeCompare(a.date))[0]
+    : null;
 
   return (
     <GlassCard className="p-4">
@@ -33,11 +43,11 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
         subtitle={`${block.aggregation === "cumulativa" ? "Totale" : "Ultimo valore"} · ${block.entries.length} voci`}
         extra={
           <>
-            {block.isTimeBased && !activeRun && (
+            {block.isTimeBased && (
               <button
-                onClick={() => startRun({ kind: "metrica", hobbyId, blockId: block.id })}
+                onClick={() => setTimerOpen(true)}
                 className="focus-ring text-ink-800 hover:text-ink-200"
-                aria-label="Avvia sessione Focus per questa metrica"
+                aria-label="Cronometra questa metrica"
               >
                 <Timer size={13} />
               </button>
@@ -52,11 +62,37 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
         }
       />
 
+      {timerOpen && block.isTimeBased && (
+        <div className="mb-3">
+          <MetricTimer
+            onFinish={(minutes) => {
+              addMetricEntry(hobbyId, block.id, { date: todayIso(), value: minutes });
+              setTimerOpen(false);
+            }}
+          />
+        </div>
+      )}
+
       {block.entries.length === 0 ? (
         <p className="text-xs text-ink-800">Ancora nessuna voce registrata.</p>
       ) : (
         <>
           <MiniLineChart points={block.entries.map((e) => ({ date: e.date, value: e.value }))} unit={block.unit} />
+
+          {block.isTimeBased && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.1em] text-ink-600">Totale cronometrato</p>
+                <p className="mt-0.5 text-sm text-ink-100">{formatMinutesDuration(totalTrackedMinutes)}</p>
+              </div>
+              {lastEntry && (
+                <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.1em] text-ink-600">Ultimo cronometraggio</p>
+                  <p className="mt-0.5 text-sm text-ink-100">{formatMinutesDuration(lastEntry.value)}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {block.goalValue !== null && block.goalValue !== undefined && goalPct !== null && (
             <div className="mt-3">

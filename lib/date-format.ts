@@ -44,6 +44,19 @@ export function addDaysIso(baseIso: string, days: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Formatta un numero di minuti come durata leggibile con la sua unità di misura accanto —
+ * "45 min" sotto l'ora, "2,5 h" da un'ora in su (una sola cifra decimale, e solo se serve,
+ * mai "2,0 h"). Usata ovunque un cronometraggio (in minuti) va mostrato come numero, per non
+ * lasciare mai un valore di tempo senza l'unità che lo identifica. */
+export function formatMinutesDuration(totalMinutes: number): string {
+  if (totalMinutes < 60) {
+    const rounded = Math.round(totalMinutes * 10) / 10;
+    return `${rounded.toLocaleString("it-IT")} min`;
+  }
+  const hours = Math.round((totalMinutes / 60) * 10) / 10;
+  return `${hours.toLocaleString("it-IT")} h`;
+}
+
 export function weekdayShort(iso: string): string {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("it-IT", { weekday: "short" }).replace(".", "");

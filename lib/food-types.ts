@@ -240,4 +240,12 @@ export interface PantryEntry {
    * lib/pantry.ts). Un acquisto senza questa data resta in dispensa normalmente, solo senza
    * uno stato di scadenza da monitorare. */
   expiryDateOverride?: string;
+  /** Evita di riavvisare "scorta in esaurimento" a ogni minuto una volta già sotto soglia —
+   * stesso principio di FoodProduct.lowStockAlerted nel modulo cibo animali
+   * (lib/animal-food-context.tsx). Vive sull'entry più recente con tracking attivo di un
+   * ingrediente (vedi ingredientStockStatus in lib/pantry.ts): un nuovo acquisto crea una
+   * nuova entry con questo campo assente, quindi l'avviso riparte da solo al riacquisto,
+   * senza bisogno di un reset esplicito come per gli animali (lì un unico "prodotto" viene
+   * aggiornato sul posto, qui un acquisto nuovo è già di per sé un record nuovo). */
+  lowStockAlerted?: boolean;
 }

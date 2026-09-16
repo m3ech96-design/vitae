@@ -12,7 +12,6 @@ import { FoodProvider } from "@/lib/food-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { DiaryProvider } from "@/lib/diary-context";
 import { HobbyProvider } from "@/lib/hobby-context";
-import { PomodoroProvider } from "@/lib/pomodoro-context";
 import { AnimalHealthProvider } from "@/lib/animal-health-context";
 import { AnimalFoodProvider } from "@/lib/animal-food-context";
 import { NewsSourcesProvider } from "@/lib/news-sources-context";
@@ -34,7 +33,6 @@ import { VaccinationNotifier } from "@/components/medical/VaccinationNotifier";
 import { AnimalNotifier } from "@/components/animali/AnimalNotifier";
 import { PantryNotifier } from "@/components/food/PantryNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
-import { FloatingFocusTimer } from "@/components/pomodoro/FloatingFocusTimer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -78,7 +76,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <WishlistProvider>
                     <DiaryProvider>
                     <HobbyProvider>
-                    <PomodoroProvider>
                     <AnimalHealthProvider>
                     <AnimalFoodProvider>
                     <NewsSourcesProvider>
@@ -99,7 +96,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <AnimalNotifier />
                             <PantryNotifier />
                             <MoodSuggestionPrompt />
-                            <FloatingFocusTimer />
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
@@ -110,7 +106,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </NewsSourcesProvider>
                     </AnimalFoodProvider>
                     </AnimalHealthProvider>
-                    </PomodoroProvider>
                     </HobbyProvider>
                     </DiaryProvider>
                     </WishlistProvider>

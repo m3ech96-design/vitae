@@ -56,6 +56,24 @@ export const INDICATIVE_DAILY_WATER_LITERS = 2;
  * stimate dal MET dell'attività specifica, molto più accurate di questa media generica). */
 export const WALKING_KCAL_PER_KG_PER_KM = 0.5;
 
+/** Quota di proteine vegetali sul totale proteine animali+vegetali raccomandata — le fonti
+ * divulgative basate su CREA/LARN (es. SapereSalute, portale del Ministero della Salute)
+ * indicano la raccomandazione generale di portare a tavola le due fonti "in uguale
+ * proporzione" ogni giorno: da qui il 50%. Non è una soglia OMS numerica come le altre di
+ * questo file (nessun ente cita una percentuale esatta), quindi il giudizio in
+ * wellbeing-report.ts la tratta con una fascia di tolleranza più ampia delle altre, mai
+ * come un taglio netto. */
+export const RECOMMENDED_VEGETABLE_PROTEIN_SHARE = 0.5;
+
+/** Quanti dei 7 gruppi alimentari "veri" (tutti tranne "Altro", che è un ripiego e non un
+ * gruppo nutrizionale — vedi lib/food-category-catalog.ts) contare come "varietà buona" in
+ * una settimana — non una soglia numerica ufficiale (nessuna fonte cita "N gruppi a
+ * settimana"), ma una soglia di presentazione ragionevole che riflette il principio CREA
+ * secondo cui piani alimentari completi includono alimenti da tutti i gruppi: qui si
+ * richiede la maggioranza (5 su 7), non la totalità, perché mancare "Dolci e zuccheri" in
+ * una settimana è un segno positivo, non un problema di varietà. */
+export const GOOD_VARIETY_GROUP_COUNT = 5;
+
 /** Quota di adulti nel mondo che, secondo l'OMS, non raggiunge i livelli minimi di
  * attività fisica raccomandati — statistica citata nel materiale divulgativo OMS
  * sull'attività fisica, usata solo per una curiosità di confronto (vedi

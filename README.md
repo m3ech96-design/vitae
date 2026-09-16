@@ -3111,6 +3111,122 @@ condizione in `app/page.tsx` lo gestisce già. Aggiunta `/benvenuto` all'elenco 
 la barra di navigazione resta nascosta (`HIDDEN_ON` in `BottomNav.tsx`), stesso trattamento
 già riservato a `/wizard`.
 
+**Corretto: importare un backup dalla pagina di Benvenuto non portava mai in Home**. Il
+bug: `window.location.reload()` (lo stesso usato in `BackupSection.tsx` per l'import da Home
+→ Impostazioni) ricarica la pagina corrente — in `BackupSection.tsx` va bene, perché lì
+l'utente è già dentro l'app nella pagina giusta; nella pagina di Benvenuto invece ricaricava
+semplicemente se stessa, che non ha alcuna logica di redirect propria (solo la root "/" in
+`app/page.tsx` decide se andare a Home o al wizard, in base al profilo). Risultato: dati
+importati correttamente, ma l'utente restava bloccato sulla stessa schermata di benvenuto,
+con l'impressione che l'import non avesse avuto alcun effetto. Corretto sostituendo il
+ricaricamento con una navigazione forzata alla root (`window.location.href = "/"`), che
+rilegge il profilo appena importato e fa scattare il redirect corretto da sola.
+
+## Checkpoint 105 — eliminato il modulo Focus (Pomodoro)
+
+Il concetto stesso di Focus/Pomodoro (scheda dedicata, cicli lavoro/pausa cronometrati,
+timer flottante persistente, collegamento a Task e ai blocchi Metrica degli Hobby) è stato
+rimosso completamente: cancellati `app/focus/`, `components/pomodoro/`,
+`lib/pomodoro-context.tsx` e `lib/pomodoro-types.ts`, e ripuliti tutti i punti che vi si
+agganciavano — il `PomodoroProvider` e il timer flottante in `app/layout.tsx`, la voce
+"Focus" tra le schede assegnabili alla barra di navigazione in `lib/nav-slots.ts`, il
+pulsante "Avvia sessione Focus" nella finestra Task (`TaskWindow.tsx`) e il pulsante
+gemello nel blocco Metrica degli Hobby (`MetricBlockView.tsx`).
+
+Al suo posto, nel blocco Metrica di una scheda Hobby marcata "basata sul tempo": un
+cronometro semplice (play/pausa/azzera, `MetricTimer.tsx` — già scritto in un checkpoint
+precedente ma non ancora collegato a questo punto d'ingresso) che al termine crea da solo
+una nuova voce nella metrica con il tempo misurato, senza dover passare dal form di
+inserimento manuale. Sotto il grafico di queste metriche sono comparse due nuove caselle:
+il totale di tutte le voci cronometrate e il valore dell'ultimo cronometraggio, entrambi
+formattati con la loro unità di tempo accanto (minuti sotto l'ora, ore con una cifra
+decimale da un'ora in su — `formatMinutesDuration` in `lib/date-format.ts`), perché prima
+un numero di minuti compariva senza alcuna unità a fianco.
+
+## Checkpoint 106 — eliminati i "tipi di conservazione" dal wizard ingredienti
+
+Studiato a fondo il Resoconto benessere settimanale (`lib/wellbeing-report.ts`) prima di
+toccare nulla, per capire quali delle 18 categorie alimentari (Latticini freschi, Carne e
+pesce freschi, Surgelati, Uova, Formaggi stagionati...) fossero davvero lette da qualche
+parte del codice oltre al wizard stesso. Risultato: **solo due** lo erano — "Verdura a
+foglia" e "Verdura e frutta dura" — usate esclusivamente per contare le porzioni di frutta
+e verdura secondo le linee guida OMS/CREA. Tutte le altre 16 non venivano lette da nessuna
+parte, verificato incrociando ogni id contro l'intero codice, non solo presunto.
+
+Di conseguenza:
+- Il catalogo (`lib/food-category-catalog.ts`) è stato ridotto a due sole voci: "Frutta e
+  verdura" (le due categorie verdura/frutta precedenti, unite in una sola perché il
+  resoconto le sommava comunque insieme) e "Altro", il ripiego. Tutte le altre 16 categorie
+  di conservazione sono state eliminate.
+- Il wizard di creazione ingrediente (`AddIngredientModal.tsx`) mostra ora solo queste due
+  categorie, con la sottoetichetta corretta: non parla più di "stimare la scadenza" (quella
+  stima non esisteva già più, era rimasta solo la scritta), ma spiega che la categoria serve
+  al Resoconto benessere per contare frutta e verdura.
+- Il wizard "Nuovo acquisto" della dispensa (`AddPantryEntryModal.tsx`) non mostra più la
+  categoria dell'ingrediente scelto: resta solo la scadenza, scritta a mano, come unico modo
+  di tracciarla — esattamente come richiesto.
+- `lib/wellbeing-report.ts` aggiornato per leggere il nuovo id unico "frutta-verdura" al
+  posto dei due precedenti, stesso calcolo, nessun cambio di comportamento.
+
+## Checkpoint 107 — da 2 categorie "monche" a una tassonomia nutrizionale completa
+
+Il checkpoint 106 aveva ridotto le categorie alimentari a sole due voci ("Frutta e
+verdura" + "Altro"), l'unico uso reale rimasto all'epoca. Segnalato che risultava
+visivamente povero — una lista giustificata da un solo calcolo sembra arbitraria — è
+seguito un brainstorming di alternative, da cui è stata scelta la strada della tassonomia
+completa: non un ripiego estetico, ma 8 gruppi alimentari (ripresi dalla classificazione
+delle Linee Guida CREA per una sana alimentazione, revisione 2018 — non inventati per
+l'occasione) dove **ognuno ha un uso dichiarato** nel Resoconto benessere, non solo
+"raccolto per il futuro":
+
+- **Frutta e verdura** → porzioni giornaliere (OMS/CREA, invariato dal checkpoint 106)
+- **Proteine animali** e **Proteine vegetali** → nuovo aspetto "Bilanciamento proteico":
+  quota di porzioni da fonti vegetali sul totale proteico della settimana, verso il 50%
+  raccomandato dalle linee guida CREA/LARN (fonte: raccomandazione generale di assumere le
+  due fonti in proporzione simile) — soglia trattata con tolleranza ampia (±20-35 punti
+  percentuali) perché non è una soglia clinica esatta come le altre, dichiarato nel codice
+- **Cereali e derivati**, **Latticini**, **Grassi da condimento**, **Dolci e zuccheri** →
+  insieme agli altri (tutti tranne "Altro"), alimentano il nuovo aspetto "Varietà della
+  dieta": quanti gruppi diversi compaiono negli ingredienti mangiati questa settimana,
+  principio CREA per cui la varietà tra gruppi alimentari è associata a una migliore
+  adeguatezza nutrizionale — soglia di presentazione (5 gruppi su 7 per "in linea"), non
+  una cifra ufficiale, dichiarato esplicitamente nel codice per non spacciarla per tale
+
+Entrambi i nuovi aspetti seguono lo stesso trattamento già in uso per gli altri (tre
+fasce di giudizio più "dati insufficienti", mai un giudizio su un campione minuscolo, fonte
+sempre citata) e compaiono da soli nella card scrollabile del Resoconto — nessuna modifica
+necessaria alla UI, che già itera genericamente sull'elenco degli aspetti.
+
+## Checkpoint 108 — scorta bassa in dispensa, sul modello del cibo animali
+
+Prima non esisteva alcun collegamento tra "un prodotto sta finendo" e la lista della spesa:
+la dispensa tracciava solo la scadenza, e per il cibo animali (modulo separato) la scorta
+bassa generava solo una notifica, mai una voce in lista. Studiato a fondo quel modello
+(FoodProduct/isLowStock/lowStockAlerted in lib/animal-food-context.tsx) prima di riprodurlo
+per la dispensa umana, adattato perché lì un ingrediente può avere più acquisti (PantryEntry)
+tracciati insieme, non un "prodotto" singolo con un contatore.
+
+- **lib/pantry.ts**: nuove `ingredientStockStatuses` (aggrega remainingQuantity/
+  initialQuantity di tutte le entry tracciate di uno stesso ingrediente — due confezioni
+  aperte insieme sommano la scorta, non restano conteggi separati) e
+  `isIngredientLowStock` (sotto il 20% della capacità nota, stessa soglia già in uso per gli
+  animali — tenuta come costante propria, i due moduli restano volutamente disaccoppiati).
+- **PantryEntry.lowStockAlerted** (food-types.ts): stesso principio del flag per gli
+  animali, ma vive sull'acquisto più recente di un ingrediente invece che su un "prodotto"
+  unico — si resetta da solo quando la scorta torna sopra soglia (nuovo acquisto,
+  correzione manuale, un pasto eliminato che ripristina quantità), letto a ogni giro dal
+  notifier invece che scritto una volta sola, perché qui non c'è un tap esplicito
+  "Riacquistato" come per gli animali.
+- **PantryNotifier**: avvisa una volta sola per ingrediente quando scende sotto soglia
+  ("sta per finire"), oltre alla notifica di scadenza già esistente.
+- **lib/shopping-list.ts**: `generateShoppingList` ora aggiunge anche gli ingredienti in
+  scorta bassa che il menù della finestra osservata non avrebbe portato in lista da solo
+  (un condimento usato di rado ma quasi finito), con quantità proposta pari a quanto manca
+  per tornare alla capacità nota, marcati "· sta finendo" nel testo dell'articolo.
+- **Dispensa**: badge "In esaurimento" sulla riga dell'ingrediente (stesso stile già in uso
+  per gli animali), e il testo del pulsante "Genera lista della spesa" aggiornato per
+  riflettere le due fonti (menù + scorte basse).
+
 ## Sviluppo in locale
 
 ```bash

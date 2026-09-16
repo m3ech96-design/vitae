@@ -48,6 +48,12 @@ interface FoodContextValue {
    * mezzo litro per sbaglio". Un valore <= 0 marca l'entry consumata da sola, coerente con
    * lo svuotamento naturale via consumeFromPantry. */
   adjustPantryQuantity: (id: string, remainingQuantity: number) => void;
+  /** Imposta/rimuove il flag "già avvisato per scorta bassa" su una specifica entry (vedi
+   * PantryEntry.lowStockAlerted in food-types.ts) — usata solo da PantryNotifier per
+   * ricordarsi di aver già notificato un ingrediente e per resettarsi quando la scorta torna
+   * sopra soglia, mai da un'azione diretta dell'utente (a differenza di adjustPantryQuantity,
+   * che l'utente attiva a mano). */
+  setPantryLowStockAlerted: (id: string, alerted: boolean) => void;
   /** true se almeno un acquisto in dispensa non ancora consumato sta per scadere o è
    * probabilmente già scaduto — pilota solo il puntino discreto sull'icona della scheda
    * Alimentazione nella barra di navigazione (stesso principio di hasStalePlaces per la
@@ -304,6 +310,11 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
     [persistPantry]
   );
 
+  const setPantryLowStockAlerted = useCallback(
+    (id: string, alerted: boolean) => persistPantry((prev) => prev.map((p) => (p.id === id ? { ...p, lowStockAlerted: alerted } : p))),
+    [persistPantry]
+  );
+
   // Ricalcolato solo quando dispensa o ingredienti cambiano davvero, non a ogni minuto: una
   // scadenza si muove in giorni, non ha senso rivalutarla più spesso di così — stesso
   // principio già adottato da hasStalePlaces per i luoghi in lib/places-context.tsx.
@@ -336,6 +347,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       markPantryEntryConsumed,
       removePantryEntry,
       adjustPantryQuantity,
+      setPantryLowStockAlerted,
       hasExpiringPantryItems,
     }),
     [
@@ -361,6 +373,7 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
       markPantryEntryConsumed,
       removePantryEntry,
       adjustPantryQuantity,
+      setPantryLowStockAlerted,
       hasExpiringPantryItems,
     ]
   );

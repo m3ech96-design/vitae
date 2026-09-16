@@ -11,8 +11,11 @@ import {
   WHO_MAX_SALT_GRAMS_PER_DAY,
   WHO_MAX_FAT_PERCENT_OF_KCAL,
   RECOMMENDED_FRUIT_VEG_PORTIONS_PER_DAY,
+  RECOMMENDED_VEGETABLE_PROTEIN_SHARE,
+  GOOD_VARIETY_GROUP_COUNT,
   INDICATIVE_DAILY_WATER_LITERS,
 } from "./health-guidelines";
+import { FOOD_CATEGORIES } from "./food-category-catalog";
 
 /**
  * Tre fasce, mai due — un binario "in linea / non in linea" costringerebbe chi è appena
@@ -52,7 +55,7 @@ export interface WellbeingReport {
 
 const WATER_TOLERANCE = 0.85; // "vicino" se raggiunge almeno l'85% del riferimento indicativo
 const MIN_FOOD_DAYS_FOR_JUDGEMENT = 4; // sotto questa soglia di giorni-con-dati, niente giudizio alimentare
-const MIN_CATEGORIZED_SHARE_FOR_FRUIT_VEG = 0.5; // se meno di metà degli ingredienti ha una categoria, il conteggio frutta/verdura sarebbe inaffidabile
+const MIN_CATEGORIZED_SHARE_FOR_FRUIT_VEG = 0.5; // se meno di metà degli ingredienti ha una categoria, i tre conteggi basati sulla categoria (frutta/verdura, bilanciamento proteico, varietà) sarebbero inaffidabili
 
 function aerobicMinutesEquivalent(workouts: Workout[], weekStart: string, today: string): number {
   // Segue esattamente la stessa equivalenza usata dall'OMS per sommare intensità diverse:
@@ -155,9 +158,23 @@ export function wellbeingReport(
         detail: "Categoria non impostata per la maggior parte degli ingredienti",
         source: "OMS/CREA",
       });
+      aspects.push({
+        id: "bilanciamento-proteico",
+        label: "Bilanciamento proteico",
+        status: "dati-insufficienti",
+        detail: "Categoria non impostata per la maggior parte degli ingredienti",
+        source: "CREA/LARN",
+      });
+      aspects.push({
+        id: "varieta-dieta",
+        label: "Varietà della dieta",
+        status: "dati-insufficienti",
+        detail: "Categoria non impostata per la maggior parte degli ingredienti",
+        source: "CREA",
+      });
     } else {
       const fruitVegIds = new Set(
-        usedIngredients.filter((i) => i.categoryId === "verdura-foglia" || i.categoryId === "verdura-frutta-dura").map((i) => i.id)
+        usedIngredients.filter((i) => i.categoryId === "frutta-verdura").map((i) => i.id)
       );
       const portions = weekFoodEntries.filter((e) => fruitVegIds.has(e.ingredientId)).length;
       const avgPortionsPerDay = portions / daysWithFood;
@@ -172,6 +189,61 @@ export function wellbeingReport(
             : "lontano",
         detail: `${avgPortionsPerDay.toFixed(1)} porzioni/giorno in media, su ${RECOMMENDED_FRUIT_VEG_PORTIONS_PER_DAY} raccomandate`,
         source: "OMS/CREA",
+      });
+
+      // --- Bilanciamento proteico: quota di proteine vegetali sulle porzioni animali+vegetali
+      // della settimana — contate come voci di pasto (stesso criterio "una voce = una
+      // porzione" già usato sopra per frutta/verdura), non come grammi di proteina pura:
+      // qui l'obiettivo è la varietà delle FONTI scelte, non il bilancio nutrizionale fine,
+      // che vive già negli aspetti "Grassi totali"/"Zuccheri" più sopra.
+      const animalProteinIds = new Set(usedIngredients.filter((i) => i.categoryId === "proteine-animali").map((i) => i.id));
+      const vegProteinIds = new Set(usedIngredients.filter((i) => i.categoryId === "proteine-vegetali").map((i) => i.id));
+      const animalPortions = weekFoodEntries.filter((e) => animalProteinIds.has(e.ingredientId)).length;
+      const vegPortions = weekFoodEntries.filter((e) => vegProteinIds.has(e.ingredientId)).length;
+      const proteinPortionsTotal = animalPortions + vegPortions;
+
+      if (proteinPortionsTotal === 0) {
+        aspects.push({
+          id: "bilanciamento-proteico",
+          label: "Bilanciamento proteico",
+          status: "dati-insufficienti",
+          detail: "Nessun ingrediente con categoria Proteine animali/vegetali questa settimana",
+          source: "CREA/LARN",
+        });
+      } else {
+        const vegShare = vegPortions / proteinPortionsTotal;
+        // Tolleranza ampia (±20 punti percentuali) attorno al 50/50: è una raccomandazione
+        // generale di proporzione, non una soglia clinica esatta come le altre di questo
+        // file — vedi RECOMMENDED_VEGETABLE_PROTEIN_SHARE in health-guidelines.ts.
+        const distanceFromTarget = Math.abs(vegShare - RECOMMENDED_VEGETABLE_PROTEIN_SHARE);
+        aspects.push({
+          id: "bilanciamento-proteico",
+          label: "Bilanciamento proteico",
+          status: distanceFromTarget <= 0.2 ? "in-linea" : distanceFromTarget <= 0.35 ? "vicino" : "lontano",
+          detail: `${Math.round(vegShare * 100)}% delle porzioni proteiche da fonti vegetali, verso il ${Math.round(RECOMMENDED_VEGETABLE_PROTEIN_SHARE * 100)}% raccomandato`,
+          source: "CREA/LARN",
+        });
+      }
+
+      // --- Varietà della dieta: quanti gruppi alimentari "veri" (tutti tranne "Altro")
+      // compaiono tra gli ingredienti usati questa settimana — il principio CREA per cui la
+      // varietà tra gruppi alimentari è associata a una migliore adeguatezza nutrizionale,
+      // non un conteggio di quante volte si mangia la stessa cosa.
+      const realGroupIds = FOOD_CATEGORIES.filter((c) => c.id !== "altro").map((c) => c.id);
+      const groupsPresent = new Set(
+        usedIngredients.filter((i) => i.categoryId && realGroupIds.includes(i.categoryId)).map((i) => i.categoryId)
+      ).size;
+      aspects.push({
+        id: "varieta-dieta",
+        label: "Varietà della dieta",
+        status:
+          groupsPresent >= GOOD_VARIETY_GROUP_COUNT
+            ? "in-linea"
+            : groupsPresent >= GOOD_VARIETY_GROUP_COUNT - 2
+            ? "vicino"
+            : "lontano",
+        detail: `${groupsPresent} gruppi alimentari diversi su ${realGroupIds.length} questa settimana`,
+        source: "CREA",
       });
     }
   }
