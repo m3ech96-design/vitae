@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, Users, LocateFixed, Sparkles, Search, BarChart3 } from "lucide-react";
+import { Pencil, Users, LocateFixed, Sparkles, Search, BarChart3, RefreshCw } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
 import { useHousehold } from "@/lib/household-context";
 import { useTasks } from "@/lib/tasks-context";
@@ -34,6 +34,7 @@ import { PersonalCardMenu } from "@/components/home/PersonalCardMenu";
 import { GlobalSearchSheet } from "@/components/home/GlobalSearchSheet";
 import { useMood } from "@/lib/mood-context";
 import { moodBackgroundLayers, moodBackgroundOpacity } from "@/lib/mood-tone";
+import { useAppUpdate } from "@/lib/app-update-context";
 
 function greetingForHour(hour: number) {
   if (hour >= 5 && hour < 12) return "Buongiorno";
@@ -64,6 +65,7 @@ export default function HomePage() {
   const [openPerson, setOpenPerson] = useState<Person | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { checking, upToDateNotice, checkNow } = useAppUpdate();
   const { events: feedEvents, clearEvents } = useFeed();
   const { tasks } = useTasks();
   const { places } = usePlaces();
@@ -125,6 +127,21 @@ export default function HomePage() {
             >
               <Search size={15} />
             </button>
+            <div className="relative">
+              <button
+                onClick={checkNow}
+                disabled={checking}
+                className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-ink-300 transition hover:border-aura-violet/50 disabled:opacity-60"
+                aria-label="Cerca aggiornamenti"
+              >
+                <RefreshCw size={15} className={checking ? "animate-spin" : ""} />
+              </button>
+              {upToDateNotice && (
+                <div className="absolute right-0 top-full z-10 mt-2 whitespace-nowrap rounded-full border border-white/10 bg-void-950/95 px-3 py-1.5 text-[11px] text-ink-100 shadow-lg backdrop-blur-xl">
+                  Sei già aggiornato
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Reveal>

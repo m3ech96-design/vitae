@@ -3715,3 +3715,108 @@ wizard si ritrova su di essa già aggiornata, non scaraventato indietro alla lis
 stato di modifica dentro ciascuna delle sei vetrine (`if (editing) return <XModal .../>`,
 stesso schema di `TaskWindow`) — ora il comportamento è identico a quello già in uso nel resto
 dell'app, non un'alternativa inventata lì per lì.
+
+## Checkpoint 121 — Tiber corretto (bug reale, non la chiave), pulsante "Cerca aggiornamenti" in Home, e una cache API rimasta rotta silenziosamente
+
+**Tiber rispondeva sempre con "Errore da Gemini (400): contents is not specified"** — non
+un problema di chiave o di formato della richiesta (già corretti al checkpoint 115), ma un
+bug di tempistica di React in `context.tsx`: `sendMessage` leggeva `workingMessages` subito
+dopo averlo solo *programmato* dentro l'updater di `persistMessages` — quella funzione gira
+alla prossima resa in scena di React, non subito, quindi `workingMessages` era ancora `[]`
+nel momento in cui `historyToGemini(workingMessages)` veniva chiamato. Il risultato:
+`contents: []` mandato a Gemini ad OGNI messaggio, non solo al primo — motivo per cui Tiber
+non aveva mai funzionato nemmeno una volta. Corretto con lo stesso schema a ref già in uso
+nello stesso file per `execCtxRef`: un `messagesRef` aggiornato in modo sincrono ad ogni
+render, letto direttamente invece di fidarsi di una variabile mutata dentro un updater.
+
+**Aggiunto un pulsante "Cerca aggiornamenti" in Home**, accanto alle altre icone
+dell'header — icona 🔄, gira mentre controlla, e un piccolo avviso "Sei già aggiornato" se
+non trova nulla di nuovo (se invece trova qualcosa, compare il consueto banner "Nuova
+versione pronta" in alto, lo stesso di sempre).
+
+**Chiarito (e corretto) un limite reale del meccanismo esistente**: chiesto se ogni build
+fatta passare da Vercel/GitHub facesse comparire l'avviso — la risposta onesta era NO: il
+meccanismo del checkpoint 118 si accorge di una versione nuova solo quando il FILE `sw.js`
+cambia byte per byte, e la maggior parte dei checkpoint tocca solo componenti React, mai
+`sw.js`. Aggiunto un secondo segnale indipendente: una rotta `/api/version` che restituisce
+il commit che Vercel imposta automaticamente ad ogni build (`VERCEL_GIT_COMMIT_SHA`) —
+cambia ad ogni deploy, qualunque cosa sia stata toccata. Il pulsante "Cerca aggiornamenti"
+confronta questo commit con quello con cui la scheda è partita; il meccanismo automatico
+esistente (controllo al ritorno in primo piano) ora fa lo stesso controllo, non solo quello
+sul service worker.
+
+**Trovata per strada una cache rotta silenziosamente da tempo**: il gestore `fetch` di
+`sw.js` applicava la stessa strategia "cache-first" a QUALUNQUE richiesta GET, comprese le
+chiamate API (`/api/weather`, `/api/news`, `/api/wishlist-price`, e la nuova
+`/api/version`) — dati per natura dinamici, non asset della shell. Dato che l'URL di queste
+chiamate è quasi sempre identico chiamata dopo chiamata (stessa posizione, stesse fonti,
+stesso articolo), la cache-first le teneva bloccate al primo valore mai ricevuto in quella
+sessione del service worker, aggiornandosi solo "per la prossima volta" — che ripeteva lo
+stesso problema all'infinito. In pratica: meteo, notizie e controllo prezzo potevano restare
+congelati indefinitamente invece di riflettere l'ultimo dato vero. Corretto escludendo
+`/api/` dalla cache del service worker (le richieste API ora vanno sempre e solo in rete).
+Cache passata a `vitae-shell-v5`.
+
+Nessuno dei tre problemi era visibile da una build o da un controllo di tipi — il primo
+(Tiber) trovato leggendo `context.tsx` cercando l'errore riportato, gli altri due
+ragionando sull'intero percorso della nuova funzionalità richiesta, non solo sul pezzo
+nuovo aggiunto.
+
+## Checkpoint 122 — Blocchi Hobby a tendina, riordinabili su/giù come i widget della Home
+
+Richiesto: i blocchi della scheda Hobby (Checklist, Metrica, Inventario, Progetti,
+Libreria, Partite, Statistiche) restavano sempre aperti, senza modo di richiuderli, e non
+si potevano riordinare — a differenza dei widget della Home, che hanno entrambe le cose.
+
+**A tendina**: ogni blocco ora si apre/chiude toccando l'intera zona titolo (non solo una
+freccina piccola da centrare con precisione) — una `ChevronDown` ruota di 90° quando è
+chiuso, per indicare il verso in cui si aprirebbe. Il default è chiuso per tutti, non solo
+per i blocchi creati da qui in avanti: un blocco salvato prima di questo checkpoint non ha
+ancora un valore per il nuovo campo `collapsed`, e quell'assenza viene letta come "chiuso"
+— coerente con l'obiettivo originale ("non sempre aperti come ora"), non solo per il futuro.
+L'azione "+" nell'header resta comunque raggiungibile anche a blocco chiuso, per aggiungere
+una voce al volo senza dover prima aprire.
+
+**Riordino su/giù**: due frecce nell'header (disattivate ai due estremi dell'elenco), stesso
+principio già in uso per i widget della Home (`widgets-context.tsx`) — qui reimplementato
+nel contesto Hobby (`moveBlock`) perché i due contesti sono indipendenti, non condividono
+codice.
+
+Costruito un guscio comune (`HobbyBlockCard.tsx`) che applica card, header, tendina e
+riordino una sola volta — i sette tipi di blocco vi passano solo cosa cambia (titolo,
+sottotitolo, l'azione "+" propria del tipo) e il proprio contenuto, che smette di essere
+disegnato quando il blocco è chiuso invece di restare nel DOM solo nascosto. L'unico che
+non lo usa è Partite, per via della copertina del blocco che condivide la riga con l'header
+(un layout suo proprio, composto a mano riusando `BlockHeader` direttamente).
+
+Le finestre di dettaglio e i wizard di aggiunta/modifica di ciascun blocco restano sempre
+raggiungibili indipendentemente da quanto il blocco sia aperto o chiuso (sono overlay a
+schermo intero, non contenuto della card) — verificato in particolare per il cronometro di
+un blocco Metrica: il tempo trascorso vive nel context globale del cronometro
+(`hobby-timer-context.tsx`), non nel componente della vista, quindi chiudere il blocco
+mentre un cronometro è in corso non fa perdere il tempo già accumulato.
+
+## Checkpoint 123 — Foto di un luogo di nuovo nell'header, ora con avanzamento automatico
+
+Richiesto: rimettere le foto di un luogo nell'header della sua finestra (spostate fuori al
+checkpoint 110), ma stavolta con un avanzamento automatico lento quando ce n'è più di una —
+comunque scorribile a mano, con l'automatico che si ferma per lasciare spazio al tocco
+manuale e riprende dopo 5 secondi di inattività. Ingrandimento al tocco confermato invariato.
+
+**Header**: la galleria (`PhotoGallery`, condivisa con Hobby) torna nell'header, a piena
+larghezza come già in ItemDetailSheet (`bordered={false}`) — icona/sfondo colorato del tipo
+di luogo restano come prima solo quando non c'è nessuna foto salvata. Rimossa la sezione
+"Foto" separata più in basso nel corpo, ora ridondante. Altezza portata a 200px quando ci
+sono foto (era 200 anche nella vecchia sezione "Foto" — le foto non rimpiccioliscono
+rispetto a prima), 176px come sempre quando c'è solo l'icona.
+
+**Avanzamento automatico** (`autoScroll`, nuovo prop opzionale di `PhotoGallery`, di norma
+`false` — le altre gallerie, Libreria/Inventario/eccetera, restano ferme come prima): ogni
+4 secondi scorre alla foto successiva con una transizione dolce, tornando alla prima dopo
+l'ultima. Si ferma per almeno 5 secondi non appena l'utente tocca o scorre la striscia a
+mano, e resta fermo anche mentre una foto è aperta a schermo intero — evitando di far
+sparire da sotto il dito la foto che si sta guardando ingrandita. Un accorgimento sotto il
+cofano: distinguere lo scroll causato dall'avanzamento automatico stesso da uno vero
+dell'utente (altrimenti l'automatico si metterebbe in pausa da solo appena tenta di
+muoversi) — un piccolo controllo temporale attorno a ogni scorrimento automatico, non un
+qualunque evento di scroll.

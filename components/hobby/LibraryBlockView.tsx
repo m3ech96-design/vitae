@@ -4,8 +4,7 @@ import { Plus } from "lucide-react";
 import { LibraryBlock, LibraryItem } from "@/lib/hobby-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { StarDisplay } from "./StarRating";
-import { GlassCard } from "../ui/GlassCard";
-import { BlockHeader } from "./BlockHeader";
+import { HobbyBlockCard } from "./HobbyBlockCard";
 import { LibraryItemModal } from "./LibraryItemModal";
 import { LibraryItemDetail } from "./LibraryItemDetail";
 
@@ -60,7 +59,7 @@ function CoverThumb({ photoKey }: { photoKey?: string }) {
   return <img src={url} alt="" className="aspect-[2/3] w-full rounded-xl2 object-cover" />;
 }
 
-export function LibraryBlockView({ hobbyId, block }: { hobbyId: string; block: LibraryBlock }) {
+export function LibraryBlockView({ hobbyId, block, index, total }: { hobbyId: string; block: LibraryBlock; index: number; total: number }) {
   const [addOpen, setAddOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("alfabetico");
@@ -70,10 +69,13 @@ export function LibraryBlockView({ hobbyId, block }: { hobbyId: string; block: L
   const sorted = useMemo(() => sortItems(block.items, sort), [block.items, sort]);
 
   return (
-    <GlassCard className="p-4">
-      <BlockHeader
+    <>
+      <HobbyBlockCard
         hobbyId={hobbyId}
         blockId={block.id}
+        collapsed={block.collapsed}
+        index={index}
+        total={total}
         title={block.title}
         subtitle={block.items.length > 0 ? `${completedCount} completati su ${block.items.length}` : undefined}
         extra={
@@ -81,43 +83,43 @@ export function LibraryBlockView({ hobbyId, block }: { hobbyId: string; block: L
             <Plus size={12} /> Voce
           </button>
         }
-      />
+      >
+        {block.items.length === 0 ? (
+          <p className="text-xs text-ink-800">Ancora nessuna voce.</p>
+        ) : (
+          <>
+            <div className="no-scrollbar mb-3 flex gap-1.5 overflow-x-auto">
+              {(Object.keys(SORT_LABEL) as SortMode[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSort(s)}
+                  className={`focus-ring shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition ${
+                    sort === s ? "border-aura-cyan/60 bg-aura-cyan/15 text-ink-100" : "border-white/10 text-ink-800"
+                  }`}
+                >
+                  {SORT_LABEL[s]}
+                </button>
+              ))}
+            </div>
 
-      {block.items.length === 0 ? (
-        <p className="text-xs text-ink-800">Ancora nessuna voce.</p>
-      ) : (
-        <>
-          <div className="no-scrollbar mb-3 flex gap-1.5 overflow-x-auto">
-            {(Object.keys(SORT_LABEL) as SortMode[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSort(s)}
-                className={`focus-ring shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition ${
-                  sort === s ? "border-aura-cyan/60 bg-aura-cyan/15 text-ink-100" : "border-white/10 text-ink-800"
-                }`}
-              >
-                {SORT_LABEL[s]}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {sorted.map((item) => (
-              <button key={item.id} onClick={() => setDetailId(item.id)} className="text-left">
-                <CoverThumb photoKey={item.photoKey} />
-                <p className="mt-1 truncate text-[11px] text-ink-100">{item.title}</p>
-                <p className="text-[10px] text-ink-600">{STATUS_LABEL[item.status]}</p>
-                {item.rating && <StarDisplay value={item.rating} size={9} />}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+            <div className="grid grid-cols-3 gap-2">
+              {sorted.map((item) => (
+                <button key={item.id} onClick={() => setDetailId(item.id)} className="text-left">
+                  <CoverThumb photoKey={item.photoKey} />
+                  <p className="mt-1 truncate text-[11px] text-ink-100">{item.title}</p>
+                  <p className="text-[10px] text-ink-600">{STATUS_LABEL[item.status]}</p>
+                  {item.rating && <StarDisplay value={item.rating} size={9} />}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </HobbyBlockCard>
 
       {addOpen && <LibraryItemModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
       {detailItem && (
         <LibraryItemDetail hobbyId={hobbyId} blockId={block.id} item={detailItem} onClose={() => setDetailId(null)} />
       )}
-    </GlassCard>
+    </>
   );
 }

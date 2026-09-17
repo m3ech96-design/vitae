@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Plus, Minus, TrendingUp, TrendingDown, LayoutGrid, Radar as RadarIcon } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
 import { StatisticsBlock, StatEntry } from "@/lib/hobby-types";
-import { GlassCard } from "../ui/GlassCard";
-import { BlockHeader } from "./BlockHeader";
+import { HobbyBlockCard } from "./HobbyBlockCard";
 import { StatEntryModal } from "./StatEntryModal";
 
 /** Tavolozza a rotazione — mai lo stesso colore fisso indipendentemente dal contenuto (vedi
@@ -123,7 +122,7 @@ function RadarChart({ entries }: { entries: StatEntry[] }) {
   );
 }
 
-export function StatisticsBlockView({ hobbyId, block }: { hobbyId: string; block: StatisticsBlock }) {
+export function StatisticsBlockView({ hobbyId, block, index, total }: { hobbyId: string; block: StatisticsBlock; index: number; total: number }) {
   const { updateStatEntry, setStatChartView } = useHobby();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -138,10 +137,13 @@ export function StatisticsBlockView({ hobbyId, block }: { hobbyId: string; block
   const adjust = (entry: StatEntry, delta: number) => updateStatEntry(hobbyId, block.id, entry.id, { value: entry.value + delta });
 
   return (
-    <GlassCard className="p-4">
-      <BlockHeader
+    <>
+      <HobbyBlockCard
         hobbyId={hobbyId}
         blockId={block.id}
+        collapsed={block.collapsed}
+        index={index}
+        total={total}
         title={block.title}
         subtitle={block.entries.length > 0 ? `${block.entries.length} voci` : undefined}
         extra={
@@ -160,47 +162,47 @@ export function StatisticsBlockView({ hobbyId, block }: { hobbyId: string; block
             </button>
           </>
         }
-      />
+      >
+        {block.entries.length === 0 ? (
+          <p className="text-xs text-ink-800">Ancora nessuna statistica. Aggiungine una per iniziare a confrontarle.</p>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              {block.entries.map((entry) => (
+                <div key={entry.id} className="flex items-center gap-2 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3 py-2">
+                  <button onClick={() => setEditId(entry.id)} className="focus-ring min-w-0 flex-1 text-left">
+                    <p className="truncate text-sm text-ink-100">{entry.name}</p>
+                  </button>
+                  <button
+                    onClick={() => adjust(entry, -entry.step)}
+                    disabled={entry.value <= entry.min}
+                    className="focus-ring flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-ink-400 disabled:opacity-30 hover:border-aura-pink/50 hover:text-aura-pink"
+                    aria-label={`Diminuisci ${entry.name}`}
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="w-10 text-center text-sm tabular-nums text-ink-100">{entry.value}</span>
+                  <button
+                    onClick={() => adjust(entry, entry.step)}
+                    disabled={entry.max !== undefined && entry.value >= entry.max}
+                    className="focus-ring flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-ink-400 disabled:opacity-30 hover:border-aura-emerald/50 hover:text-aura-emerald"
+                    aria-label={`Aumenta ${entry.name}`}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
 
-      {block.entries.length === 0 ? (
-        <p className="text-xs text-ink-800">Ancora nessuna statistica. Aggiungine una per iniziare a confrontarle.</p>
-      ) : (
-        <>
-          <div className="space-y-1.5">
-            {block.entries.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-2 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3 py-2">
-                <button onClick={() => setEditId(entry.id)} className="focus-ring min-w-0 flex-1 text-left">
-                  <p className="truncate text-sm text-ink-100">{entry.name}</p>
-                </button>
-                <button
-                  onClick={() => adjust(entry, -entry.step)}
-                  disabled={entry.value <= entry.min}
-                  className="focus-ring flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-ink-400 disabled:opacity-30 hover:border-aura-pink/50 hover:text-aura-pink"
-                  aria-label={`Diminuisci ${entry.name}`}
-                >
-                  <Minus size={12} />
-                </button>
-                <span className="w-10 text-center text-sm tabular-nums text-ink-100">{entry.value}</span>
-                <button
-                  onClick={() => adjust(entry, entry.step)}
-                  disabled={entry.max !== undefined && entry.value >= entry.max}
-                  className="focus-ring flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-ink-400 disabled:opacity-30 hover:border-aura-emerald/50 hover:text-aura-emerald"
-                  aria-label={`Aumenta ${entry.name}`}
-                >
-                  <Plus size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 border-t border-white/[0.06] pt-4">
-            {view === "radar" ? <RadarChart entries={block.entries} /> : <BarChart entries={block.entries} />}
-          </div>
-        </>
-      )}
+            <div className="mt-4 border-t border-white/[0.06] pt-4">
+              {view === "radar" ? <RadarChart entries={block.entries} /> : <BarChart entries={block.entries} />}
+            </div>
+          </>
+        )}
+      </HobbyBlockCard>
 
       {addOpen && <StatEntryModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
       {editEntry && <StatEntryModal hobbyId={hobbyId} blockId={block.id} entry={editEntry} onClose={() => setEditId(null)} />}
-    </GlassCard>
+    </>
   );
 }

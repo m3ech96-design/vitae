@@ -78,22 +78,23 @@ export default function HobbyDetailPage({ params }: { params: { id: string } }) 
       )}
 
       <div className="mt-6 space-y-4">
-        {hobby.blocks.map((block) => {
+        {hobby.blocks.map((block, index) => {
+          const total = hobby.blocks.length;
           switch (block.kind) {
             case "checklist":
-              return <ChecklistBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <ChecklistBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
             case "metrica":
-              return <MetricBlockView key={block.id} hobbyId={hobby.id} hobbyName={hobby.name} block={block} />;
+              return <MetricBlockView key={block.id} hobbyId={hobby.id} hobbyName={hobby.name} block={block} index={index} total={total} />;
             case "inventario":
-              return <InventoryBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <InventoryBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
             case "progetti":
-              return <ProjectsBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <ProjectsBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
             case "libreria":
-              return <LibraryBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <LibraryBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
             case "partite":
-              return <MatchesBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <MatchesBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
             case "statistiche":
-              return <StatisticsBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <StatisticsBlockView key={block.id} hobbyId={hobby.id} block={block} index={index} total={total} />;
           }
         })}
       </div>

@@ -5,8 +5,7 @@ import { ProjectsBlock } from "@/lib/hobby-types";
 import { projectsTotalCost } from "@/lib/hobby-stats";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { StarDisplay } from "./StarRating";
-import { GlassCard } from "../ui/GlassCard";
-import { BlockHeader } from "./BlockHeader";
+import { HobbyBlockCard } from "./HobbyBlockCard";
 import { ProjectModal } from "./ProjectModal";
 import { ProjectDetail } from "./ProjectDetail";
 
@@ -32,7 +31,7 @@ function ProjectThumb({ photoKey }: { photoKey?: string }) {
   return <img src={url} alt="" className="aspect-square w-full rounded-xl2 object-cover" />;
 }
 
-export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: ProjectsBlock }) {
+export function ProjectsBlockView({ hobbyId, block, index, total }: { hobbyId: string; block: ProjectsBlock; index: number; total: number }) {
   const [addOpen, setAddOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
@@ -40,10 +39,13 @@ export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: 
   const detailProject = block.projects.find((p) => p.id === detailId);
 
   return (
-    <GlassCard className="p-4">
-      <BlockHeader
+    <>
+      <HobbyBlockCard
         hobbyId={hobbyId}
         blockId={block.id}
+        collapsed={block.collapsed}
+        index={index}
+        total={total}
         title={block.title}
         subtitle={block.projects.length > 0 ? `${block.projects.length} progetti${totalCost > 0 ? ` · ${totalCost.toLocaleString("it-IT")}€ investiti` : ""}` : undefined}
         extra={
@@ -51,27 +53,27 @@ export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: 
             <Plus size={12} /> Progetto
           </button>
         }
-      />
-
-      {block.projects.length === 0 ? (
-        <p className="text-xs text-ink-800">Ancora nessun progetto.</p>
-      ) : (
-        <div className="grid grid-cols-3 gap-2">
-          {block.projects.map((p) => (
-            <button key={p.id} onClick={() => setDetailId(p.id)} className="text-left">
-              <ProjectThumb photoKey={p.photoKeys[0]} />
-              <p className="mt-1 truncate text-[11px] text-ink-100">{p.name}</p>
-              <p className="text-[10px]" style={{ color: STATUS_COLOR[p.status] }}>{STATUS_LABEL[p.status]}</p>
-              {p.rating && <StarDisplay value={p.rating} size={9} />}
-            </button>
-          ))}
-        </div>
-      )}
+      >
+        {block.projects.length === 0 ? (
+          <p className="text-xs text-ink-800">Ancora nessun progetto.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {block.projects.map((p) => (
+              <button key={p.id} onClick={() => setDetailId(p.id)} className="text-left">
+                <ProjectThumb photoKey={p.photoKeys[0]} />
+                <p className="mt-1 truncate text-[11px] text-ink-100">{p.name}</p>
+                <p className="text-[10px]" style={{ color: STATUS_COLOR[p.status] }}>{STATUS_LABEL[p.status]}</p>
+                {p.rating && <StarDisplay value={p.rating} size={9} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </HobbyBlockCard>
 
       {addOpen && <ProjectModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
       {detailProject && (
         <ProjectDetail hobbyId={hobbyId} blockId={block.id} project={detailProject} onClose={() => setDetailId(null)} />
       )}
-    </GlassCard>
+    </>
   );
 }

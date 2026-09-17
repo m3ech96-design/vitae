@@ -15,7 +15,20 @@
 // online normalmente, ma senza il vantaggio dell'accesso offline immediato alla prima visita
 // di ciascuna sezione, che è lo scopo di questa lista. Aggiornata con le sezioni realmente
 // esistenti oggi.
-const CACHE_NAME = "vitae-shell-v4";
+// v5: aggiunta una via di uscita per le chiamate API (vedi il gestore "fetch" più sotto) — le
+// stesse istruzioni chiedevano un modo per rilevare un nuovo aggiornamento a comando tramite
+// /api/version (vedi app/api/version/route.ts), e quella rotta userebbe questa stessa cache
+// se non escludessi esplicitamente /api/: la strategia "cached || network" qui sotto serve
+// SEMPRE la cache se esiste, aggiornandola solo per la prossima volta — quindi /api/version
+// resterebbe congelato al primo commit mai ricevuto, non rilevando mai un nuovo deploy.
+// Controllando questo, trovato lo stesso problema silenzioso già in corso da tempo per
+// /api/weather, /api/news e /api/wishlist-price: l'URL di quelle chiamate è quasi sempre
+// identico chiamata dopo chiamata (stessa posizione, stesse fonti, stesso articolo), quindi
+// anche meteo, notizie e controllo prezzo restavano bloccati al primo valore mai ricevuto in
+// quella sessione del service worker, aggiornandosi solo "per la prossima volta" che però
+// ripeteva lo stesso problema. Le chiamate API sono dati dinamici per natura — mai da servire
+// dalla cache di un service worker pensato per la sola shell dell'app.
+const CACHE_NAME = "vitae-shell-v5";
 const SHELL_URLS = [
   "/",
   "/wizard",
@@ -70,6 +83,14 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // Mai cache-first per le chiamate API — sono dati dinamici (meteo, notizie, prezzo di un
+  // articolo, versione dell'app...), non asset della shell. Lasciando qui sotto (return
+  // senza chiamare event.respondWith) la richiesta prosegue dritta in rete, come se questo
+  // service worker non esistesse — esattamente il comportamento voluto per dati che devono
+  // sempre essere freschi. Vedi la nota sul nome della cache qui sopra per come è stato
+  // trovato.
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith("/api/")) return;
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const network = fetch(event.request)

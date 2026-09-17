@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { PhotoLightbox } from "./PhotoLightbox";
+
+const AUTO_ADVANCE_MS = 4000;
+const RESUME_AFTER_MS = 5000;
 
 /**
  * Una singola foto della galleria — risolta da IndexedDB come nel resto dell'app (vedi
@@ -43,6 +46,7 @@ export function PhotoGallery({
   photoKeys,
   height = 176,
   bordered = true,
+  autoScroll = false,
 }: {
   photoKeys: string[];
   height?: number;
@@ -54,12 +58,67 @@ export function PhotoGallery({
    * (`overflow-hidden rounded-t-xl3`) a tagliare gli angoli, esattamente come fa già
    * l'header di PlaceWindow. */
   bordered?: boolean;
+  /** Richiesto per l'header della finestra di un luogo: avanza da solo alla foto successiva
+   * ogni pochi secondi (se ce n'è più di una), con una transizione dolce, mai a scatti — MA
+   * lascia sempre spazio allo scorrimento manuale, fermandosi non appena l'utente tocca la
+   * striscia e riprendendo solo dopo un po' di inattività. Falso di norma: le altre gallerie
+   * (Libreria, Inventario...) restano ferme finché non è l'utente a scorrerle. */
+  autoScroll?: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [manuallyPaused, setManuallyPaused] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Distingue uno scroll causato da noi stessi (l'avanzamento automatico) da uno vero
+  // dell'utente: senza, l'evento "scroll" generato dal nostro stesso scrollTo() verrebbe
+  // scambiato per un'interazione manuale, mettendo in pausa l'avanzamento automatico non
+  // appena tenta di muoversi da solo.
+  const isAutoAdvancingRef = useRef(false);
+
+  const scheduleResume = useCallback(() => {
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    resumeTimeoutRef.current = setTimeout(() => setManuallyPaused(false), RESUME_AFTER_MS);
+  }, []);
+
+  const onManualScroll = useCallback(() => {
+    if (isAutoAdvancingRef.current) return;
+    setManuallyPaused(true);
+    scheduleResume();
+  }, [scheduleResume]);
+
+  useEffect(() => () => {
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+  }, []);
+
+  // L'avanzamento vero e proprio — sospeso mentre l'utente ha appena scorso a mano
+  // (manuallyPaused) o mentre una foto è aperta a schermo intero (openIndex), non solo
+  // quando la galleria è a riposo.
+  useEffect(() => {
+    if (!autoScroll || photoKeys.length <= 1 || manuallyPaused || openIndex !== null) return;
+    const id = setInterval(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const slideWidth = el.clientWidth;
+      const atEnd = el.scrollLeft + slideWidth >= el.scrollWidth - 4;
+      isAutoAdvancingRef.current = true;
+      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + slideWidth, behavior: "smooth" });
+      // Una transizione "smooth" nativa dura all'incirca mezzo secondo — passato quel tempo
+      // lo scroll è certamente terminato, quindi un evento "scroll" successivo è di nuovo
+      // sicuramente dell'utente.
+      setTimeout(() => {
+        isAutoAdvancingRef.current = false;
+      }, 600);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(id);
+  }, [autoScroll, photoKeys.length, manuallyPaused, openIndex]);
+
   if (photoKeys.length === 0) return null;
   return (
     <>
       <div
+        ref={scrollRef}
+        onScroll={onManualScroll}
+        onPointerDown={onManualScroll}
         className={`no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth ${bordered ? "rounded-xl2 border border-white/[0.06]" : ""}`}
         style={{ height }}
       >

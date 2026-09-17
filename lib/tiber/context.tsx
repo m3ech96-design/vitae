@@ -61,6 +61,12 @@ export function TiberProvider({
   const execCtxRef = useRef(executionContext);
   execCtxRef.current = executionContext;
 
+  // Stesso principio, per lo stesso motivo: sendMessage (sotto) ha bisogno del valore
+  // aggiornatissimo di `messages` in modo SINCRONO, prima che React abbia rieseguito il
+  // render — un useState letto tramite chiusura può essere quello di un render vecchio.
+  const messagesRef = useRef<TiberMessage[]>(messages);
+  messagesRef.current = messages;
+
   useEffect(() => {
     try {
       const rawKey = window.localStorage.getItem(API_KEY_STORAGE);
@@ -148,11 +154,16 @@ export function TiberProvider({
       setSending(true);
 
       const userMsg: TiberMessage = { id: newId(), role: "user", text, createdAt: new Date().toISOString() };
-      let workingMessages: TiberMessage[] = [];
-      persistMessages((prev) => {
-        workingMessages = [...prev, userMsg];
-        return workingMessages;
-      });
+      // Corretto un bug per cui Gemini rifiutava OGNI messaggio con "contents is not
+      // specified": `workingMessages` veniva letto qui sotto subito dopo aver solo
+      // PROGRAMMATO l'aggiornamento di stato — la funzione che lo valorizza gira più avanti,
+      // alla prossima resa in scena di React, non subito. `historyToGemini` finiva quindi
+      // per ricevere sempre un array vuoto, mai la cronologia vera. `messagesRef.current` è
+      // invece già aggiornato in modo sincrono (vedi sopra), quindi il valore è quello giusto
+      // fin da subito, senza aspettare React.
+      const workingMessages = [...messagesRef.current, userMsg];
+      messagesRef.current = workingMessages;
+      persistMessages(workingMessages);
 
       try {
         let history = [...historyToGemini(workingMessages)];

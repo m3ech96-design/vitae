@@ -24,6 +24,10 @@ interface BlockBase {
   /** Rinominabile — così due blocchi Metrica sullo stesso hobby restano distinguibili
    * ("Km percorsi" e "Dislivello", per esempio). */
   title: string;
+  /** A tendina, non sempre aperto — `undefined` (blocchi salvati prima che questo campo
+   * esistesse) conta come chiuso: il default deve essere "a tendina" per tutti, non solo
+   * per i blocchi creati da qui in avanti. */
+  collapsed?: boolean;
 }
 
 // ---------------------------------------------------------------------------

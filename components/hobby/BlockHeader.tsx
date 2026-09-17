@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 
@@ -10,6 +10,12 @@ export function BlockHeader({
   title,
   subtitle,
   extra,
+  collapsed,
+  onToggleCollapsed,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
 }: {
   hobbyId: string;
   blockId: string;
@@ -17,6 +23,15 @@ export function BlockHeader({
   subtitle?: string;
   /** Un'azione in più a destra, specifica del tipo di blocco (es. "+" per una nuova voce). */
   extra?: React.ReactNode;
+  /** A tendina: se il blocco è chiuso o aperto adesso — chi possiede lo stato vero è
+   * HobbyBlockCard (il genitore comune a tutti i tipi di blocco), qui arriva solo per
+   * disegnare la freccina nel verso giusto. */
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }) {
   const { renameBlock, removeBlock } = useHobby();
   const [editing, setEditing] = useState(false);
@@ -44,24 +59,37 @@ export function BlockHeader({
           </button>
         </div>
       ) : (
-        <div className="min-w-0">
-          <p className="truncate font-display text-sm text-ink-100">{title}</p>
-          {subtitle && <p className="text-[11px] text-ink-600">{subtitle}</p>}
-        </div>
+        // A tendina: l'intera zona titolo/sottotitolo apre e chiude il blocco, non solo la
+        // freccina — un bersaglio piccolo da solo sarebbe scomodo da toccare con precisione.
+        <button onClick={onToggleCollapsed} className="focus-ring flex min-w-0 items-start gap-1.5 text-left">
+          <ChevronDown size={14} className={`mt-0.5 shrink-0 text-ink-800 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+          <div className="min-w-0">
+            <p className="truncate font-display text-sm text-ink-100">{title}</p>
+            {subtitle && <p className="text-[11px] text-ink-600">{subtitle}</p>}
+          </div>
+        </button>
       )}
       <div className="flex shrink-0 items-center gap-2">
         {extra}
         {!editing && (
-          <button
-            onClick={() => {
-              setDraft(title);
-              setEditing(true);
-            }}
-            className="focus-ring text-ink-800 hover:text-ink-200"
-            aria-label="Rinomina blocco"
-          >
-            <Pencil size={13} />
-          </button>
+          <>
+            <button onClick={onMoveUp} disabled={!canMoveUp} className="focus-ring text-ink-800 hover:text-ink-200 disabled:opacity-25" aria-label="Sposta su">
+              <ArrowUp size={13} />
+            </button>
+            <button onClick={onMoveDown} disabled={!canMoveDown} className="focus-ring text-ink-800 hover:text-ink-200 disabled:opacity-25" aria-label="Sposta giù">
+              <ArrowDown size={13} />
+            </button>
+            <button
+              onClick={() => {
+                setDraft(title);
+                setEditing(true);
+              }}
+              className="focus-ring text-ink-800 hover:text-ink-200"
+              aria-label="Rinomina blocco"
+            >
+              <Pencil size={13} />
+            </button>
+          </>
         )}
         <button onClick={() => setConfirmDelete(true)} className="focus-ring text-ink-800 hover:text-aura-pink" aria-label="Elimina blocco">
           <Trash2 size={13} />

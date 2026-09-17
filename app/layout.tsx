@@ -22,7 +22,8 @@ import { QuickInteractionProvider } from "@/lib/quick-interaction-context";
 import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
-import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { AppUpdateProvider } from "@/lib/app-update-context";
+import { AppUpdateBanner } from "@/components/AppUpdateBanner";
 import { HobbyTimerProvider } from "@/lib/hobby-timer-context";
 import { FloatingHobbyTimerPill } from "@/components/hobby/FloatingHobbyTimerPill";
 import { DayRhythm } from "@/components/DayRhythm";
@@ -63,7 +64,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="it">
       <body className="font-body antialiased">
-        <ServiceWorkerRegister />
+        <AppUpdateProvider>
+        <AppUpdateBanner />
         <DayRhythm />
         <HobbyTimerProvider>
         <ProfileProvider>
@@ -124,6 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </PlacesProvider>
         </ProfileProvider>
         </HobbyTimerProvider>
+        </AppUpdateProvider>
       </body>
     </html>
   );

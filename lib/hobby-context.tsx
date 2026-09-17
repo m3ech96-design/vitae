@@ -63,6 +63,8 @@ interface HobbyContextValue {
   addBlock: (hobbyId: string, kind: HobbyBlockKind, title: string) => void;
   removeBlock: (hobbyId: string, blockId: string) => void;
   renameBlock: (hobbyId: string, blockId: string, title: string) => void;
+  setBlockCollapsed: (hobbyId: string, blockId: string, collapsed: boolean) => void;
+  moveBlock: (hobbyId: string, blockId: string, direction: "up" | "down") => void;
   setMatchesBlockPhoto: (hobbyId: string, blockId: string, photoKey: string | undefined) => void;
   updateMetricConfig: (hobbyId: string, blockId: string, patch: Partial<Pick<MetricBlock, "unit" | "direction" | "aggregation" | "goalValue" | "goalDeadline" | "isTimeBased">>) => void;
 
@@ -183,6 +185,35 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
     (hobbyId: string, blockId: string, title: string) =>
       persist((prev) =>
         prev.map((h) => (h.id === hobbyId ? { ...h, blocks: h.blocks.map((b) => (b.id === blockId ? { ...b, title } : b)) } : h))
+      ),
+    [persist]
+  );
+
+  const setBlockCollapsed = useCallback(
+    (hobbyId: string, blockId: string, collapsed: boolean) =>
+      persist((prev) =>
+        prev.map((h) => (h.id === hobbyId ? { ...h, blocks: h.blocks.map((b) => (b.id === blockId ? { ...b, collapsed } : b)) } : h))
+      ),
+    [persist]
+  );
+
+  /** Scambia il blocco con quello immediatamente sopra/sotto — stesso principio dello
+   * spostamento su/giù già in uso per i widget della Home (widgets-context.tsx), qui
+   * risolto tramite l'id del blocco invece che il solo indice: l'indice arriva dal render
+   * del momento in cui si preme il pulsante, e ricalcolarlo dall'id dentro l'updater evita
+   * di spostare il blocco sbagliato se l'elenco fosse nel frattempo cambiato. */
+  const moveBlock = useCallback(
+    (hobbyId: string, blockId: string, direction: "up" | "down") =>
+      persist((prev) =>
+        prev.map((h) => {
+          if (h.id !== hobbyId) return h;
+          const idx = h.blocks.findIndex((b) => b.id === blockId);
+          const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+          if (idx === -1 || targetIdx < 0 || targetIdx >= h.blocks.length) return h;
+          const blocks = [...h.blocks];
+          [blocks[idx], blocks[targetIdx]] = [blocks[targetIdx], blocks[idx]];
+          return { ...h, blocks };
+        })
       ),
     [persist]
   );
@@ -423,6 +454,8 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
       addBlock,
       removeBlock,
       renameBlock,
+      setBlockCollapsed,
+      moveBlock,
       setMatchesBlockPhoto,
       updateMetricConfig,
       addChecklistItem,
@@ -457,6 +490,8 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
       addBlock,
       removeBlock,
       renameBlock,
+      setBlockCollapsed,
+      moveBlock,
       setMatchesBlockPhoto,
       updateMetricConfig,
       addChecklistItem,

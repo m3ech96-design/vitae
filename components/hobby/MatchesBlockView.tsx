@@ -25,70 +25,88 @@ function BlockCover({ hobbyId, blockId, photoKey }: { hobbyId: string; blockId: 
   return <SinglePhotoField photoKey={photoKey} onChange={(key) => setMatchesBlockPhoto(hobbyId, blockId, key)} size="md" />;
 }
 
-export function MatchesBlockView({ hobbyId, block }: { hobbyId: string; block: MatchesBlock }) {
+/**
+ * Non usa HobbyBlockCard (a differenza degli altri blocchi): qui l'header condivide la riga
+ * con la copertina del blocco (BlockCover, sopra) — un layout proprio di questo tipo di
+ * blocco, che il guscio comune non prevede. La logica di apertura/chiusura e spostamento è
+ * la stessa, solo composta a mano invece che tramite quel guscio.
+ */
+export function MatchesBlockView({ hobbyId, block, index, total }: { hobbyId: string; block: MatchesBlock; index: number; total: number }) {
+  const { setBlockCollapsed, moveBlock } = useHobby();
   const [addOpen, setAddOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const isCollapsed = block.collapsed ?? true;
 
   const record = matchRecord(block);
   const detailMatch = block.matches.find((m) => m.id === detailId);
 
   return (
-    <GlassCard className="p-4">
-      <div className="flex items-start gap-3">
-        <BlockCover hobbyId={hobbyId} blockId={block.id} photoKey={block.photoKey} />
-        <div className="min-w-0 flex-1">
-          <BlockHeader
-            hobbyId={hobbyId}
-            blockId={block.id}
-            title={block.title}
-            subtitle={block.matches.length > 0 ? `${record.wins}V ${record.losses}S ${record.draws}P · ${Math.round(record.winRatePct)}%` : undefined}
-            extra={
-              <button onClick={() => setAddOpen(true)} className="focus-ring flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1.5 text-[11px] text-ink-300 hover:border-aura-amber/50">
-                <Plus size={12} /> Partita
-              </button>
-            }
-          />
-        </div>
-      </div>
-
-      {block.matches.length === 0 ? (
-        <p className="text-xs text-ink-800">Ancora nessuna partita registrata.</p>
-      ) : (
-        <>
-          {record.currentStreak && record.currentStreak.count >= 2 && (
-            <p className="mb-2 flex items-center gap-1 text-[11px] text-ink-600">
-              <Flame size={12} className="text-aura-amber" /> {record.currentStreak.count} {RESULT_LABEL[record.currentStreak.result].toLowerCase() === "v" ? "vittorie" : record.currentStreak.result === "sconfitta" ? "sconfitte" : "pareggi"} di fila
-            </p>
-          )}
-          <div className="space-y-1.5">
-            {[...block.matches]
-              .sort((a, b) => b.date.localeCompare(a.date))
-              .map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setDetailId(m.id)}
-                  className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2 text-left transition hover:border-white/20"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-display"
-                      style={{ background: `${RESULT_COLOR[m.result]}22`, color: RESULT_COLOR[m.result] }}
-                    >
-                      {RESULT_LABEL[m.result]}
-                    </span>
-                    <span className="truncate text-sm text-ink-100">{m.opponent || m.competition || formatDateShort(m.date)}</span>
-                  </div>
-                  <span className="shrink-0 text-xs text-ink-600">{m.score || formatDateShort(m.date)}</span>
+    <>
+      <GlassCard className="p-4">
+        <div className="flex items-start gap-3">
+          <BlockCover hobbyId={hobbyId} blockId={block.id} photoKey={block.photoKey} />
+          <div className="min-w-0 flex-1">
+            <BlockHeader
+              hobbyId={hobbyId}
+              blockId={block.id}
+              title={block.title}
+              subtitle={block.matches.length > 0 ? `${record.wins}V ${record.losses}S ${record.draws}P · ${Math.round(record.winRatePct)}%` : undefined}
+              collapsed={isCollapsed}
+              onToggleCollapsed={() => setBlockCollapsed(hobbyId, block.id, !isCollapsed)}
+              canMoveUp={index > 0}
+              canMoveDown={index < total - 1}
+              onMoveUp={() => moveBlock(hobbyId, block.id, "up")}
+              onMoveDown={() => moveBlock(hobbyId, block.id, "down")}
+              extra={
+                <button onClick={() => setAddOpen(true)} className="focus-ring flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1.5 text-[11px] text-ink-300 hover:border-aura-amber/50">
+                  <Plus size={12} /> Partita
                 </button>
-              ))}
+              }
+            />
           </div>
-        </>
-      )}
+        </div>
+
+        {!isCollapsed && (
+          block.matches.length === 0 ? (
+            <p className="text-xs text-ink-800">Ancora nessuna partita registrata.</p>
+          ) : (
+            <>
+              {record.currentStreak && record.currentStreak.count >= 2 && (
+                <p className="mb-2 flex items-center gap-1 text-[11px] text-ink-600">
+                  <Flame size={12} className="text-aura-amber" /> {record.currentStreak.count} {RESULT_LABEL[record.currentStreak.result].toLowerCase() === "v" ? "vittorie" : record.currentStreak.result === "sconfitta" ? "sconfitte" : "pareggi"} di fila
+                </p>
+              )}
+              <div className="space-y-1.5">
+                {[...block.matches]
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setDetailId(m.id)}
+                      className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2 text-left transition hover:border-white/20"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-display"
+                          style={{ background: `${RESULT_COLOR[m.result]}22`, color: RESULT_COLOR[m.result] }}
+                        >
+                          {RESULT_LABEL[m.result]}
+                        </span>
+                        <span className="truncate text-sm text-ink-100">{m.opponent || m.competition || formatDateShort(m.date)}</span>
+                      </div>
+                      <span className="shrink-0 text-xs text-ink-600">{m.score || formatDateShort(m.date)}</span>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )
+        )}
+      </GlassCard>
 
       {addOpen && <MatchModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
       {detailMatch && (
         <MatchDetail hobbyId={hobbyId} blockId={block.id} match={detailMatch} onClose={() => setDetailId(null)} />
       )}
-    </GlassCard>
+    </>
   );
 }
