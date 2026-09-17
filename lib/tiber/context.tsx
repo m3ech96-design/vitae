@@ -124,7 +124,12 @@ export function TiberProvider({
         continue;
       }
       const calls = m.toolCalls ?? [];
-      contents.push(modelTurn(m.text, calls.map((tc) => ({ name: tc.toolName, args: tc.args }))));
+      contents.push(
+        modelTurn(
+          m.text,
+          calls.map((tc) => ({ name: tc.toolName, args: tc.args, thoughtSignature: tc.thoughtSignature }))
+        )
+      );
       if (calls.length > 0) {
         contents.push(functionResponseTurn(calls.map((tc) => ({ name: tc.toolName, result: tc.result ?? "In attesa di conferma dell'utente." }))));
       }
@@ -195,6 +200,7 @@ export function TiberProvider({
               id: newId(),
               toolName: destructiveCall.name,
               args: destructiveCall.args,
+              thoughtSignature: destructiveCall.thoughtSignature,
               needsConfirmation: true,
             };
             const assistantMsg: TiberMessage = {
@@ -217,6 +223,7 @@ export function TiberProvider({
             id: newId(),
             toolName: fc.name,
             args: fc.args,
+            thoughtSignature: fc.thoughtSignature,
             result: results[i].result,
           }));
           const assistantMsg: TiberMessage = {

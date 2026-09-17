@@ -3837,3 +3837,22 @@ Studio, coerente con la scelta originale di partire senza chiave a pagamento —
 tetto di richieste gratuite giornaliere più basso di quanto fosse su 2.5 Flash: se Tiber
 dovesse rispondere più spesso con un errore "limite raggiunto", è per questo, non per un
 problema del codice.
+
+## Checkpoint 125 — Tiber: aggiunta la "firma di pensiero" richiesta da Gemini 3.x nelle chiamate a tool
+
+Nuovo errore, stavolta un 400: "Function call is missing a thought_signature in
+functionCall parts." — conseguenza diretta del passaggio a gemini-3.6-flash (checkpoint
+124): i modelli Gemini 3.x usano un "pensiero" interno anche per le chiamate a tool, e ogni
+volta che il modello genera una `functionCall` allega una firma opaca (`thoughtSignature`)
+che va rimandata indietro identica, nello stesso punto, quando la cronologia viene
+riproposta in una richiesta successiva — un requisito che i modelli 2.x precedenti non
+avevano, per questo il codice non la gestiva già.
+
+Corretto: la firma viene ora letta dalla risposta di Gemini (`gemini.ts`), portata con sé
+nell'oggetto interno che rappresenta una chiamata a tool, salvata insieme al resto del
+messaggio (`TiberToolCall.thoughtSignature`, `types.ts`) e rimessa al suo posto ogni volta
+che la cronologia viene ricostruita per una nuova richiesta (`historyToGemini` in
+context.tsx) — sia per le chiamate eseguite subito sia per quelle della fascia distruttiva
+rimaste in attesa di conferma. Le conversazioni già salvate prima di questa correzione non
+vanno perse né richiedono di essere azzerate: Google valida la firma solo per le chiamate
+del turno più recente, non per quelle dei turni precedenti già in cronologia.

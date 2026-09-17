@@ -20,6 +20,13 @@ const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models
 export interface GeminiFunctionCall {
   name: string;
   args: Record<string, unknown>;
+  /** "Firma" opaca che Gemini 3.x allega alla PRIMA functionCall di ogni turno (le
+   * eventuali altre, se il modello ne propone più di una in parallelo, restano senza) — va
+   * rimandata indietro identica, nello stesso punto, quando si ripropone la cronologia in
+   * una richiesta successiva. Trovato l'errore preciso ("Function call is missing a
+   * thought_signature") solo dopo essere passati a un modello 3.x (checkpoint 124): i
+   * modelli 2.x precedenti non la richiedevano affatto, per questo non c'era già. */
+  thoughtSignature?: string;
 }
 
 export interface GeminiTurnResult {
@@ -31,7 +38,7 @@ export interface GeminiTurnResult {
 
 type GeminiPart =
   | { text: string }
-  | { functionCall: { name: string; args: Record<string, unknown> } }
+  | { functionCall: { name: string; args: Record<string, unknown> }; thoughtSignature?: string }
   | { functionResponse: { name: string; response: Record<string, unknown> } };
 
 interface GeminiContent {
@@ -99,7 +106,7 @@ export async function callGemini(
   for (const part of parts) {
     if ("text" in part && part.text) text += part.text;
     if ("functionCall" in part && part.functionCall) {
-      functionCalls.push({ name: part.functionCall.name, args: part.functionCall.args ?? {} });
+      functionCalls.push({ name: part.functionCall.name, args: part.functionCall.args ?? {}, thoughtSignature: part.thoughtSignature });
     }
   }
 
@@ -113,7 +120,12 @@ export function userTurn(text: string): GeminiContent {
 export function modelTurn(text: string, functionCalls: GeminiFunctionCall[]): GeminiContent {
   const parts: GeminiPart[] = [];
   if (text) parts.push({ text });
-  for (const fc of functionCalls) parts.push({ functionCall: { name: fc.name, args: fc.args } });
+  for (const fc of functionCalls) {
+    parts.push({
+      functionCall: { name: fc.name, args: fc.args },
+      ...(fc.thoughtSignature ? { thoughtSignature: fc.thoughtSignature } : {}),
+    });
+  }
   return { role: "model", parts };
 }
 

@@ -17,6 +17,11 @@ export interface TiberToolCall {
   id: string;
   toolName: string;
   args: Record<string, unknown>;
+  /** "Firma" opaca che Gemini allega alla chiamata — va conservata e rimandata indietro
+   * identica quando questo messaggio viene riproposto nella cronologia di una richiesta
+   * successiva (vedi gemini.ts e historyToGemini in context.tsx). Assente per i modelli
+   * precedenti a Gemini 3.x, che non la richiedevano. */
+  thoughtSignature?: string;
   /** Esito dell'esecuzione — testo breve mostrato sotto il messaggio ("Task creata", "Spesa
    * di 12€ aggiunta"...). Assente finché la chiamata è ancora in attesa di conferma
    * (azione distruttiva non ancora confermata). */
