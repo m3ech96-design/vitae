@@ -1,8 +1,20 @@
 import { TiberToolDeclaration } from "./tool-types";
 
 /** Modello Flash del piano gratuito — vedi la nota nell'area vitae-assistente-ia sulla
- * scelta di partire da Gemini gratuito invece di una chiave a pagamento. */
-const GEMINI_MODEL = "gemini-2.5-flash";
+ * scelta di partire da Gemini gratuito invece di una chiave a pagamento.
+ *
+ * Era "gemini-2.5-flash": Google l'ha ritirato per i nuovi utenti prima della data di
+ * spegnimento annunciata (16 ottobre 2026) — un ritiro anticipato non annunciato, non un
+ * problema di questo codice. Il messaggio d'errore di Google stesso indica il sostituto,
+ * "gemini-3.6-flash": confermato compatibile con lo stesso endpoint REST generateContent
+ * già in uso qui (stessa forma di richiesta — contents/systemInstruction/tools — nessun'
+ * altra modifica necessaria), disponibile anch'esso nel piano gratuito di AI Studio senza
+ * carta di credito. Le richieste gratuite giornaliere concesse ai modelli Flash "pieni"
+ * come questo sono però più basse di quanto fossero su 2.5 Flash — se Tiber dovesse
+ * rispondere con un errore 429 "limite raggiunto" più spesso di prima, è per questo, non
+ * per un problema del codice: un'eventuale chiave a pagamento (bastano pochi centesimi per
+ * conversazione) alzerebbe di molto quel tetto. */
+const GEMINI_MODEL = "gemini-3.6-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 export interface GeminiFunctionCall {

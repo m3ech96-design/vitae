@@ -3820,3 +3820,20 @@ cofano: distinguere lo scroll causato dall'avanzamento automatico stesso da uno 
 dell'utente (altrimenti l'automatico si metterebbe in pausa da solo appena tenta di
 muoversi) — un piccolo controllo temporale attorno a ogni scorrimento automatico, non un
 qualunque evento di scroll.
+
+## Checkpoint 124 — Tiber: modello Gemini ritirato, aggiornato a gemini-3.6-flash
+
+Nuovo errore da Gemini, stavolta un 404: "This model models/gemini-2.5-flash is no longer
+available to new users." Non un problema del codice (il turno precedente aveva già corretto
+il vero bug di `contents` vuoto) — verificato con una ricerca: Google ha davvero ritirato
+`gemini-2.5-flash` per i nuovi utenti prima della data di spegnimento ufficiale (16 ottobre
+2026), un ritiro anticipato senza preavviso già segnalato da altri sviluppatori.
+
+Aggiornato al modello indicato dal messaggio d'errore stesso, `gemini-3.6-flash` —
+confermato compatibile con lo stesso endpoint REST `generateContent` già in uso qui, stessa
+identica forma di richiesta (`contents`/`systemInstruction`/`tools`): nessun'altra modifica
+necessaria oltre al nome del modello. Confermato anche disponibile nel piano gratuito di AI
+Studio, coerente con la scelta originale di partire senza chiave a pagamento — ma con un
+tetto di richieste gratuite giornaliere più basso di quanto fosse su 2.5 Flash: se Tiber
+dovesse rispondere più spesso con un errore "limite raggiunto", è per questo, non per un
+problema del codice.
