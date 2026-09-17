@@ -1,7 +1,8 @@
 "use client";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 import { TiberProvider, useTiber } from "@/lib/tiber/context";
 import { useTiberExecutionContext } from "@/lib/tiber/execution-bundle";
 import { TiberMessageBubble } from "@/components/tiber/TiberMessageBubble";
@@ -11,7 +12,7 @@ import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 function TiberChat() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hydrated, apiKey, messages, sending, error, sendMessage, clearConversation } = useTiber();
+  const { hydrated, apiKey, messages, sending, error, sendMessage } = useTiber();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
@@ -50,11 +51,9 @@ function TiberChat() {
         <button onClick={() => router.back()} className="focus-ring flex items-center gap-1.5 text-xs text-ink-600 hover:text-ink-200">
           <ArrowLeft size={14} /> Indietro
         </button>
-        {messages.length > 0 && (
-          <button onClick={clearConversation} className="focus-ring flex items-center gap-1.5 text-xs text-ink-600 hover:text-aura-pink">
-            <Trash2 size={12} /> Azzera
-          </button>
-        )}
+        <button onClick={() => router.push("/tiber/impostazioni")} className="focus-ring flex items-center gap-1.5 text-xs text-ink-600 hover:text-ink-200">
+          <Settings size={14} /> Impostazioni
+        </button>
       </div>
 
       <div className="mt-4">
@@ -87,7 +86,10 @@ function TiberChat() {
             <div ref={scrollRef} />
           </div>
 
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
             className="fixed inset-x-0 z-20 mx-auto w-full max-w-xl px-5 pb-[max(env(safe-area-inset-bottom),1rem)] sm:px-6"
             style={{ bottom: keyboardInset }}
           >
@@ -109,7 +111,7 @@ function TiberChat() {
                 <Send size={14} />
               </button>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
     </div>

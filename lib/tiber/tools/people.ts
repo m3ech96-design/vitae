@@ -30,12 +30,12 @@ export const peopleTools: Record<string, TiberToolDefinition> = {
       name: "crea_persona",
       description: "Aggiunge una nuova persona o animale a Rapporti/Mondo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          firstName: { type: "string", description: "Nome." },
-          lastName: { type: "string", description: "Cognome (lascia vuoto per un animale)." },
-          kind: { type: "string", enum: PERSON_KINDS, description: "Tipo: uomo, donna, bambino, bambina, cane o gatto." },
-          livesAtHome: { type: "boolean", description: "true se vive nello stesso nucleo domestico dell'utente." },
+          firstName: { type: "STRING", description: "Nome." },
+          lastName: { type: "STRING", description: "Cognome (lascia vuoto per un animale)." },
+          kind: { type: "STRING", enum: PERSON_KINDS, description: "Tipo: uomo, donna, bambino, bambina, cane o gatto." },
+          livesAtHome: { type: "BOOLEAN", description: "true se vive nello stesso nucleo domestico dell'utente." },
         },
         required: ["firstName", "kind"],
       },
@@ -58,11 +58,11 @@ export const peopleTools: Record<string, TiberToolDefinition> = {
       description:
         "Registra un'interazione (positiva o negativa) con una persona in Rapporti, cercandola per nome — modifica il suo punteggio di relazione.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          personName: { type: "string", description: "Nome della persona." },
-          label: { type: "string", description: "Breve descrizione dell'interazione." },
-          positive: { type: "boolean", description: "true se positiva, false se negativa." },
+          personName: { type: "STRING", description: "Nome della persona." },
+          label: { type: "STRING", description: "Breve descrizione dell'interazione." },
+          positive: { type: "BOOLEAN", description: "true se positiva, false se negativa." },
         },
         required: ["personName", "label", "positive"],
       },
@@ -83,11 +83,11 @@ export const peopleTools: Record<string, TiberToolDefinition> = {
       name: "modifica_persona",
       description: "Modifica dati anagrafici di base di una persona o animale esistente, cercandola per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome (anche parziale) attuale." },
-          newFirstName: { type: "string", description: "Nuovo nome, se da cambiare." },
-          newLastName: { type: "string", description: "Nuovo cognome, se da cambiare." },
+          name: { type: "STRING", description: "Nome (anche parziale) attuale." },
+          newFirstName: { type: "STRING", description: "Nuovo nome, se da cambiare." },
+          newLastName: { type: "STRING", description: "Nuovo cognome, se da cambiare." },
         },
         required: ["name"],
       },
@@ -108,7 +108,7 @@ export const peopleTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elenca_persone",
       description: "Elenca le persone conosciute in Rapporti (esclusi gli animali), con punteggio relazione attuale.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { people } = peopleCtx(ctx);
@@ -123,8 +123,8 @@ export const peopleTools: Record<string, TiberToolDefinition> = {
       name: "elimina_persona",
       description: "Elimina definitivamente una persona (o animale) da Rapporti, cercandola per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) della persona o animale da eliminare." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) della persona o animale da eliminare." } },
         required: ["name"],
       },
     },

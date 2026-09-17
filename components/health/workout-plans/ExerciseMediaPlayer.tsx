@@ -1,8 +1,10 @@
 "use client";
+import { useState } from "react";
 import { WorkoutPlanExercise } from "@/lib/types";
 import { youtubeVideoId } from "@/lib/youtube";
 import { useResolvedVideo } from "@/lib/use-resolved-video";
 import { useResolvedImage } from "@/lib/use-resolved-image";
+import { PhotoLightbox } from "../../ui/PhotoLightbox";
 
 /** Il media di un esercizio, qualunque sia la sua fonte — un solo componente che decide da
  * sé cosa mostrare in base a `mediaType`, così ogni punto dell'app che deve mostrare
@@ -10,6 +12,7 @@ import { useResolvedImage } from "@/lib/use-resolved-image";
 export function ExerciseMediaPlayer({ exercise }: { exercise: WorkoutPlanExercise }) {
   const videoUrl = useResolvedVideo(exercise.mediaType === "video" ? exercise.mediaValue : undefined);
   const imageUrl = useResolvedImage(exercise.mediaType === "image" ? exercise.mediaValue : undefined);
+  const [viewing, setViewing] = useState(false);
 
   if (exercise.mediaType === "youtube" && exercise.mediaValue) {
     const videoId = youtubeVideoId(exercise.mediaValue);
@@ -38,9 +41,16 @@ export function ExerciseMediaPlayer({ exercise }: { exercise: WorkoutPlanExercis
     );
   }
 
-  if (exercise.mediaType === "image" && imageUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={imageUrl} alt={exercise.name} className="w-full rounded-xl2 object-cover" />;
+  if (exercise.mediaType === "image" && imageUrl && exercise.mediaValue) {
+    return (
+      <>
+        <button onClick={() => setViewing(true)} className="focus-ring block w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt={exercise.name} className="w-full rounded-xl2 object-cover" />
+        </button>
+        {viewing && <PhotoLightbox photos={[exercise.mediaValue]} onClose={() => setViewing(false)} />}
+      </>
+    );
   }
 
   return null;

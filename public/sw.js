@@ -1,21 +1,25 @@
-// "vitae-shell-v3": il nome della cache va cambiato ogni volta che gli asset della shell
+// "vitae-shell-v4": il nome della cache va cambiato ogni volta che gli asset della shell
 // (icone comprese) cambiano davvero — è l'unico modo per cui il service worker si accorge
 // di essere diverso e rifà install/activate, ripulendo la cache vecchia. Restare fermi sullo
 // stesso nome per checkpoint su checkpoint (come "v1" per molto tempo) è la causa reale già
 // trovata dietro "l'icona dell'app è sparita": un'icona rimasta in cache da tanto tempo fa,
 // mai più rinfrescata perché il browser non aveva motivo di rieseguire l'installazione.
 //
-// v3: SHELL_URLS copriva solo le prime 10 sezioni esistenti quando fu scritto — le sezioni
-// aggiunte da allora (animali, hobby, diario, wishlist, vitaecom, news, ecc.) funzionano
-// comunque offline dopo la prima visita online (la strategia sotto le mette in cache al primo
-// fetch), ma non erano precaricate all'installazione: la primissima visita di ciascuna,
-// se fatta offline, falliva. Aggiunte qui le sezioni principali (restano escluse le route con
-// parametro dinamico come /animali/[id], che richiedono un id specifico e non hanno senso
-// come URL fisso da precaricare).
-const CACHE_NAME = "vitae-shell-v3";
+// v4: corretto un elenco rimasto indietro rispetto al codice reale — conteneva ancora
+// "/vitaecom" (e le sue sotto-pagine) e "/albero-genealogico", entrambi eliminati da tempo
+// (vedi il README). cache.addAll() fallisce IN BLOCCO se anche una sola URL della lista
+// risponde con un errore (qui un 404, dato che quelle pagine non esistono più) — quindi da
+// quando quelle sezioni sono state rimosse, ogni installazione di questo service worker ha
+// silenziosamente fallito l'intero precaricamento della shell (l'errore veniva inghiottito
+// dal .catch() qui sotto), senza mai avvisare di nulla: l'app ha continuato a funzionare
+// online normalmente, ma senza il vantaggio dell'accesso offline immediato alla prima visita
+// di ciascuna sezione, che è lo scopo di questa lista. Aggiornata con le sezioni realmente
+// esistenti oggi.
+const CACHE_NAME = "vitae-shell-v4";
 const SHELL_URLS = [
   "/",
   "/wizard",
+  "/benvenuto",
   "/profilo",
   "/home",
   "/map",
@@ -30,21 +34,27 @@ const SHELL_URLS = [
   "/wishlist",
   "/alimentazione",
   "/attivita-peso",
-  "/albero-genealogico",
+  "/liste-note",
+  "/riepilogo-settimana",
   "/news",
-  "/segnalazioni",
-  "/vitaecom",
-  "/vitaecom/chat",
-  "/vitaecom/persone",
-  "/vitaecom/profilo",
+  "/tiber",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
+  // Ogni URL per conto proprio, non un addAll() unico: addAll() fallisce IN BLOCCO se anche
+  // una sola richiesta non va a buon fine (è quello che ha rotto silenziosamente questa
+  // cache quando /vitaecom e /albero-genealogico sono state rimosse, vedi la nota sulla
+  // versione qui sopra) — con allSettled, una futura pagina rimossa e dimenticata qui fa
+  // fallire solo la sua voce, non l'intero precaricamento della shell.
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS)).catch(() => {})
+    caches
+      .open(CACHE_NAME)
+      .then((cache) =>
+        Promise.allSettled(SHELL_URLS.map((url) => cache.add(url).catch(() => {})))
+      )
   );
   self.skipWaiting();
 });

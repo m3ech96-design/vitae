@@ -28,11 +28,11 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_a_wishlist",
       description: "Aggiunge un nuovo articolo alla Wishlist.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome dell'articolo." },
-          price: { type: "number", description: "Prezzo in euro, se noto." },
-          siteUrl: { type: "string", description: "URL del prodotto, se noto." },
+          name: { type: "STRING", description: "Nome dell'articolo." },
+          price: { type: "NUMBER", description: "Prezzo in euro, se noto." },
+          siteUrl: { type: "STRING", description: "URL del prodotto, se noto." },
         },
         required: ["name"],
       },
@@ -49,12 +49,12 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
       name: "modifica_wishlist",
       description: "Modifica nome, prezzo o URL di un articolo Wishlist esistente, cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome (anche parziale) attuale dell'articolo." },
-          newName: { type: "string", description: "Nuovo nome, se da cambiare." },
-          price: { type: "number", description: "Nuovo prezzo in euro." },
-          siteUrl: { type: "string", description: "Nuovo URL." },
+          name: { type: "STRING", description: "Nome (anche parziale) attuale dell'articolo." },
+          newName: { type: "STRING", description: "Nuovo nome, se da cambiare." },
+          price: { type: "NUMBER", description: "Nuovo prezzo in euro." },
+          siteUrl: { type: "STRING", description: "Nuovo URL." },
         },
         required: ["name"],
       },
@@ -77,10 +77,10 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
       name: "segna_wishlist_esaudito",
       description: "Segna un articolo Wishlist come acquistato/esaudito, cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome (anche parziale) dell'articolo." },
-          amount: { type: "number", description: "Importo speso per acquistarlo." },
+          name: { type: "STRING", description: "Nome (anche parziale) dell'articolo." },
+          amount: { type: "NUMBER", description: "Importo speso per acquistarlo." },
         },
         required: ["name", "amount"],
       },
@@ -99,8 +99,8 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
       name: "riapri_wishlist",
       description: "Riapre un articolo Wishlist già esaudito, tornando a monitorare il risparmio verso di esso.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) dell'articolo." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) dell'articolo." } },
         required: ["name"],
       },
     },
@@ -117,7 +117,7 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elenca_wishlist",
       description: "Elenca gli articoli in Wishlist con prezzo e quota risparmiata.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { items } = wishlistCtx(ctx);
@@ -131,8 +131,8 @@ export const wishlistTools: Record<string, TiberToolDefinition> = {
       name: "elimina_da_wishlist",
       description: "Elimina definitivamente un articolo dalla Wishlist, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) dell'articolo da eliminare." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) dell'articolo da eliminare." } },
         required: ["name"],
       },
     },

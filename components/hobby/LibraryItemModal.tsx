@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Trash2, ImagePlus } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { useHousehold } from "@/lib/household-context";
@@ -11,8 +11,7 @@ import { Button } from "../ui/Button";
 import { Chip } from "../ui/Chip";
 import { StarRating } from "./StarRating";
 import { PersonPicker } from "../ui/PersonPicker";
-import { ImageCropInput } from "../ui/ImageCropInput";
-import { useResolvedImage } from "@/lib/use-resolved-image";
+import { SinglePhotoField } from "../ui/SinglePhotoField";
 
 const STATUS_OPTIONS: { id: LibraryStatus; label: string }[] = [
   { id: "da-provare", label: "Da provare" },
@@ -20,13 +19,6 @@ const STATUS_OPTIONS: { id: LibraryStatus; label: string }[] = [
   { id: "completato", label: "Completato" },
   { id: "abbandonato", label: "Abbandonato" },
 ];
-
-function CoverPreview({ photoKey }: { photoKey?: string }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="h-full w-full object-cover" />;
-}
 
 export function LibraryItemModal({
   hobbyId,
@@ -100,15 +92,7 @@ export function LibraryItemModal({
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <div className="flex items-center gap-3">
-            <ImageCropInput
-              shape="square"
-              onChange={(key) => setPhotoKey(key)}
-              trigger={(open) => (
-                <button type="button" onClick={open} className="focus-ring flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl2 border border-dashed border-white/15 text-ink-600 hover:border-aura-cyan/50" aria-label="Copertina">
-                  {photoKey ? <CoverPreview photoKey={photoKey} /> : <ImagePlus size={18} />}
-                </button>
-              )}
-            />
+            <SinglePhotoField photoKey={photoKey} onChange={setPhotoKey} size="lg" />
             <div className="min-w-0 flex-1 space-y-3">
               <TextField label="Titolo" value={title} onChange={(e) => setTitle(e.target.value)} />
               <TextField label="Autore/creatore" value={creator} onChange={(e) => setCreator(e.target.value)} />

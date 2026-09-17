@@ -5,18 +5,25 @@ import { useMedical } from "@/lib/medical-context";
 import { formatDateShort, todayIso } from "@/lib/date-format";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { ImageCropInput } from "../ui/ImageCropInput";
+import { PhotoThumb } from "../ui/PhotoThumb";
+import { PhotoLightbox } from "../ui/PhotoLightbox";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
 
 const TYPES = ["Analisi", "Visita", "Imaging", "Altro"];
 
-function ReportPhoto({ photoKey }: { photoKey?: string }) {
+/** Anteprima larga (non un quadratino) per il referto in fase di compilazione/consultazione
+ * — dove PhotoThumb va benissimo per un'icona di riga, qui la foto è il contenuto
+ * principale della sezione e merita più spazio; resta comunque apribile a schermo intero. */
+function WideReportPhoto({ photoKey, onClick }: { photoKey: string; onClick: () => void }) {
   const url = useResolvedImage(photoKey);
-  if (!url) return null;
+  if (!url) return <div className="mt-2 h-40 w-full animate-pulse rounded-lg bg-white/5" />;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt="" className="mt-2 max-h-40 w-full rounded-lg object-cover" />
+    <button onClick={onClick} className="focus-ring mt-2 block w-full overflow-hidden rounded-lg">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className="max-h-40 w-full object-cover" />
+    </button>
   );
 }
 
@@ -30,6 +37,7 @@ export function ReportsSection() {
   const [notes, setNotes] = useState("");
   const [photoKey, setPhotoKey] = useState<string | undefined>();
   const [openReportId, setOpenReportId] = useState<string | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   const submit = () => {
     if (!title.trim()) return;
@@ -55,7 +63,7 @@ export function ReportsSection() {
           className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 text-left transition hover:border-white/15"
         >
           <div className="flex items-center gap-2.5">
-            <FileText size={15} className="shrink-0 text-aura-cyan" />
+            {r.photoKey ? <PhotoThumb photoKey={r.photoKey} size="sm" /> : <FileText size={15} className="shrink-0 text-aura-cyan" />}
             <div>
               <p className="text-sm text-ink-100">{r.title}</p>
               <p className="text-[11px] text-ink-800">
@@ -97,7 +105,7 @@ export function ReportsSection() {
           <TextField label="Note (facoltativo)" value={notes} onChange={(e) => setNotes(e.target.value)} />
           {photoKey ? (
             <div className="relative">
-              <ReportPhoto photoKey={photoKey} />
+              <WideReportPhoto photoKey={photoKey} onClick={() => setViewingPhoto(photoKey)} />
               <button
                 onClick={() => setPhotoKey(undefined)}
                 className="focus-ring absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-void-950/80 text-ink-200"
@@ -138,7 +146,7 @@ export function ReportsSection() {
             {openReport.doctorOrLab ? ` · ${openReport.doctorOrLab}` : ""}
           </p>
           {openReport.notes && <p className="mt-2 text-sm text-ink-200">{openReport.notes}</p>}
-          <ReportPhoto photoKey={openReport.photoKey} />
+          {openReport.photoKey && <WideReportPhoto photoKey={openReport.photoKey} onClick={() => setViewingPhoto(openReport.photoKey!)} />}
           <Button
             variant="danger"
             size="sm"
@@ -152,6 +160,8 @@ export function ReportsSection() {
           </Button>
         </PersonalCardSheet>
       )}
+
+      {viewingPhoto && <PhotoLightbox photos={[viewingPhoto]} onClose={() => setViewingPhoto(null)} />}
     </div>
   );
 }

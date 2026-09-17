@@ -18,6 +18,9 @@ import {
   LibraryItem,
   MatchesBlock,
   Match,
+  StatisticsBlock,
+  StatEntry,
+  StatChartView,
   collectBlockPhotoKeys,
   collectHobbyPhotoKeys,
 } from "./hobby-types";
@@ -39,6 +42,8 @@ function emptyBlock(kind: HobbyBlockKind, title: string): HobbyBlock {
       return { ...base, kind, items: [] };
     case "partite":
       return { ...base, kind, matches: [] };
+    case "statistiche":
+      return { ...base, kind, entries: [], chartView: "barre" };
   }
 }
 
@@ -84,6 +89,11 @@ interface HobbyContextValue {
   addMatch: (hobbyId: string, blockId: string, input: Omit<Match, "id" | "createdAt">) => void;
   updateMatch: (hobbyId: string, blockId: string, matchId: string, patch: Partial<Omit<Match, "id" | "createdAt">>) => void;
   removeMatch: (hobbyId: string, blockId: string, matchId: string) => void;
+
+  addStatEntry: (hobbyId: string, blockId: string, input: Omit<StatEntry, "id">) => void;
+  updateStatEntry: (hobbyId: string, blockId: string, entryId: string, patch: Partial<Omit<StatEntry, "id">>) => void;
+  removeStatEntry: (hobbyId: string, blockId: string, entryId: string) => void;
+  setStatChartView: (hobbyId: string, blockId: string, view: StatChartView) => void;
 }
 
 const HobbyContext = createContext<HobbyContextValue | null>(null);
@@ -361,6 +371,48 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
     [persist, withBlock, hobbies]
   );
 
+  // --- 7. Statistiche ---
+  const addStatEntry = useCallback(
+    (hobbyId: string, blockId: string, input: Omit<StatEntry, "id">) =>
+      persist((prev) =>
+        withBlock<StatisticsBlock>(prev, hobbyId, blockId, (b) => ({ ...b, entries: [...b.entries, { ...input, id: newId() }] }))
+      ),
+    [persist, withBlock]
+  );
+  const updateStatEntry = useCallback(
+    (hobbyId: string, blockId: string, entryId: string, patch: Partial<Omit<StatEntry, "id">>) =>
+      persist((prev) =>
+        withBlock<StatisticsBlock>(prev, hobbyId, blockId, (b) => ({
+          ...b,
+          // Il pavimento e il tetto (se presenti) vincolano SEMPRE il valore finale, anche
+          // quando ad aggiornarlo è un tocco su +/- che non li tocca affatto — un solo punto
+          // dove il vincolo si applica, invece di doverlo ripetere in ogni chiamante che
+          // potrebbe voler cambiare il valore (i pulsanti +/-, la modifica diretta, Tiber).
+          entries: b.entries.map((e) => {
+            if (e.id !== entryId) return e;
+            const merged = { ...e, ...patch };
+            const min = merged.min;
+            const max = merged.max;
+            const clamped = Math.min(max ?? Infinity, Math.max(min, merged.value));
+            return { ...merged, value: clamped };
+          }),
+        }))
+      ),
+    [persist, withBlock]
+  );
+  const removeStatEntry = useCallback(
+    (hobbyId: string, blockId: string, entryId: string) =>
+      persist((prev) =>
+        withBlock<StatisticsBlock>(prev, hobbyId, blockId, (b) => ({ ...b, entries: b.entries.filter((e) => e.id !== entryId) }))
+      ),
+    [persist, withBlock]
+  );
+  const setStatChartView = useCallback(
+    (hobbyId: string, blockId: string, view: StatChartView) =>
+      persist((prev) => withBlock<StatisticsBlock>(prev, hobbyId, blockId, (b) => ({ ...b, chartView: view }))),
+    [persist, withBlock]
+  );
+
   const value = useMemo<HobbyContextValue>(
     () => ({
       hydrated,
@@ -391,6 +443,10 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
       addMatch,
       updateMatch,
       removeMatch,
+      addStatEntry,
+      updateStatEntry,
+      removeStatEntry,
+      setStatChartView,
     }),
     [
       hydrated,
@@ -421,6 +477,10 @@ export function HobbyProvider({ children }: { children: React.ReactNode }) {
       addMatch,
       updateMatch,
       removeMatch,
+      addStatEntry,
+      updateStatEntry,
+      removeStatEntry,
+      setStatChartView,
     ]
   );
 

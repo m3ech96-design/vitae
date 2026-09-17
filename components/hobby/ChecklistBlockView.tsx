@@ -4,8 +4,10 @@ import { Plus } from "lucide-react";
 import { ChecklistBlock } from "@/lib/hobby-types";
 import { formatDateShort } from "@/lib/date-format";
 import { GlassCard } from "../ui/GlassCard";
+import { PhotoThumb } from "../ui/PhotoThumb";
 import { BlockHeader } from "./BlockHeader";
 import { ChecklistItemModal } from "./ChecklistItemModal";
+import { ChecklistItemDetail } from "./ChecklistItemDetail";
 
 const STATUS_COLOR: Record<string, string> = {
   "da-fare": "#8B90A8",
@@ -20,10 +22,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function ChecklistBlockView({ hobbyId, block }: { hobbyId: string; block: ChecklistBlock }) {
   const [addOpen, setAddOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const doneCount = block.items.filter((i) => i.status === "fatta").length;
-  const editItem = block.items.find((i) => i.id === editId);
+  const detailItem = block.items.find((i) => i.id === detailId);
 
   return (
     <GlassCard className="p-4">
@@ -48,10 +50,11 @@ export function ChecklistBlockView({ hobbyId, block }: { hobbyId: string; block:
             .map((item) => (
               <button
                 key={item.id}
-                onClick={() => setEditId(item.id)}
-                className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-left transition hover:border-white/20"
+                onClick={() => setDetailId(item.id)}
+                className="focus-ring flex w-full items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-left transition hover:border-white/20"
               >
-                <div className="min-w-0">
+                {item.photoKeys.length > 0 && <PhotoThumb photoKey={item.photoKeys[0]} size="sm" />}
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-ink-100">{item.title}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-600">
                     <span style={{ color: STATUS_COLOR[item.status] }}>{STATUS_LABEL[item.status]}</span>
@@ -67,7 +70,9 @@ export function ChecklistBlockView({ hobbyId, block }: { hobbyId: string; block:
       )}
 
       {addOpen && <ChecklistItemModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
-      {editItem && <ChecklistItemModal hobbyId={hobbyId} blockId={block.id} item={editItem} onClose={() => setEditId(null)} />}
+      {detailItem && (
+        <ChecklistItemDetail hobbyId={hobbyId} blockId={block.id} item={detailItem} onClose={() => setDetailId(null)} />
+      )}
     </GlassCard>
   );
 }

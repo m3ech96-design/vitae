@@ -31,11 +31,11 @@ export const placesTools: Record<string, TiberToolDefinition> = {
       name: "crea_luogo",
       description: "Salva un nuovo luogo in Mappa, geocodificando l'indirizzo indicato.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome del luogo." },
-          address: { type: "string", description: "Indirizzo o nome del posto da geocodificare (es. 'Piazza Duomo, Milano')." },
-          type: { type: "string", enum: PLACE_TYPES, description: "Tipo di luogo." },
+          name: { type: "STRING", description: "Nome del luogo." },
+          address: { type: "STRING", description: "Indirizzo o nome del posto da geocodificare (es. 'Piazza Duomo, Milano')." },
+          type: { type: "STRING", enum: PLACE_TYPES, description: "Tipo di luogo." },
         },
         required: ["name", "address", "type"],
       },
@@ -55,10 +55,10 @@ export const placesTools: Record<string, TiberToolDefinition> = {
       name: "valuta_luogo",
       description: "Imposta la valutazione (1-5) di un luogo già salvato in Mappa, cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome (anche parziale) del luogo." },
-          rating: { type: "number", description: "Valutazione da 1 a 5." },
+          name: { type: "STRING", description: "Nome (anche parziale) del luogo." },
+          rating: { type: "NUMBER", description: "Valutazione da 1 a 5." },
         },
         required: ["name", "rating"],
       },
@@ -77,8 +77,8 @@ export const placesTools: Record<string, TiberToolDefinition> = {
       name: "registra_visita_luogo",
       description: "Fa check-in e check-out immediati per un luogo, registrando una visita, cercandolo per nome.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) del luogo visitato." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) del luogo visitato." } },
         required: ["name"],
       },
     },
@@ -96,7 +96,7 @@ export const placesTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elenca_luoghi",
       description: "Elenca i luoghi salvati in Mappa, con tipo e valutazione.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { places } = placesCtx(ctx);
@@ -110,8 +110,8 @@ export const placesTools: Record<string, TiberToolDefinition> = {
       name: "elimina_luogo",
       description: "Elimina definitivamente un luogo salvato, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) del luogo da eliminare." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) del luogo da eliminare." } },
         required: ["name"],
       },
     },

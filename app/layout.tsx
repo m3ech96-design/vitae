@@ -23,6 +23,8 @@ import { FinanceProvider } from "@/lib/finance-context";
 import { MoodProvider } from "@/lib/mood-context";
 import { NeedsProvider } from "@/lib/needs-context";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { HobbyTimerProvider } from "@/lib/hobby-timer-context";
+import { FloatingHobbyTimerPill } from "@/components/hobby/FloatingHobbyTimerPill";
 import { DayRhythm } from "@/components/DayRhythm";
 import { BottomNav } from "@/components/BottomNav";
 import { NearbyPlacePrompt } from "@/components/household/NearbyPlacePrompt";
@@ -63,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-body antialiased">
         <ServiceWorkerRegister />
         <DayRhythm />
+        <HobbyTimerProvider>
         <ProfileProvider>
           <PlacesProvider>
             <HouseholdProvider>
@@ -88,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <NeedsProvider>
                             {children}
                             <BottomNav />
+                            <FloatingHobbyTimerPill />
                             <NearbyPlacePrompt />
                             <EngagementNotifier />
                             <TaskNotifier />
@@ -119,6 +123,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </HouseholdProvider>
           </PlacesProvider>
         </ProfileProvider>
+        </HobbyTimerProvider>
       </body>
     </html>
   );

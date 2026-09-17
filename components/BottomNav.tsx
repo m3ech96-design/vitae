@@ -12,7 +12,7 @@ import { useLongPress } from "@/lib/use-long-press";
 import { ALL_NAV_ITEMS, useNavSlots, NavItemDef } from "@/lib/nav-slots";
 
 const HOME_ITEM: NavItemDef = { href: "/home", label: "Home", icon: HomeIcon };
-const HIDDEN_ON = ["/", "/wizard", "/benvenuto"];
+const HIDDEN_ON = ["/", "/wizard", "/benvenuto", "/tiber"];
 const HIDDEN_PREFIX_ON: string[] = [];
 
 /** L'alone viola dietro la scheda attiva — un solo elemento condiviso (stesso `layoutId` in
@@ -126,7 +126,7 @@ export function BottomNav() {
   const { hasStalePlaces } = usePlaces();
   const { hasExpiringPantryItems } = useFood();
   const { slots, hydrated, setSlot, swapSlots } = useNavSlots();
-  if (HIDDEN_ON.includes(pathname) || HIDDEN_PREFIX_ON.some((prefix) => pathname.startsWith(prefix))) return null;
+  const hidden = HIDDEN_ON.includes(pathname) || HIDDEN_PREFIX_ON.some((prefix) => pathname.startsWith(prefix));
 
   const slotItems = slots.map((href) => ALL_NAV_ITEMS.find((i) => i.href === href)).filter((i): i is NavItemDef => Boolean(i));
   const moreItems = ALL_NAV_ITEMS.filter((i) => !slots.includes(i.href));
@@ -145,58 +145,62 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),14px)]">
-        <motion.div
-          key="offline-pill"
-          initial={{ opacity: 0, rotateY: -100 }}
-          animate={{ opacity: 1, rotateY: 0 }}
-          exit={{ opacity: 0, rotateY: 100 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="glass-nav flex items-center gap-1 rounded-full px-2 py-2 shadow-glass transition-[box-shadow,border-color] duration-1000"
-          style={{
-            transformPerspective: 700,
-            ...(mood
-              ? {
-                  borderColor: `${mood.color}${Math.round(activeMoodIntensity * 90 + 20)
-                    .toString(16)
-                    .padStart(2, "0")}`,
-                  boxShadow: `0 0 ${14 * activeMoodIntensity}px -2px ${mood.color}aa, inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 40px -12px rgba(0,0,0,0.6)`,
-                }
-              : {}),
-          }}
-        >
-          <NavButton item={HOME_ITEM} active={pathname.startsWith("/home")} />
-          {hydrated &&
-            slotItems.map((item, index) => (
-              <span key={item.href} className="relative">
-                <NavButton item={item} active={pathname.startsWith(item.href)} onLongPress={() => setPickingSlot(index)} />
-                {item.href === "/map" && hasStalePlaces && (
-                  <span
-                    className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
-                    style={{ background: "#00E5C7" }}
-                  />
+      <AnimatePresence>
+        {!hidden && (
+          <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),14px)]">
+            <motion.div
+              key="offline-pill"
+              initial={{ opacity: 0, y: 24, rotateY: -100 }}
+              animate={{ opacity: 1, y: 0, rotateY: 0 }}
+              exit={{ opacity: 0, y: 24, rotateY: 100 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="glass-nav flex items-center gap-1 rounded-full px-2 py-2 shadow-glass transition-[box-shadow,border-color] duration-1000"
+              style={{
+                transformPerspective: 700,
+                ...(mood
+                  ? {
+                      borderColor: `${mood.color}${Math.round(activeMoodIntensity * 90 + 20)
+                        .toString(16)
+                        .padStart(2, "0")}`,
+                      boxShadow: `0 0 ${14 * activeMoodIntensity}px -2px ${mood.color}aa, inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 40px -12px rgba(0,0,0,0.6)`,
+                    }
+                  : {}),
+              }}
+            >
+              <NavButton item={HOME_ITEM} active={pathname.startsWith("/home")} />
+              {hydrated &&
+                slotItems.map((item, index) => (
+                  <span key={item.href} className="relative">
+                    <NavButton item={item} active={pathname.startsWith(item.href)} onLongPress={() => setPickingSlot(index)} />
+                    {item.href === "/map" && hasStalePlaces && (
+                      <span
+                        className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
+                        style={{ background: "#00E5C7" }}
+                      />
+                    )}
+                    {item.href === "/alimentazione" && hasExpiringPantryItems && (
+                      <span
+                        className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
+                        style={{ background: "#FFB454" }}
+                      />
+                    )}
+                  </span>
+                ))}
+              <button
+                onClick={() => setMoreOpen(true)}
+                className={clsx(
+                  "focus-ring relative flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-all",
+                  moreActive ? "text-ink-100" : "text-ink-600 hover:text-ink-200"
                 )}
-                {item.href === "/alimentazione" && hasExpiringPantryItems && (
-                  <span
-                    className="pointer-events-none absolute right-2 top-1 h-2 w-2 rounded-full border border-void-950"
-                    style={{ background: "#FFB454" }}
-                  />
-                )}
-              </span>
-            ))}
-          <button
-            onClick={() => setMoreOpen(true)}
-            className={clsx(
-              "focus-ring relative flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-all",
-              moreActive ? "text-ink-100" : "text-ink-600 hover:text-ink-200"
-            )}
-          >
-            {moreActive && <ActiveGlow />}
-            <MoreHorizontal size={18} className="relative z-10" />
-            <span className="relative z-10 text-[9px]">Altro</span>
-          </button>
-        </motion.div>
-      </nav>
+              >
+                {moreActive && <ActiveGlow />}
+                <MoreHorizontal size={18} className="relative z-10" />
+                <span className="relative z-10 text-[9px]">Altro</span>
+              </button>
+            </motion.div>
+          </nav>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {moreOpen && (

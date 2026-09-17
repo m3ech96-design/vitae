@@ -44,8 +44,8 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "crea_scheda_allenamento",
       description: "Crea una nuova scheda allenamento (es. 'Scheda palestra inverno').",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome della scheda." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome della scheda." } },
         required: ["name"],
       },
     },
@@ -61,8 +61,8 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "elimina_scheda_allenamento",
       description: "Elimina definitivamente una scheda allenamento, cercandola per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) della scheda." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) della scheda." } },
         required: ["name"],
       },
     },
@@ -81,10 +81,10 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_tabella_scheda",
       description: "Aggiunge una tabella (es. 'Push day', 'Gambe') a una scheda allenamento esistente.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          planName: { type: "string", description: "Nome della scheda." },
-          tableName: { type: "string", description: "Nome della nuova tabella." },
+          planName: { type: "STRING", description: "Nome della scheda." },
+          tableName: { type: "STRING", description: "Nome della nuova tabella." },
         },
         required: ["planName", "tableName"],
       },
@@ -103,10 +103,10 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "elimina_tabella_scheda",
       description: "Elimina una tabella da una scheda allenamento, cercandola per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          planName: { type: "string", description: "Nome della scheda." },
-          tableName: { type: "string", description: "Nome (anche parziale) della tabella." },
+          planName: { type: "STRING", description: "Nome della scheda." },
+          tableName: { type: "STRING", description: "Nome (anche parziale) della tabella." },
         },
         required: ["planName", "tableName"],
       },
@@ -128,12 +128,12 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_esercizio_scheda",
       description: "Aggiunge un esercizio a una tabella di una scheda allenamento.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          planName: { type: "string", description: "Nome della scheda." },
-          tableName: { type: "string", description: "Nome della tabella, se la scheda ne ha più di una." },
-          exerciseName: { type: "string", description: "Nome dell'esercizio." },
-          reps: { type: "string", description: "Serie e ripetizioni previste (es. '4x8')." },
+          planName: { type: "STRING", description: "Nome della scheda." },
+          tableName: { type: "STRING", description: "Nome della tabella, se la scheda ne ha più di una." },
+          exerciseName: { type: "STRING", description: "Nome dell'esercizio." },
+          reps: { type: "STRING", description: "Serie e ripetizioni previste (es. '4x8')." },
         },
         required: ["planName", "exerciseName", "reps"],
       },
@@ -154,13 +154,13 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "registra_serie_esercizio",
       description: "Registra una sessione svolta di un esercizio (peso, ripetizioni, serie), cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          planName: { type: "string", description: "Nome della scheda." },
-          exerciseName: { type: "string", description: "Nome (anche parziale) dell'esercizio." },
-          weightKg: { type: "number", description: "Peso usato in kg." },
-          reps: { type: "number", description: "Ripetizioni per serie." },
-          sets: { type: "number", description: "Numero di serie." },
+          planName: { type: "STRING", description: "Nome della scheda." },
+          exerciseName: { type: "STRING", description: "Nome (anche parziale) dell'esercizio." },
+          weightKg: { type: "NUMBER", description: "Peso usato in kg." },
+          reps: { type: "NUMBER", description: "Ripetizioni per serie." },
+          sets: { type: "NUMBER", description: "Numero di serie." },
         },
         required: ["planName", "exerciseName", "weightKg", "reps", "sets"],
       },
@@ -185,10 +185,10 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
       name: "elimina_esercizio_scheda",
       description: "Elimina un esercizio da una scheda allenamento, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          planName: { type: "string", description: "Nome della scheda." },
-          exerciseName: { type: "string", description: "Nome (anche parziale) dell'esercizio." },
+          planName: { type: "STRING", description: "Nome della scheda." },
+          exerciseName: { type: "STRING", description: "Nome (anche parziale) dell'esercizio." },
         },
         required: ["planName", "exerciseName"],
       },
@@ -213,7 +213,7 @@ export const workoutPlanTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elenca_schede_allenamento",
       description: "Elenca le schede allenamento esistenti con le loro tabelle.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { plans } = plansCtx(ctx);

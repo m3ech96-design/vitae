@@ -19,10 +19,10 @@ export const diaryTools: Record<string, TiberToolDefinition> = {
       name: "scrivi_diario",
       description: "Aggiunge una nuova voce al Diario personale.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          text: { type: "string", description: "Testo della voce di diario." },
-          date: { type: "string", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
+          text: { type: "STRING", description: "Testo della voce di diario." },
+          date: { type: "STRING", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
         },
         required: ["text"],
       },
@@ -45,10 +45,10 @@ export const diaryTools: Record<string, TiberToolDefinition> = {
       name: "modifica_voce_diario",
       description: "Sostituisce il testo di una voce di diario esistente, cercandola per contenuto attuale.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          text: { type: "string", description: "Testo (anche parziale) attuale della voce da trovare." },
-          newText: { type: "string", description: "Nuovo testo della voce." },
+          text: { type: "STRING", description: "Testo (anche parziale) attuale della voce da trovare." },
+          newText: { type: "STRING", description: "Nuovo testo della voce." },
         },
         required: ["text", "newText"],
       },
@@ -68,8 +68,8 @@ export const diaryTools: Record<string, TiberToolDefinition> = {
       name: "elimina_voce_diario",
       description: "Elimina una voce di diario cercandola per contenuto testuale. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { text: { type: "string", description: "Testo (anche parziale) della voce da eliminare." } },
+        type: "OBJECT",
+        properties: { text: { type: "STRING", description: "Testo (anche parziale) della voce da eliminare." } },
         required: ["text"],
       },
     },

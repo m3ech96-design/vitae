@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ListChecks, LineChart, Package, Hammer, Library, Swords } from "lucide-react";
+import { ListChecks, LineChart, Package, Hammer, Library, Swords, BarChart3 } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
 import { HobbyBlockKind, HOBBY_BLOCK_LABELS } from "@/lib/hobby-types";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
@@ -14,6 +14,7 @@ const KIND_META: { id: HobbyBlockKind; icon: typeof ListChecks; description: str
   { id: "progetti", icon: Hammer, description: "Galleria di opere in corso o finite" },
   { id: "libreria", icon: Library, description: "Cose provate, lette o viste, con un voto" },
   { id: "partite", icon: Swords, description: "Partite giocate, con avversario e risultato" },
+  { id: "statistiche", icon: BarChart3, description: "Più valori a confronto, per capire cosa migliorare" },
 ];
 
 export function AddBlockSheet({ hobbyId, onClose }: { hobbyId: string; onClose: () => void }) {

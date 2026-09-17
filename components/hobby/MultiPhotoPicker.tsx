@@ -1,33 +1,34 @@
 "use client";
+import { useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { ImageCropInput } from "../ui/ImageCropInput";
-import { useResolvedImage } from "@/lib/use-resolved-image";
+import { PhotoThumb } from "../ui/PhotoThumb";
+import { PhotoLightbox } from "../ui/PhotoLightbox";
 
-function Thumb({ photoKey, onRemove }: { photoKey: string; onRemove: () => void }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  return (
-    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl2 border border-white/10">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" className="h-full w-full object-cover" />
-      <button
-        onClick={onRemove}
-        className="focus-ring absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-void-950/80 text-ink-100"
-        aria-label="Rimuovi foto"
-      >
-        <X size={10} />
-      </button>
-    </div>
-  );
-}
-
+/**
+ * Corretto secondo le istruzioni: prima le miniature (64px) non erano cliccabili — l'unico
+ * modo per vedere una foto inserita qui era ricordarsela a memoria, dato che restava troppo
+ * piccola per essere consultata davvero. Ora un tocco apre PhotoLightbox a schermo intero,
+ * sfogliabile tra tutte le foto già aggiunte qui, con zoom al doppio tocco per i dettagli.
+ */
 export function MultiPhotoPicker({ photoKeys, onChange, label }: { photoKeys: string[]; onChange: (keys: string[]) => void; label?: string }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   return (
     <div>
       {label && <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">{label}</span>}
       <div className="flex flex-wrap gap-2">
-        {photoKeys.map((k) => (
-          <Thumb key={k} photoKey={k} onRemove={() => onChange(photoKeys.filter((x) => x !== k))} />
+        {photoKeys.map((k, i) => (
+          <div key={k} className="relative">
+            <PhotoThumb photoKey={k} size="lg" onClick={() => setLightboxIndex(i)} />
+            <button
+              onClick={() => onChange(photoKeys.filter((x) => x !== k))}
+              className="focus-ring absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-void-950/80 text-ink-100"
+              aria-label="Rimuovi foto"
+            >
+              <X size={10} />
+            </button>
+          </div>
         ))}
         <ImageCropInput
           shape="square"
@@ -45,6 +46,15 @@ export function MultiPhotoPicker({ photoKeys, onChange, label }: { photoKeys: st
           )}
         />
       </div>
+
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={photoKeys}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onDelete={(key) => onChange(photoKeys.filter((x) => x !== key))}
+        />
+      )}
     </div>
   );
 }

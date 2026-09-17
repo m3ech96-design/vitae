@@ -58,13 +58,24 @@ export async function callGemini(
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
+    // Il corpo d'errore di Google è quasi sempre JSON con un `error.message` leggibile —
+    // usarlo alla lettera invece di indovinare la causa dal solo status HTTP evita di
+    // diagnosticare male l'errore sbagliato (è già successo: un 400 dovuto a un formato
+    // scorretto nella richiesta — non alla chiave — veniva prima etichettato come "chiave
+    // non valida", mandando a controllare inutilmente qualcosa che era già corretto).
+    let googleMessage = "";
+    try {
+      googleMessage = JSON.parse(errText)?.error?.message ?? "";
+    } catch {
+      // corpo non JSON: si userà errText grezzo più sotto
+    }
     if (res.status === 429) {
       throw new Error("Limite di richieste del piano gratuito Gemini raggiunto per ora — riprova tra poco o domani.");
     }
-    if (res.status === 400 || res.status === 403) {
-      throw new Error("Chiave Gemini non valida o senza permessi — controllala nelle impostazioni di Tiber.");
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`Chiave Gemini non valida o senza permessi${googleMessage ? `: ${googleMessage}` : ""}`);
     }
-    throw new Error(`Errore da Gemini (${res.status}): ${errText.slice(0, 200)}`);
+    throw new Error(`Errore da Gemini (${res.status})${googleMessage ? `: ${googleMessage}` : `: ${errText.slice(0, 200)}`}`);
   }
 
   const data = await res.json();

@@ -1,25 +1,18 @@
 "use client";
 import { useState } from "react";
-import { Plus, ImagePlus, Flame } from "lucide-react";
+import { Plus, Flame } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
 import { MatchesBlock } from "@/lib/hobby-types";
 import { matchRecord } from "@/lib/hobby-stats";
 import { formatDateShort } from "@/lib/date-format";
-import { useResolvedImage } from "@/lib/use-resolved-image";
 import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
 import { MatchModal } from "./MatchModal";
-import { ImageCropInput } from "../ui/ImageCropInput";
+import { MatchDetail } from "./MatchDetail";
+import { SinglePhotoField } from "../ui/SinglePhotoField";
 
 const RESULT_COLOR: Record<string, string> = { vittoria: "#34D399", sconfitta: "#FF6B9D", pareggio: "#FFB454" };
 const RESULT_LABEL: Record<string, string> = { vittoria: "V", sconfitta: "S", pareggio: "P" };
-
-function CoverPhoto({ photoKey }: { photoKey?: string }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="h-full w-full object-cover" />;
-}
 
 /**
  * Copertina del blocco — box art del videogioco, stemma della squadra, o qualunque
@@ -29,30 +22,15 @@ function CoverPhoto({ photoKey }: { photoKey?: string }) {
  */
 function BlockCover({ hobbyId, blockId, photoKey }: { hobbyId: string; blockId: string; photoKey?: string }) {
   const { setMatchesBlockPhoto } = useHobby();
-  return (
-    <ImageCropInput
-      shape="square"
-      onChange={(key) => setMatchesBlockPhoto(hobbyId, blockId, key)}
-      trigger={(open) => (
-        <button
-          type="button"
-          onClick={open}
-          className="focus-ring flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl2 border border-dashed border-white/15 text-ink-600 transition hover:border-aura-amber/50"
-          aria-label="Copertina del blocco"
-        >
-          {photoKey ? <CoverPhoto photoKey={photoKey} /> : <ImagePlus size={16} />}
-        </button>
-      )}
-    />
-  );
+  return <SinglePhotoField photoKey={photoKey} onChange={(key) => setMatchesBlockPhoto(hobbyId, blockId, key)} size="md" />;
 }
 
 export function MatchesBlockView({ hobbyId, block }: { hobbyId: string; block: MatchesBlock }) {
   const [addOpen, setAddOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const record = matchRecord(block);
-  const editMatch = block.matches.find((m) => m.id === editId);
+  const detailMatch = block.matches.find((m) => m.id === detailId);
 
   return (
     <GlassCard className="p-4">
@@ -88,7 +66,7 @@ export function MatchesBlockView({ hobbyId, block }: { hobbyId: string; block: M
               .map((m) => (
                 <button
                   key={m.id}
-                  onClick={() => setEditId(m.id)}
+                  onClick={() => setDetailId(m.id)}
                   className="focus-ring flex w-full items-center justify-between rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2 text-left transition hover:border-white/20"
                 >
                   <div className="flex min-w-0 items-center gap-2">
@@ -108,7 +86,9 @@ export function MatchesBlockView({ hobbyId, block }: { hobbyId: string; block: M
       )}
 
       {addOpen && <MatchModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
-      {editMatch && <MatchModal hobbyId={hobbyId} blockId={block.id} match={editMatch} onClose={() => setEditId(null)} />}
+      {detailMatch && (
+        <MatchDetail hobbyId={hobbyId} blockId={block.id} match={detailMatch} onClose={() => setDetailId(null)} />
+      )}
     </GlassCard>
   );
 }

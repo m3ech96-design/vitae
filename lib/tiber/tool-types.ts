@@ -10,7 +10,7 @@ export interface TiberToolDeclaration {
   name: string;
   description: string;
   parameters: {
-    type: "object";
+    type: "OBJECT";
     properties: Record<string, unknown>;
     required?: string[];
   };

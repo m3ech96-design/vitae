@@ -3524,3 +3524,194 @@ nessuna modifica necessaria in quei due componenti.
 Per gli articoli Amazon, l'aggiornamento prezzo resta quindi da fare a mano — non per una
 lacuna di questa app, ma per una barriera che Amazon stessa impone a qualunque richiesta
 automatica da un server.
+
+## Checkpoint 118 — Vitae ora avvisa quando è pronta una versione nuova
+
+Richiesto: un modo per far aggiornare Vitae direttamente dall'app a ogni nuovo checkpoint
+pubblicato su GitHub/Vercel, invece di scoprire per caso di avere una versione vecchia.
+
+Il meccanismo di fondo esisteva già (`ServiceWorkerRegister.tsx` controlla se c'è un
+aggiornamento a ogni apertura/ripresa dell'app, e `sw.js` fa subentrare subito il nuovo
+service worker con `skipWaiting`/`clients.claim`), ma tutto restava invisibile: l'utente non
+aveva alcun segnale che un aggiornamento fosse arrivato, né un modo per attivarlo subito
+invece di aspettare la prossima apertura casuale.
+
+- **Aggiunto un avviso visibile**: quando il browser sostituisce davvero il service worker
+  vecchio con uno nuovo (evento `controllerchange`, e solo se la pagina era già controllata
+  da una versione precedente — non alla primissima installazione), compare un piccolo banner
+  in alto ("Nuova versione pronta") con un tocco per ricaricare subito, o per ignorarlo e
+  farlo più tardi.
+- **Corretta una cache rotta silenziosamente**: la lista di pagine precaricate dal service
+  worker (`SHELL_URLS` in `sw.js`) conteneva ancora `/vitaecom` e le sue sotto-pagine più
+  `/albero-genealogico` — entrambe rimosse da tempo (vedi checkpoint 98 e 97). Dato che
+  `cache.addAll()` fallisce per intero se anche una sola URL della lista risponde con un
+  errore, ogni installazione di questo service worker da allora falliva silenziosamente
+  l'intero precaricamento della shell (l'app continuava a funzionare online, ma senza
+  l'accesso offline immediato alla prima visita di ciascuna sezione, lo scopo di quella
+  lista). Aggiornata con le sezioni realmente esistenti oggi, e resa più resistente in
+  futuro: ogni URL viene ora precaricato per conto proprio (non più un `addAll()` unico), così
+  una singola pagina rimossa e dimenticata in questa lista non farà più fallire il
+  precaricamento di tutte le altre.
+- Nome della cache passato a `vitae-shell-v4`, come richiede ogni cambiamento reale a
+  questo file perché il browser lo riconosca e lo reinstalli.
+
+## Checkpoint 119 — Tiber davvero funzionante, visualizzatore foto unificato, nuovo blocco Statistiche
+
+Giro di lavoro ampio, in risposta a una segnalazione articolata su più fronti: Tiber non
+funzionava affatto, l'app non aveva mai avuto un modo decente di guardare le foto inserite,
+e mancava un blocco Hobby per confrontare più valori tra loro (es. le statistiche di un
+personaggio in un videogioco).
+
+### Tiber: il bug che lo rendeva completamente inutilizzabile
+
+Segnalato: "le chiavi API di Gemini sono sempre non valide", provate più chiavi diverse.
+Non era la chiave — verificato che Gemini richiede i tipi dei parametri dei tool in
+**maiuscolo** (`"STRING"`, `"OBJECT"`, `"NUMBER"`...), mentre tutti i 150 tool di Tiber li
+avevano scritti in minuscolo: questo faceva rifiutare con errore 400 **ogni singola
+richiesta**, fin dalla primissima, e il codice etichettava quell'errore come "chiave non
+valida" per sbaglio. Corretto ovunque nei tool, corretto anche il nome del campo
+dell'istruzione di sistema (`systemInstruction`, non `system_instruction` — altro errore
+che avrebbe fatto ignorare le istruzioni di comportamento), e corretta la ricostruzione
+della cronologia conversazione, che non includeva mai l'esito delle chiamate a tool dei
+turni precedenti — violazione del formato richiesto da Gemini che sarebbe scattata dal
+secondo scambio di qualunque conversazione reale. Reso anche il messaggio d'errore onesto:
+mostra il motivo vero restituito da Google invece di indovinarlo dal solo codice HTTP.
+
+Corretti anche i problemi di interfaccia segnalati: la barra di testo della chat non è più
+coperta dalla barra di navigazione (nascosta su questa pagina, come già succede in
+wizard/benvenuto); la transizione di scomparsa/comparsa della nav — già scritta nel codice
+ma mai collegata a un `AnimatePresence`, quindi mai eseguita — ora funziona davvero, con la
+stessa cura aggiunta anche alla barra di Tiber. Create le impostazioni di Tiber
+(`/tiber/impostazioni`, raggiungibili con l'icona ingranaggio): gestione della chiave, info
+sul modello, spiegazione dell'autonomia, azzeramento conversazione — prima non esistevano.
+
+### Cronometro persistente
+
+Il cronometro del blocco Metrica smetteva di esistere appena si usciva dalla scheda Hobby
+(stato locale del componente). Ora vive in un context globale (`lib/hobby-timer-context.tsx`)
+che sopravvive alla navigazione e a un ricaricamento della pagina, con una pillola flottante
+visibile ovunque nell'app (`FloatingHobbyTimerPill.tsx`) che mostra il tempo trascorso e
+permette pausa/ripresa al volo. Un solo cronometro attivo alla volta in tutta l'app.
+
+### Visualizzatore foto — audit completo di tutta l'app
+
+Segnalato con un esempio preciso: negli hobby si potevano inserire foto che poi non si
+vedevano mai, né come miniature né ingrandite. Verificato che il problema era sistemico, non
+isolato: ogni scheda dell'app (Hobby, Salute, Animali, Mappa, Wishlist, Diario, wizard)
+reinventava per conto proprio una minuscola anteprima statica — quasi sempre senza alcun
+modo di ingrandirla, spesso senza nemmeno un'icona di riserva quando la foto mancava.
+
+Costruite tre fondamenta condivise, usate ora ovunque nell'app invece che ricreate caso per
+caso:
+- **`PhotoLightbox`** — visualizzatore a schermo intero, sfogliabile quando le foto sono più
+  di una (scorrimento, frecce, contatore), zoom al doppio tocco, eliminazione facoltativa.
+- **`PhotoThumb`** — miniatura con fallback coerente (icona, non un vuoto) per righe di
+  elenco e copertine a dimensione fissa.
+- **`SinglePhotoField`** — per il caso "una foto sola che si può guardare, sostituire o
+  togliere", con i tre gesti finalmente separati (prima, toccare l'unica foto la sostituiva
+  sempre, senza modo di limitarsi a guardarla).
+
+Applicate sistematicamente a: **Hobby** (tutti i modali — Checklist, Inventario, Progetti,
+Libreria, Partite, Metrica, nuovo hobby — inclusa la copertina del blocco Partite e la lista
+Checklist, che prima non mostrava alcuna anteprima); **Salute** (referti medici, foto di
+progresso — ora sfogliabili in sequenza per confrontarle nel tempo, invece di riaprirle una
+alla volta); **Animali** (referti veterinari); **Mappa** (galleria luoghi, unificato un
+lightbox locale duplicato con quello condiviso); **Wishlist** (aggiunta articolo, vista
+dettaglio); **Diario** (il lightbox esistente mostrava un solo media alla volta — ora scorre
+tra tutte le foto/video della stessa voce); più i punti minori del wizard
+(`ThumbGridField`) e delle Schede allenamento (`ExerciseMediaPlayer`). Verificati e lasciati
+intatti perché già ben fatti: `EntityLinkCard`, `AvatarUploader`, `HobbyCard`.
+
+### Nuovo blocco Hobby: Statistiche
+
+Richiesto con un esempio preciso: poter tracciare le statistiche di un personaggio (es. in
+un videogioco come Skyrim) per vedere a colpo d'occhio quale sia la più alta e quale la più
+bassa, per sapere cosa migliorare.
+
+Progettato deliberatamente diverso dal blocco Metrica: Metrica segue UN valore nel tempo con
+uno storico; Statistiche confronta PIÙ valori indipendenti in un dato momento, senza tenere
+uno storico per voce — la domanda a cui risponde è "come sto messo ora", non "come sono
+cambiato". Ogni voce ha un nome, un valore, un minimo (sempre presente, di norma 0), un
+massimo facoltativo (non ogni statistica ne ha uno naturale) e un incremento personalizzabile
+a tocco (utile per conteggi in centinaia, non solo variazioni di 1 in 1).
+
+Due visualizzazioni, scelta salvata per blocco:
+- **Barre** (di norma) — ordinate dalla più alta alla più bassa, con la più alta e la più
+  bassa segnalate con un'icona, risponde senza ambiguità e senza limiti di numero di voci
+  alla domanda "cosa migliorare".
+- **Radar** (quando le voci sono tra 3 e 10) — più evocativo, una vera scheda personaggio;
+  disponibile solo in quell'intervallo perché sotto le 3 voci degenera in un triangolo e
+  sopra le 10 gli assi diventano troppo fitti per leggere le etichette.
+
+Entrambi i grafici sono SVG scritti a mano, coerenti con il resto dell'app (nessuna nuova
+libreria di charting introdotta). Dato a Tiber accesso al nuovo blocco (aggiungere una
+statistica, impostarne il valore esatto, eliminarla), coerente con l'autonomia già data su
+tutti gli altri moduli.
+
+## Checkpoint 120 — Libreria ordinabile, e vetrina di sola lettura al posto del wizard diretto in tutta la scheda Hobby
+
+Segnalato con un esempio preciso: nel blocco Libreria, toccare un libro apriva
+**direttamente** il wizard di modifica (`LibraryItemModal`) — nessun modo di limitarsi a
+guardare la copertina o rileggere la recensione senza finire dentro un modulo di campi
+editabili, e la recensione comunque non era mai leggibile per intero lì dentro (un
+`<textarea>` di poche righe). Richiesto anche un ordinamento per il blocco (alfabetico, data
+di aggiunta, data di completamento, valutazione) e — esplicitamente — la stessa correzione
+"ovunque nell'app compaia lo stesso schema".
+
+### Libreria: ordinamento
+
+Aggiunta una riga di filtri (stile pillola, la stessa convenzione già in uso in Liste e
+note) con i quattro criteri richiesti: **A-Z**, **Aggiunti di recente**, **Completati di
+recente**, **Voto più alto**. Ordina solo la visualizzazione, mai l'array salvato — le voci
+senza il dato richiesto (nessuna data di completamento, nessun voto) finiscono sempre in
+fondo, non mescolate a caso.
+
+### Vetrina di sola lettura — un componente condiviso, non sei copie
+
+Costruito `ItemDetailSheet` (`components/ui/ItemDetailSheet.tsx`): l'header mostra la
+foto per intero — mai ritagliata, stesso principio di `PhotoGallery` (estratta da
+`PlaceGallery.tsx`, ora condivisa da tutta l'app, non solo dalla Mappa) — sotto i campi in
+sola lettura (`DetailField`, stesso stile a card già usato in `WishlistItemSheet`), e la
+matita in alto per chi vuole davvero aprire il wizard — la stessa icona già in uso altrove
+nell'app (Wishlist, finestra di un luogo, Task) per lo stesso scopo.
+
+Il tocco su una voce apre ora questa vetrina invece del wizard, con testi lunghi
+(recensioni, note) sempre mostrati per intero, in tutti e sei i blocchi Hobby che avevano
+contenuto reale da consultare:
+- **Libreria** — copertina, recensione completa, consigliato da.
+- **Inventario** — galleria fronte/retro/dettagli, altri dettagli con eventuale miniatura.
+- **Progetti** — galleria prima/durante/dopo, materiali, note/riflessioni complete.
+- **Partite** — foto/screenshot, note tattiche complete.
+- **Checklist** — foto, note complete, tag, con chi, luogo.
+- **Metrica** — foto e nota della singola voce registrata.
+
+Verificato il resto dell'app prima di considerare il giro concluso: Wishlist, Task, Diario,
+la finestra di un luogo in Mappa, i referti medici/veterinari e le foto di progresso in
+Salute seguivano già questo stesso schema (vetrina + matita separata) — lasciati intatti.
+Lasciato intatto anche il nuovo blocco Statistiche (checkpoint 119): una voce lì è solo un
+nome e un numero, già interamente visibile nella riga stessa — non c'è nulla da "consultare"
+separatamente dal modificarla.
+
+### Due correzioni trovate rileggendo il codice a freddo
+
+Richiesto esplicitamente di rileggere e verificare il lavoro appena fatto — emersi due
+problemi reali, non visibili da una build o da un controllo di tipi (entrambi passavano
+comunque):
+
+**Header non a filo, foto "incorniciata" invece che a piena larghezza**: `PhotoGallery` porta
+di serie un proprio bordo e angoli arrotondati, pensati per stare dentro un corpo scorrevole
+come una card a sé (l'uso originale, dentro la finestra di un luogo). Usata così anche
+nell'header della nuova vetrina, il risultato non era un header a tutta larghezza come quello
+già esistente in `PlaceWindow` (senza bordo, angoli tagliati dal foglio esterno) ma una foto
+rimpicciolita "in cornice" dentro l'area di testata. Aggiunto un flag (`bordered`, di norma
+`true`) per disattivare bordo e arrotondamento propri quando la galleria è usata come header a
+piena larghezza — l'uso esistente in Mappa resta identico, invariato di default.
+
+**Chiudere il wizard riportava alla griglia, non alla vetrina aggiornata**: lo stato "sto
+modificando" era stato messo nel componente del blocco (`LibraryBlockView` e affini) invece
+che nella vetrina stessa — diversamente da come funzionano già `WishlistItemSheet`,
+`PlaceWindow` e `TaskWindow`, dove la vetrina resta aperta durante la modifica e chi chiude il
+wizard si ritrova su di essa già aggiornata, non scaraventato indietro alla lista. Spostato lo
+stato di modifica dentro ciascuna delle sei vetrine (`if (editing) return <XModal .../>`,
+stesso schema di `TaskWindow`) — ora il comportamento è identico a quello già in uso nel resto
+dell'app, non un'alternativa inventata lì per lì.

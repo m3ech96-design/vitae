@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ImagePlus } from "lucide-react";
+import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";
@@ -9,16 +9,8 @@ import { WishlistItem, DEFAULT_SAFETY_MARGIN } from "@/lib/wishlist-types";
 import { CustomField } from "@/lib/types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
-import { ImageCropInput } from "../ui/ImageCropInput";
+import { SinglePhotoField } from "../ui/SinglePhotoField";
 import { DynamicFieldList } from "../wizard/DynamicFieldList";
-import { useResolvedImage } from "@/lib/use-resolved-image";
-
-function PhotoPreview({ photoKey }: { photoKey: string }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="h-full w-full object-cover" />;
-}
 
 export function AddWishlistItemModal({ item, onClose }: { item?: WishlistItem; onClose: () => void }) {
   const { addItem, updateItem } = useWishlist();
@@ -88,20 +80,7 @@ export function AddWishlistItemModal({ item, onClose }: { item?: WishlistItem; o
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <div className="flex items-center gap-3">
-            <ImageCropInput
-              shape="square"
-              onChange={(key) => setPhotoKey(key)}
-              trigger={(open) => (
-                <button
-                  type="button"
-                  onClick={open}
-                  className="focus-ring flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl2 border border-dashed border-white/15 text-ink-600 transition hover:border-aura-pink/50"
-                  aria-label="Foto dell'articolo"
-                >
-                  {photoKey ? <PhotoPreview photoKey={photoKey} /> : <ImagePlus size={20} />}
-                </button>
-              )}
-            />
+            <SinglePhotoField photoKey={photoKey} onChange={setPhotoKey} size="xl" />
             <div className="min-w-0 flex-1">
               <TextField label="Nome dell'articolo" value={name} onChange={(e) => setName(e.target.value)} placeholder="Es. Cuffie wireless" />
             </div>

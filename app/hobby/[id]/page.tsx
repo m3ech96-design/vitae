@@ -12,6 +12,7 @@ import { InventoryBlockView } from "@/components/hobby/InventoryBlockView";
 import { ProjectsBlockView } from "@/components/hobby/ProjectsBlockView";
 import { LibraryBlockView } from "@/components/hobby/LibraryBlockView";
 import { MatchesBlockView } from "@/components/hobby/MatchesBlockView";
+import { StatisticsBlockView } from "@/components/hobby/StatisticsBlockView";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 function CoverPhoto({ photoKey }: { photoKey?: string }) {
@@ -82,7 +83,7 @@ export default function HobbyDetailPage({ params }: { params: { id: string } }) 
             case "checklist":
               return <ChecklistBlockView key={block.id} hobbyId={hobby.id} block={block} />;
             case "metrica":
-              return <MetricBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+              return <MetricBlockView key={block.id} hobbyId={hobby.id} hobbyName={hobby.name} block={block} />;
             case "inventario":
               return <InventoryBlockView key={block.id} hobbyId={hobby.id} block={block} />;
             case "progetti":
@@ -91,6 +92,8 @@ export default function HobbyDetailPage({ params }: { params: { id: string } }) 
               return <LibraryBlockView key={block.id} hobbyId={hobby.id} block={block} />;
             case "partite":
               return <MatchesBlockView key={block.id} hobbyId={hobby.id} block={block} />;
+            case "statistiche":
+              return <StatisticsBlockView key={block.id} hobbyId={hobby.id} block={block} />;
           }
         })}
       </div>

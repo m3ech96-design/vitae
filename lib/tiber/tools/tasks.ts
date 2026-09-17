@@ -36,16 +36,16 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       description:
         "Crea una nuova task (attività quotidiana, spesa, appuntamento, promemoria, obiettivo o evento) nella scheda Task di Vitae.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo della task." },
-          type: { type: "string", enum: TASK_TYPES, description: "Tipo di task." },
-          date: { type: "string", description: "Data in formato YYYY-MM-DD." },
-          time: { type: "string", description: "Orario HH:MM, se rilevante (es. per Evento/Appuntamento)." },
-          dueDate: { type: "string", description: "Data di scadenza YYYY-MM-DD, per Promemoria/Obiettivo/Spesa." },
-          notes: { type: "string", description: "Note libere sulla task." },
-          recurrence: { type: "string", enum: RECURRENCES, description: "Ricorrenza della task." },
-          priority: { type: "string", enum: PRIORITIES, description: "Priorità della task." },
+          title: { type: "STRING", description: "Titolo della task." },
+          type: { type: "STRING", enum: TASK_TYPES, description: "Tipo di task." },
+          date: { type: "STRING", description: "Data in formato YYYY-MM-DD." },
+          time: { type: "STRING", description: "Orario HH:MM, se rilevante (es. per Evento/Appuntamento)." },
+          dueDate: { type: "STRING", description: "Data di scadenza YYYY-MM-DD, per Promemoria/Obiettivo/Spesa." },
+          notes: { type: "STRING", description: "Note libere sulla task." },
+          recurrence: { type: "STRING", enum: RECURRENCES, description: "Ricorrenza della task." },
+          priority: { type: "STRING", enum: PRIORITIES, description: "Priorità della task." },
         },
         required: ["title", "type", "date"],
       },
@@ -78,8 +78,8 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "completa_task",
       description: "Segna come completata una task esistente, cercandola per titolo.",
       parameters: {
-        type: "object",
-        properties: { title: { type: "string", description: "Titolo (anche parziale) della task da completare." } },
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della task da completare." } },
         required: ["title"],
       },
     },
@@ -97,8 +97,8 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "riapri_task",
       description: "Riporta una task completata allo stato non completato, cercandola per titolo.",
       parameters: {
-        type: "object",
-        properties: { title: { type: "string", description: "Titolo (anche parziale) della task da riaprire." } },
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della task da riaprire." } },
         required: ["title"],
       },
     },
@@ -116,14 +116,14 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "modifica_task",
       description: "Modifica campi di una task esistente (titolo, data, note, priorità...), cercandola per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo (anche parziale) della task da modificare." },
-          newTitle: { type: "string", description: "Nuovo titolo, se da cambiare." },
-          date: { type: "string", description: "Nuova data YYYY-MM-DD." },
-          dueDate: { type: "string", description: "Nuova scadenza YYYY-MM-DD." },
-          notes: { type: "string", description: "Nuove note." },
-          priority: { type: "string", enum: PRIORITIES, description: "Nuova priorità." },
+          title: { type: "STRING", description: "Titolo (anche parziale) della task da modificare." },
+          newTitle: { type: "STRING", description: "Nuovo titolo, se da cambiare." },
+          date: { type: "STRING", description: "Nuova data YYYY-MM-DD." },
+          dueDate: { type: "STRING", description: "Nuova scadenza YYYY-MM-DD." },
+          notes: { type: "STRING", description: "Nuove note." },
+          priority: { type: "STRING", enum: PRIORITIES, description: "Nuova priorità." },
         },
         required: ["title"],
       },
@@ -148,10 +148,10 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "registra_spesa_task",
       description: "Registra quanto è costata una task di tipo Spesa, cercandola per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo (anche parziale) della task di tipo Spesa." },
-          amount: { type: "number", description: "Importo speso in euro." },
+          title: { type: "STRING", description: "Titolo (anche parziale) della task di tipo Spesa." },
+          amount: { type: "NUMBER", description: "Importo speso in euro." },
         },
         required: ["title", "amount"],
       },
@@ -170,10 +170,10 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "spunta_sottotask",
       description: "Spunta (o toglie la spunta) a una sottotask, cercando la task per titolo e la sottotask per testo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          taskTitle: { type: "string", description: "Titolo (anche parziale) della task principale." },
-          subtaskTitle: { type: "string", description: "Testo (anche parziale) della sottotask." },
+          taskTitle: { type: "STRING", description: "Titolo (anche parziale) della task principale." },
+          subtaskTitle: { type: "STRING", description: "Testo (anche parziale) della sottotask." },
         },
         required: ["taskTitle", "subtaskTitle"],
       },
@@ -195,10 +195,10 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "spunta_voce_spesa_task",
       description: "Spunta (o toglie la spunta) a una voce della lista della spesa dentro una task di tipo Spesa.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          taskTitle: { type: "string", description: "Titolo (anche parziale) della task di tipo Spesa." },
-          itemLabel: { type: "string", description: "Testo (anche parziale) della voce." },
+          taskTitle: { type: "STRING", description: "Titolo (anche parziale) della task di tipo Spesa." },
+          itemLabel: { type: "STRING", description: "Testo (anche parziale) della voce." },
         },
         required: ["taskTitle", "itemLabel"],
       },
@@ -220,8 +220,8 @@ export const taskTools: Record<string, TiberToolDefinition> = {
       name: "elimina_task",
       description: "Elimina definitivamente una task, cercandola per titolo. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { title: { type: "string", description: "Titolo (anche parziale) della task da eliminare." } },
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della task da eliminare." } },
         required: ["title"],
       },
     },
@@ -239,7 +239,7 @@ export const taskTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elenca_task",
       description: "Restituisce l'elenco delle task non completate, con titolo, tipo e data — usalo per rispondere a domande sulle task esistenti.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { tasks } = tasksCtx(ctx);

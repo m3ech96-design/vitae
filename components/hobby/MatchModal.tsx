@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Trash2, ImagePlus } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { usePlaces } from "@/lib/places-context";
@@ -11,21 +11,13 @@ import { todayIso } from "@/lib/date-format";
 import { TextField, TextArea } from "../ui/TextField";
 import { Button } from "../ui/Button";
 import { PersonPicker } from "../ui/PersonPicker";
-import { ImageCropInput } from "../ui/ImageCropInput";
-import { useResolvedImage } from "@/lib/use-resolved-image";
+import { SinglePhotoField } from "../ui/SinglePhotoField";
 
 const RESULT_OPTIONS: { id: MatchResult; label: string; color: string }[] = [
   { id: "vittoria", label: "Vittoria", color: "#34D399" },
   { id: "sconfitta", label: "Sconfitta", color: "#FF6B9D" },
   { id: "pareggio", label: "Pareggio", color: "#FFB454" },
 ];
-
-function PhotoPreview({ photoKey }: { photoKey: string }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="h-full w-full object-cover" />;
-}
 
 export function MatchModal({
   hobbyId,
@@ -141,15 +133,10 @@ export function MatchModal({
 
           <TextArea label="Note tattiche" value={note} onChange={(e) => setNote(e.target.value)} />
 
-          <ImageCropInput
-            shape="square"
-            onChange={(key) => setPhotoKey(key)}
-            trigger={(open) => (
-              <button type="button" onClick={open} className="focus-ring flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl2 border border-dashed border-white/15 text-ink-600 hover:border-aura-violet/50" aria-label="Foto/screenshot">
-                {photoKey ? <PhotoPreview photoKey={photoKey} /> : <ImagePlus size={16} />}
-              </button>
-            )}
-          />
+          <div>
+            <span className="mb-2 block font-display text-xs uppercase tracking-[0.14em] text-ink-600">Foto/screenshot</span>
+            <SinglePhotoField photoKey={photoKey} onChange={setPhotoKey} />
+          </div>
         </div>
 
         <div className="border-t border-white/[0.06] px-6 py-4">

@@ -70,12 +70,12 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_spesa",
       description: "Registra una spesa singola in Finanze, con categoria e data.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Descrizione della spesa (es. 'Spesa al discount')." },
-          amount: { type: "number", description: "Importo in euro." },
-          date: { type: "string", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
-          category: { type: "string", enum: EXPENSE_CATEGORIES, description: "Categoria della spesa." },
+          label: { type: "STRING", description: "Descrizione della spesa (es. 'Spesa al discount')." },
+          amount: { type: "NUMBER", description: "Importo in euro." },
+          date: { type: "STRING", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
+          category: { type: "STRING", enum: EXPENSE_CATEGORIES, description: "Categoria della spesa." },
         },
         required: ["label", "amount"],
       },
@@ -94,8 +94,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "elimina_spesa",
       description: "Elimina una spesa singola registrata, cercandola per descrizione. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) della spesa da eliminare." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) della spesa da eliminare." } },
         required: ["label"],
       },
     },
@@ -115,8 +115,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "imposta_budget_mensile",
       description: "Imposta o rimuove il budget mensile del ciclo di spesa corrente.",
       parameters: {
-        type: "object",
-        properties: { amount: { type: "number", description: "Nuovo budget in euro. Ometti per rimuoverlo." } },
+        type: "OBJECT",
+        properties: { amount: { type: "NUMBER", description: "Nuovo budget in euro. Ometti per rimuoverlo." } },
       },
     },
     execute: (args, ctx) => {
@@ -135,8 +135,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "imposta_inizio_ciclo_budget",
       description: "Imposta il giorno del mese (1-28) in cui inizia il ciclo di budget.",
       parameters: {
-        type: "object",
-        properties: { day: { type: "number", description: "Giorno del mese, da 1 a 28." } },
+        type: "OBJECT",
+        properties: { day: { type: "NUMBER", description: "Giorno del mese, da 1 a 28." } },
         required: ["day"],
       },
     },
@@ -152,11 +152,11 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "imposta_ripartizione_stipendio",
       description: "Imposta le tre percentuali (spese fisse, tempo libero, risparmi) del calcolatore stipendio — devono sommare a 100.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          speseFisse: { type: "number", description: "Percentuale spese fisse." },
-          tempoLibero: { type: "number", description: "Percentuale tempo libero." },
-          risparmi: { type: "number", description: "Percentuale risparmi." },
+          speseFisse: { type: "NUMBER", description: "Percentuale spese fisse." },
+          tempoLibero: { type: "NUMBER", description: "Percentuale tempo libero." },
+          risparmi: { type: "NUMBER", description: "Percentuale risparmi." },
         },
         required: ["speseFisse", "tempoLibero", "risparmi"],
       },
@@ -173,12 +173,12 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "crea_spesa_ricorrente",
       description: "Crea una nuova spesa ricorrente (es. abbonamento, affitto).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Descrizione della spesa ricorrente." },
-          amount: { type: "number", description: "Importo in euro." },
-          category: { type: "string", enum: EXPENSE_CATEGORIES, description: "Categoria." },
-          recurrence: { type: "string", enum: EXPENSE_RECURRENCES, description: "Frequenza." },
+          label: { type: "STRING", description: "Descrizione della spesa ricorrente." },
+          amount: { type: "NUMBER", description: "Importo in euro." },
+          category: { type: "STRING", enum: EXPENSE_CATEGORIES, description: "Categoria." },
+          recurrence: { type: "STRING", enum: EXPENSE_RECURRENCES, description: "Frequenza." },
         },
         required: ["label", "amount", "category", "recurrence"],
       },
@@ -195,8 +195,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "attiva_disattiva_spesa_ricorrente",
       description: "Attiva o disattiva una spesa ricorrente esistente, cercandola per descrizione.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) della spesa ricorrente." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) della spesa ricorrente." } },
         required: ["label"],
       },
     },
@@ -214,8 +214,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "elimina_spesa_ricorrente",
       description: "Elimina definitivamente una spesa ricorrente, cercandola per descrizione. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) della spesa ricorrente." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) della spesa ricorrente." } },
         required: ["label"],
       },
     },
@@ -234,12 +234,12 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "crea_spesa_pianificata",
       description: "Crea una spesa pianificata (una tantum) con una data di scadenza da pagare.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Descrizione della spesa." },
-          amount: { type: "number", description: "Importo in euro." },
-          dueDate: { type: "string", description: "Data di scadenza YYYY-MM-DD." },
-          category: { type: "string", enum: EXPENSE_CATEGORIES, description: "Categoria." },
+          label: { type: "STRING", description: "Descrizione della spesa." },
+          amount: { type: "NUMBER", description: "Importo in euro." },
+          dueDate: { type: "STRING", description: "Data di scadenza YYYY-MM-DD." },
+          category: { type: "STRING", enum: EXPENSE_CATEGORIES, description: "Categoria." },
         },
         required: ["label", "amount", "dueDate", "category"],
       },
@@ -256,8 +256,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "segna_spesa_pianificata_pagata",
       description: "Segna come pagata una spesa pianificata, cercandola per descrizione — la trasforma in una spesa singola registrata.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) della spesa pianificata." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) della spesa pianificata." } },
         required: ["label"],
       },
     },
@@ -275,8 +275,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "elimina_spesa_pianificata",
       description: "Elimina una spesa pianificata non ancora pagata, cercandola per descrizione. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) della spesa pianificata." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) della spesa pianificata." } },
         required: ["label"],
       },
     },
@@ -295,10 +295,10 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "crea_obiettivo_risparmio",
       description: "Crea un nuovo obiettivo di risparmio in Finanze.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Nome dell'obiettivo (es. 'Viaggio in Giappone')." },
-          targetAmount: { type: "number", description: "Importo obiettivo in euro." },
+          label: { type: "STRING", description: "Nome dell'obiettivo (es. 'Viaggio in Giappone')." },
+          targetAmount: { type: "NUMBER", description: "Importo obiettivo in euro." },
         },
         required: ["label", "targetAmount"],
       },
@@ -315,10 +315,10 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "versa_su_obiettivo",
       description: "Versa una somma positiva su un obiettivo di risparmio esistente, cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Nome (anche parziale) dell'obiettivo." },
-          amount: { type: "number", description: "Importo positivo da versare." },
+          label: { type: "STRING", description: "Nome (anche parziale) dell'obiettivo." },
+          amount: { type: "NUMBER", description: "Importo positivo da versare." },
         },
         required: ["label", "amount"],
       },
@@ -337,10 +337,10 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "preleva_da_obiettivo",
       description: "Preleva una somma da un obiettivo di risparmio esistente, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Nome (anche parziale) dell'obiettivo." },
-          amount: { type: "number", description: "Importo positivo da prelevare." },
+          label: { type: "STRING", description: "Nome (anche parziale) dell'obiettivo." },
+          amount: { type: "NUMBER", description: "Importo positivo da prelevare." },
         },
         required: ["label", "amount"],
       },
@@ -360,8 +360,8 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "elimina_obiettivo_risparmio",
       description: "Elimina un obiettivo di risparmio, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Nome (anche parziale) dell'obiettivo da eliminare." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Nome (anche parziale) dell'obiettivo da eliminare." } },
         required: ["label"],
       },
     },
@@ -380,10 +380,10 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "deposita_nel_salvadanaio",
       description: "Deposita una somma positiva nel salvadanaio generale (non un obiettivo specifico).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          amount: { type: "number", description: "Importo positivo da depositare." },
-          note: { type: "string", description: "Nota facoltativa sul movimento." },
+          amount: { type: "NUMBER", description: "Importo positivo da depositare." },
+          note: { type: "STRING", description: "Nota facoltativa sul movimento." },
         },
         required: ["amount"],
       },
@@ -400,10 +400,10 @@ export const financeTools: Record<string, TiberToolDefinition> = {
       name: "preleva_dal_salvadanaio",
       description: "Preleva una somma dal salvadanaio generale. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          amount: { type: "number", description: "Importo positivo da prelevare." },
-          note: { type: "string", description: "Nota facoltativa sul movimento." },
+          amount: { type: "NUMBER", description: "Importo positivo da prelevare." },
+          note: { type: "STRING", description: "Nota facoltativa sul movimento." },
         },
         required: ["amount"],
       },
@@ -420,7 +420,7 @@ export const financeTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "stato_finanze",
       description: "Restituisce budget mensile, saldo salvadanaio e obiettivi di risparmio attuali — usalo per rispondere a domande sullo stato delle finanze.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { monthlyBudget, savingsEntries, savingsGoals } = financeCtx(ctx);

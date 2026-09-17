@@ -39,8 +39,8 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "imposta_stato_animo",
       description: "Imposta manualmente lo stato d'animo attivo dell'utente, cercandolo per nome (es. 'Felice', 'Stanco').",
       parameters: {
-        type: "object",
-        properties: { moodLabel: { type: "string", description: "Nome dello stato d'animo." } },
+        type: "OBJECT",
+        properties: { moodLabel: { type: "STRING", description: "Nome dello stato d'animo." } },
         required: ["moodLabel"],
       },
     },
@@ -57,7 +57,7 @@ export const moodTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "azzera_stato_animo",
       description: "Torna allo stato d'animo neutro, cancellando quello attivo.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { mood } = moodCtx(ctx);
@@ -71,8 +71,8 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "crea_stato_animo_personalizzato",
       description: "Crea un nuovo stato d'animo personalizzato.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Nome del nuovo stato d'animo." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Nome del nuovo stato d'animo." } },
         required: ["label"],
       },
     },
@@ -88,8 +88,8 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "elimina_stato_animo_personalizzato",
       description: "Elimina uno stato d'animo personalizzato (non quelli predefiniti), cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { moodLabel: { type: "string", description: "Nome (anche parziale) dello stato d'animo." } },
+        type: "OBJECT",
+        properties: { moodLabel: { type: "STRING", description: "Nome (anche parziale) dello stato d'animo." } },
         required: ["moodLabel"],
       },
     },
@@ -109,10 +109,10 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_bisogno_settimanale",
       description: "Aggiunge un nuovo bisogno settimanale (dura 7 giorni) con uno stato d'animo associato a quando verrà esaudito.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          label: { type: "string", description: "Descrizione del bisogno (es. 'Uscire con amici')." },
-          moodLabel: { type: "string", description: "Stato d'animo da provare quando esaudito." },
+          label: { type: "STRING", description: "Descrizione del bisogno (es. 'Uscire con amici')." },
+          moodLabel: { type: "STRING", description: "Stato d'animo da provare quando esaudito." },
         },
         required: ["label", "moodLabel"],
       },
@@ -131,8 +131,8 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "esaudisci_bisogno",
       description: "Segna come esaudito un bisogno settimanale attivo, cercandolo per descrizione.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) del bisogno." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) del bisogno." } },
         required: ["label"],
       },
     },
@@ -151,8 +151,8 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       name: "annulla_bisogno_settimanale",
       description: "Annulla un bisogno settimanale attivo senza segnarlo come esaudito, cercandolo per descrizione.",
       parameters: {
-        type: "object",
-        properties: { label: { type: "string", description: "Descrizione (anche parziale) del bisogno." } },
+        type: "OBJECT",
+        properties: { label: { type: "STRING", description: "Descrizione (anche parziale) del bisogno." } },
         required: ["label"],
       },
     },

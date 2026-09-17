@@ -9,15 +9,20 @@ import { useResolvedImage } from "@/lib/use-resolved-image";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { PhotoLightbox } from "../ui/PhotoLightbox";
 import { SavingsRing } from "./SavingsRing";
 import { AddWishlistItemModal } from "./AddWishlistItemModal";
 import { WishlistPriceHistorySection } from "./WishlistPriceHistorySection";
 
-function DetailPhoto({ photoKey }: { photoKey?: string }) {
+function DetailPhoto({ photoKey, onClick }: { photoKey?: string; onClick: () => void }) {
   const url = useResolvedImage(photoKey);
   if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="mb-4 aspect-video w-full rounded-xl2 object-cover" />;
+  return (
+    <button onClick={onClick} className="focus-ring mb-4 block w-full overflow-hidden rounded-xl2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className="aspect-video w-full object-cover" />
+    </button>
+  );
 }
 
 /**
@@ -35,6 +40,7 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
   const { savingsGoals, contributeSavingsGoal, addSavingsEntry } = useFinance();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
 
   const place = item.linkedPlaceId ? places.find((p) => p.id === item.linkedPlaceId) : undefined;
   const linkedTo = item.linkedTo;
@@ -108,7 +114,8 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
       }
       onClose={onClose}
     >
-      <DetailPhoto photoKey={item.photoKey} />
+      <DetailPhoto photoKey={item.photoKey} onClick={() => setViewingPhoto(true)} />
+      {viewingPhoto && item.photoKey && <PhotoLightbox photos={[item.photoKey]} onClose={() => setViewingPhoto(false)} />}
 
       <div className="space-y-5">
         <SavingsRing

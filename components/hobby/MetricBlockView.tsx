@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Settings, Trophy, TrendingUp, TrendingDown, Timer } from "lucide-react";
 import { useHobby } from "@/lib/hobby-context";
+import { useHobbyTimer } from "@/lib/hobby-timer-context";
 import { MetricBlock } from "@/lib/hobby-types";
 import { metricCurrentValue, metricPersonalRecord, metricPeriodComparison } from "@/lib/hobby-stats";
 import { formatDateShort, formatMinutesDuration, todayIso } from "@/lib/date-format";
@@ -10,20 +11,30 @@ import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
 import { HeatmapGrid } from "./HeatmapGrid";
 import { MetricEntryModal } from "./MetricEntryModal";
+import { MetricEntryDetail } from "./MetricEntryDetail";
 import { MetricConfigModal } from "./MetricConfigModal";
 import { MetricTimer } from "./MetricTimer";
 
-export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: MetricBlock }) {
+export function MetricBlockView({ hobbyId, hobbyName, block }: { hobbyId: string; hobbyName: string; block: MetricBlock }) {
   const { addMetricEntry } = useHobby();
+  const { active } = useHobbyTimer();
   const [addOpen, setAddOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
+
+  // Se questo blocco ha già un cronometro attivo (avviato qui, poi lasciato girare mentre si
+  // consultava un'altra scheda tramite la pillola flottante), riapparire qui deve mostrarlo
+  // subito — senza, l'utente dovrebbe ritoccare l'icona del cronometro per ritrovarlo, anche
+  // se non l'ha mai davvero fermato.
+  useEffect(() => {
+    if (active?.blockId === block.id) setTimerOpen(true);
+  }, [active?.blockId, block.id]);
 
   const current = metricCurrentValue(block);
   const record = metricPersonalRecord(block);
   const comparison = metricPeriodComparison(block, 7);
-  const editEntry = block.entries.find((e) => e.id === editId);
+  const detailEntry = block.entries.find((e) => e.id === detailId);
   const goalPct = block.goalValue ? Math.min(100, Math.round((current / block.goalValue) * 100)) : null;
 
   /** Somma di tutti i cronometraggi registrati in questo blocco (in minuti, come li salva
@@ -65,6 +76,10 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
       {timerOpen && block.isTimeBased && (
         <div className="mb-3">
           <MetricTimer
+            hobbyId={hobbyId}
+            hobbyName={hobbyName}
+            blockId={block.id}
+            blockTitle={block.title}
             onFinish={(minutes) => {
               addMetricEntry(hobbyId, block.id, { date: todayIso(), value: minutes });
               setTimerOpen(false);
@@ -143,7 +158,7 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
               .map((e) => (
                 <button
                   key={e.id}
-                  onClick={() => setEditId(e.id)}
+                  onClick={() => setDetailId(e.id)}
                   className="focus-ring rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-ink-400 transition hover:border-aura-violet/50 hover:text-ink-100"
                 >
                   {block.isTimeBased ? formatMinutesDuration(e.value) : `${e.value} ${block.unit}`} · {formatDateShort(e.date)}
@@ -153,8 +168,16 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
         </>
       )}
 
-      {addOpen && <MetricEntryModal hobbyId={hobbyId} block={block} onClose={() => setAddOpen(false)} />}
-      {editEntry && <MetricEntryModal hobbyId={hobbyId} block={block} entry={editEntry} onClose={() => setEditId(null)} />}
+      {addOpen && <MetricEntryModal hobbyId={hobbyId} hobbyName={hobbyName} block={block} onClose={() => setAddOpen(false)} />}
+      {detailEntry && (
+        <MetricEntryDetail
+          hobbyId={hobbyId}
+          hobbyName={hobbyName}
+          block={block}
+          entry={detailEntry}
+          onClose={() => setDetailId(null)}
+        />
+      )}
       {configOpen && <MetricConfigModal hobbyId={hobbyId} block={block} onClose={() => setConfigOpen(false)} />}
     </GlassCard>
   );

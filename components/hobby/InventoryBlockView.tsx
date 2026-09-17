@@ -7,6 +7,7 @@ import { useResolvedImage } from "@/lib/use-resolved-image";
 import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
 import { InventoryItemModal } from "./InventoryItemModal";
+import { InventoryItemDetail } from "./InventoryItemDetail";
 
 function ItemThumb({ photoKey }: { photoKey?: string }) {
   const url = useResolvedImage(photoKey);
@@ -17,11 +18,11 @@ function ItemThumb({ photoKey }: { photoKey?: string }) {
 
 export function InventoryBlockView({ hobbyId, block }: { hobbyId: string; block: InventoryBlock }) {
   const [addOpen, setAddOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const totalValue = inventoryTotalValue(block);
   const gainLoss = inventoryGainLoss(block);
-  const editItem = block.items.find((i) => i.id === editId);
+  const detailItem = block.items.find((i) => i.id === detailId);
 
   return (
     <GlassCard className="p-4">
@@ -50,7 +51,7 @@ export function InventoryBlockView({ hobbyId, block }: { hobbyId: string; block:
             {block.items.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setEditId(item.id)}
+                onClick={() => setDetailId(item.id)}
                 className="focus-ring flex w-full items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3 py-2 text-left transition hover:border-white/20"
               >
                 <ItemThumb photoKey={item.photoKeys[0]} />
@@ -77,7 +78,9 @@ export function InventoryBlockView({ hobbyId, block }: { hobbyId: string; block:
       )}
 
       {addOpen && <InventoryItemModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
-      {editItem && <InventoryItemModal hobbyId={hobbyId} blockId={block.id} item={editItem} onClose={() => setEditId(null)} />}
+      {detailItem && (
+        <InventoryItemDetail hobbyId={hobbyId} blockId={block.id} item={detailItem} onClose={() => setDetailId(null)} />
+      )}
     </GlassCard>
   );
 }

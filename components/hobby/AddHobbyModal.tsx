@@ -1,23 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ImagePlus } from "lucide-react";
+import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { Hobby } from "@/lib/hobby-types";
 import { CustomField } from "@/lib/types";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
-import { ImageCropInput } from "../ui/ImageCropInput";
+import { SinglePhotoField } from "../ui/SinglePhotoField";
 import { DynamicFieldList } from "../wizard/DynamicFieldList";
-import { useResolvedImage } from "@/lib/use-resolved-image";
-
-function CoverPreview({ photoKey }: { photoKey?: string }) {
-  const url = useResolvedImage(photoKey);
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="h-full w-full object-cover" />;
-}
 
 export function AddHobbyModal({ hobby, onClose }: { hobby?: Hobby; onClose: () => void }) {
   const { addHobby, updateHobby } = useHobby();
@@ -56,20 +48,7 @@ export function AddHobbyModal({ hobby, onClose }: { hobby?: Hobby; onClose: () =
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <div className="flex items-center gap-3">
-            <ImageCropInput
-              shape="square"
-              onChange={(key) => setPhotoKey(key)}
-              trigger={(open) => (
-                <button
-                  type="button"
-                  onClick={open}
-                  className="focus-ring flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl2 border border-dashed border-white/15 text-ink-600 transition hover:border-aura-violet/50"
-                  aria-label="Foto dell'hobby"
-                >
-                  {photoKey ? <CoverPreview photoKey={photoKey} /> : <ImagePlus size={20} />}
-                </button>
-              )}
-            />
+            <SinglePhotoField photoKey={photoKey} onChange={setPhotoKey} size="xl" />
             <div className="min-w-0 flex-1">
               <TextField label="Nome" value={name} onChange={(e) => setName(e.target.value)} placeholder="Es. Corsa, Modellismo, Chitarra..." />
             </div>

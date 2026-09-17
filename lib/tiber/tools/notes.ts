@@ -44,10 +44,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       description:
         "Aggiunge una voce a una lista esistente in 'Liste e note' (es. la lista della spesa), cercando la lista per titolo. Se la lista non esiste, la crea.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          listTitle: { type: "string", description: "Titolo della lista (es. 'Lista della spesa')." },
-          item: { type: "string", description: "Testo della voce da aggiungere." },
+          listTitle: { type: "STRING", description: "Titolo della lista (es. 'Lista della spesa')." },
+          item: { type: "STRING", description: "Testo della voce da aggiungere." },
         },
         required: ["listTitle", "item"],
       },
@@ -66,11 +66,11 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "segna_voce_lista",
       description: "Segna come fatta (o da fare) una voce di una lista, cercando lista e voce per testo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          listTitle: { type: "string", description: "Titolo (anche parziale) della lista." },
-          item: { type: "string", description: "Testo (anche parziale) della voce." },
-          done: { type: "boolean", description: "true per segnarla fatta, false per riaprirla." },
+          listTitle: { type: "STRING", description: "Titolo (anche parziale) della lista." },
+          item: { type: "STRING", description: "Testo (anche parziale) della voce." },
+          done: { type: "BOOLEAN", description: "true per segnarla fatta, false per riaprirla." },
         },
         required: ["listTitle", "item", "done"],
       },
@@ -92,10 +92,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_voce_lista",
       description: "Rimuove una voce da una lista, cercando lista e voce per testo. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          listTitle: { type: "string", description: "Titolo (anche parziale) della lista." },
-          item: { type: "string", description: "Testo (anche parziale) della voce da rimuovere." },
+          listTitle: { type: "STRING", description: "Titolo (anche parziale) della lista." },
+          item: { type: "STRING", description: "Testo (anche parziale) della voce da rimuovere." },
         },
         required: ["listTitle", "item"],
       },
@@ -118,10 +118,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "crea_nota",
       description: "Crea una nuova lista o nota testuale vuota in 'Liste e note'.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo della nuova lista/nota." },
-          kind: { type: "string", enum: ["list", "note"], description: "'list' per una lista spuntabile, 'note' per testo libero." },
+          title: { type: "STRING", description: "Titolo della nuova lista/nota." },
+          kind: { type: "STRING", enum: ["list", "note"], description: "'list' per una lista spuntabile, 'note' per testo libero." },
         },
         required: ["title", "kind"],
       },
@@ -138,10 +138,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "rinomina_nota",
       description: "Rinomina una lista o nota esistente, cercandola per titolo attuale.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo (anche parziale) attuale." },
-          newTitle: { type: "string", description: "Nuovo titolo." },
+          title: { type: "STRING", description: "Titolo (anche parziale) attuale." },
+          newTitle: { type: "STRING", description: "Nuovo titolo." },
         },
         required: ["title", "newTitle"],
       },
@@ -160,10 +160,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "scrivi_nota_testuale",
       description: "Sostituisce il contenuto di una nota testuale esistente (non una lista), cercandola per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo (anche parziale) della nota." },
-          body: { type: "string", description: "Nuovo contenuto della nota." },
+          title: { type: "STRING", description: "Titolo (anche parziale) della nota." },
+          body: { type: "STRING", description: "Nuovo contenuto della nota." },
         },
         required: ["title", "body"],
       },
@@ -182,8 +182,8 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "fissa_nota",
       description: "Fissa (o toglie dal fisso) una lista o nota in cima all'elenco, cercandola per titolo.",
       parameters: {
-        type: "object",
-        properties: { title: { type: "string", description: "Titolo (anche parziale) della lista/nota." } },
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della lista/nota." } },
         required: ["title"],
       },
     },
@@ -201,10 +201,10 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_tag_nota",
       description: "Aggiunge un tag a una lista o nota, cercandola per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titolo (anche parziale) della lista/nota." },
-          tag: { type: "string", description: "Tag da aggiungere." },
+          title: { type: "STRING", description: "Titolo (anche parziale) della lista/nota." },
+          tag: { type: "STRING", description: "Tag da aggiungere." },
         },
         required: ["title", "tag"],
       },
@@ -223,8 +223,8 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       name: "elimina_nota",
       description: "Elimina definitivamente una lista o nota, cercandola per titolo. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { title: { type: "string", description: "Titolo (anche parziale) della lista/nota da eliminare." } },
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della lista/nota da eliminare." } },
         required: ["title"],
       },
     },

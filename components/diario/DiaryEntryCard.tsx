@@ -118,7 +118,7 @@ export function DiaryEntryCard({ entry, highlightQuery }: { entry: DiaryEntry; h
       )}
 
       {lightboxIndex !== null && (
-        <MediaLightbox media={visualMedia[lightboxIndex]} onClose={() => setLightboxIndex(null)} />
+        <MediaLightbox media={visualMedia} initialIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />
       )}
       {confirmDelete && (
         <ConfirmDialog

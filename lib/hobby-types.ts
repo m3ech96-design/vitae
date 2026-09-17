@@ -6,7 +6,7 @@ import { CustomField } from "./types";
  * lo stesso hobby, ad esempio), nessun tetto al numero totale. Il tetto sta solo nel
  * vocabolario dei sei TIPI di blocco, non in quanti blocchi finiscono in un hobby.
  */
-export type HobbyBlockKind = "checklist" | "metrica" | "inventario" | "progetti" | "libreria" | "partite";
+export type HobbyBlockKind = "checklist" | "metrica" | "inventario" | "progetti" | "libreria" | "partite" | "statistiche";
 
 export const HOBBY_BLOCK_LABELS: Record<HobbyBlockKind, string> = {
   checklist: "Checklist",
@@ -15,6 +15,7 @@ export const HOBBY_BLOCK_LABELS: Record<HobbyBlockKind, string> = {
   progetti: "Progetti",
   libreria: "Libreria",
   partite: "Partite",
+  statistiche: "Statistiche",
 };
 
 interface BlockBase {
@@ -201,7 +202,56 @@ export interface MatchesBlock extends BlockBase {
   matches: Match[];
 }
 
-export type HobbyBlock = ChecklistBlock | MetricBlock | InventoryBlock | ProjectsBlock | LibraryBlock | MatchesBlock;
+// ---------------------------------------------------------------------------
+// 7. Statistiche
+// ---------------------------------------------------------------------------
+/**
+ * Un gruppo di valori numerici indipendenti che si confrontano TRA loro in un dato momento
+ * (quale è il più alto, quale il più basso) — diverso dal blocco Metrica, che segue UN solo
+ * valore nel tempo con uno storico. L'esempio guida ("le statistiche di un personaggio in un
+ * videogioco, per sapere cosa migliorare al prossimo passaggio di livello") è per natura un
+ * confronto istantaneo tra più voci, non una serie storica: da qui la scelta deliberata di
+ * NON tenere uno storico per voce (a differenza di Metrica) — la domanda che questo blocco
+ * risponde è "come sto messo ORA", non "come sono cambiato nel tempo".
+ */
+export interface StatEntry {
+  id: string;
+  name: string;
+  value: number;
+  /** Non opzionale: un pavimento è sempre presente (di norma 0) per evitare valori negativi
+   * accidentali da troppi tocchi su "-" — modificabile comunque per chi ne ha davvero bisogno
+   * (es. un modificatore che può scendere sotto zero). */
+  min: number;
+  /** Facoltativo — non ogni statistica ha un tetto naturale (l'oro di una partita non ce
+   * l'ha, un'abilità di solito sì). Quando presente, il grafico mostra anche quanto manca al
+   * massimo, non solo il confronto con le altre voci. */
+  max?: number;
+  /** Quanto si sposta il valore a ogni tocco di +/- — di norma 1, ma un conteggio in
+   * centinaia (es. punti esperienza) risulterebbe impossibile da regolare un'unità alla
+   * volta senza un incremento più grande configurabile per singola voce. */
+  step: number;
+  /** Colore per il grafico — se assente, ne viene assegnato uno a rotazione da una tavolozza
+   * condivisa (vedi STAT_PALETTE in StatisticsBlockView.tsx), mai lo stesso colore fisso per
+   * ogni voce indipendentemente dal contenuto. */
+  color?: string;
+}
+
+export type StatChartView = "barre" | "radar";
+
+export interface StatisticsBlock extends BlockBase {
+  kind: "statistiche";
+  entries: StatEntry[];
+  /** Preferenza di visualizzazione salvata per blocco, non globale — due hobby diversi
+   * possono avere gusti diversi (una scheda personaggio si presta al radar, un conteggio di
+   * poche voci sta meglio a barre). Di norma "barre": risponde direttamente e senza
+   * ambiguità alla domanda "qual è la più alta/bassa", anche con molte voci — il radar è
+   * un'alternativa più evocativa (una vera "scheda personaggio"), ma leggibile con
+   * precisione solo fino a un numero contenuto di voci (vedi il limite in
+   * StatisticsBlockView.tsx). */
+  chartView: StatChartView;
+}
+
+export type HobbyBlock = ChecklistBlock | MetricBlock | InventoryBlock | ProjectsBlock | LibraryBlock | MatchesBlock | StatisticsBlock;
 
 export interface Hobby {
   id: string;
@@ -228,6 +278,8 @@ export function collectBlockPhotoKeys(block: HobbyBlock): string[] {
       return block.items.map((i) => i.photoKey).filter((k): k is string => Boolean(k));
     case "partite":
       return [block.photoKey, ...block.matches.map((m) => m.photoKey)].filter((k): k is string => Boolean(k));
+    case "statistiche":
+      return [];
   }
 }
 

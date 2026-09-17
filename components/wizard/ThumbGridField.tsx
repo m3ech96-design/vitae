@@ -8,6 +8,7 @@ import { capitalizeWords } from "@/lib/text";
 import { Button } from "../ui/Button";
 import { TextField } from "../ui/TextField";
 import { ImageCropInput } from "../ui/ImageCropInput";
+import { PhotoLightbox } from "../ui/PhotoLightbox";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 
 function Thumb({ imageKey, title }: { imageKey?: string; title: string }) {
@@ -36,6 +37,7 @@ export function ThumbGridField({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [image, setImage] = useState<string | undefined>(undefined);
+  const [viewingKey, setViewingKey] = useState<string | null>(null);
 
   const reset = () => {
     setTitle("");
@@ -68,7 +70,9 @@ export function ThumbGridField({
               className="group relative aspect-square overflow-hidden rounded-xl2 border border-white/10 bg-white/[0.03]"
             >
               {item.imageUrl ? (
-                <Thumb imageKey={item.imageUrl} title={item.title} />
+                <button onClick={() => setViewingKey(item.imageUrl!)} className="focus-ring block h-full w-full" aria-label="Vedi foto">
+                  <Thumb imageKey={item.imageUrl} title={item.title} />
+                </button>
               ) : (
                 <div className="flex h-full w-full items-center justify-center p-2 text-center text-[11px] text-ink-400">
                   {item.title}
@@ -135,6 +139,8 @@ export function ThumbGridField({
           </div>
         </motion.div>
       )}
+
+      {viewingKey && <PhotoLightbox photos={[viewingKey]} onClose={() => setViewingKey(null)} />}
     </div>
   );
 }

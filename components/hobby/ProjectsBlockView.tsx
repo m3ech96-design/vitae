@@ -8,6 +8,7 @@ import { StarDisplay } from "./StarRating";
 import { GlassCard } from "../ui/GlassCard";
 import { BlockHeader } from "./BlockHeader";
 import { ProjectModal } from "./ProjectModal";
+import { ProjectDetail } from "./ProjectDetail";
 
 const STATUS_COLOR: Record<string, string> = {
   idea: "#8B90A8",
@@ -33,10 +34,10 @@ function ProjectThumb({ photoKey }: { photoKey?: string }) {
 
 export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: ProjectsBlock }) {
   const [addOpen, setAddOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const totalCost = projectsTotalCost(block);
-  const editProject = block.projects.find((p) => p.id === editId);
+  const detailProject = block.projects.find((p) => p.id === detailId);
 
   return (
     <GlassCard className="p-4">
@@ -57,7 +58,7 @@ export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: 
       ) : (
         <div className="grid grid-cols-3 gap-2">
           {block.projects.map((p) => (
-            <button key={p.id} onClick={() => setEditId(p.id)} className="text-left">
+            <button key={p.id} onClick={() => setDetailId(p.id)} className="text-left">
               <ProjectThumb photoKey={p.photoKeys[0]} />
               <p className="mt-1 truncate text-[11px] text-ink-100">{p.name}</p>
               <p className="text-[10px]" style={{ color: STATUS_COLOR[p.status] }}>{STATUS_LABEL[p.status]}</p>
@@ -68,7 +69,9 @@ export function ProjectsBlockView({ hobbyId, block }: { hobbyId: string; block: 
       )}
 
       {addOpen && <ProjectModal hobbyId={hobbyId} blockId={block.id} onClose={() => setAddOpen(false)} />}
-      {editProject && <ProjectModal hobbyId={hobbyId} blockId={block.id} project={editProject} onClose={() => setEditId(null)} />}
+      {detailProject && (
+        <ProjectDetail hobbyId={hobbyId} blockId={block.id} project={detailProject} onClose={() => setDetailId(null)} />
+      )}
     </GlassCard>
   );
 }

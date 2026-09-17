@@ -12,6 +12,7 @@ import {
   LibraryStatus,
   Match,
   MatchResult,
+  StatEntry,
 } from "@/lib/hobby-types";
 
 interface HobbyCtx {
@@ -20,6 +21,9 @@ interface HobbyCtx {
   removeHobby: (id: string) => void;
   addBlock: (hobbyId: string, kind: HobbyBlockKind, title: string) => void;
   removeBlock: (hobbyId: string, blockId: string) => void;
+  addStatEntry: (hobbyId: string, blockId: string, input: Omit<StatEntry, "id">) => void;
+  updateStatEntry: (hobbyId: string, blockId: string, entryId: string, patch: Partial<Omit<StatEntry, "id">>) => void;
+  removeStatEntry: (hobbyId: string, blockId: string, entryId: string) => void;
   addMetricEntry: (hobbyId: string, blockId: string, input: Omit<MetricEntry, "id">) => void;
   addChecklistItem: (hobbyId: string, blockId: string, input: Omit<ChecklistItem, "id" | "createdAt">) => void;
   updateChecklistItem: (hobbyId: string, blockId: string, itemId: string, patch: Partial<Omit<ChecklistItem, "id" | "createdAt">>) => void;
@@ -68,8 +72,8 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "crea_hobby",
       description: "Crea un nuovo hobby vuoto, a cui poi si possono aggiungere blocchi (Checklist, Metrica, Inventario, Progetti, Libreria, Partite).",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome dell'hobby." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome dell'hobby." } },
         required: ["name"],
       },
     },
@@ -85,8 +89,8 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "elimina_hobby",
       description: "Elimina definitivamente un hobby e tutti i suoi blocchi, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) dell'hobby." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) dell'hobby." } },
         required: ["name"],
       },
     },
@@ -105,11 +109,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_blocco_hobby",
       description: "Aggiunge un nuovo blocco (Checklist, Metrica, Inventario, Progetti, Libreria o Partite) a un hobby esistente.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          kind: { type: "string", enum: BLOCK_KINDS, description: "Tipo di blocco." },
-          title: { type: "string", description: "Titolo del blocco." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          kind: { type: "STRING", enum: BLOCK_KINDS, description: "Tipo di blocco." },
+          title: { type: "STRING", description: "Titolo del blocco." },
         },
         required: ["hobbyName", "kind", "title"],
       },
@@ -128,10 +132,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "elimina_blocco_hobby",
       description: "Elimina un blocco di un hobby, cercando hobby e blocco per titolo. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          blockTitle: { type: "string", description: "Titolo (anche parziale) del blocco." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          blockTitle: { type: "STRING", description: "Titolo (anche parziale) del blocco." },
         },
         required: ["hobbyName", "blockTitle"],
       },
@@ -154,12 +158,12 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "registra_metrica_hobby",
       description: "Registra un nuovo valore in un blocco Metrica di un hobby (es. km percorsi, pagine lette).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          blockTitle: { type: "string", description: "Titolo del blocco Metrica, se l'hobby ne ha più di uno." },
-          value: { type: "number", description: "Valore da registrare." },
-          note: { type: "string", description: "Nota facoltativa." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          blockTitle: { type: "STRING", description: "Titolo del blocco Metrica, se l'hobby ne ha più di uno." },
+          value: { type: "NUMBER", description: "Valore da registrare." },
+          note: { type: "STRING", description: "Nota facoltativa." },
         },
         required: ["hobbyName", "value"],
       },
@@ -180,10 +184,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_voce_checklist_hobby",
       description: "Aggiunge una voce a un blocco Checklist di un hobby.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          title: { type: "string", description: "Titolo della voce." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          title: { type: "STRING", description: "Titolo della voce." },
         },
         required: ["hobbyName", "title"],
       },
@@ -204,11 +208,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiorna_stato_checklist_hobby",
       description: "Aggiorna lo stato di una voce checklist di un hobby, cercandola per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          itemTitle: { type: "string", description: "Titolo (anche parziale) della voce." },
-          status: { type: "string", enum: CHECKLIST_STATUSES, description: "Nuovo stato." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          itemTitle: { type: "STRING", description: "Titolo (anche parziale) della voce." },
+          status: { type: "STRING", enum: CHECKLIST_STATUSES, description: "Nuovo stato." },
         },
         required: ["hobbyName", "itemTitle", "status"],
       },
@@ -232,10 +236,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_voce_checklist_hobby",
       description: "Rimuove una voce da un blocco Checklist, cercandola per titolo. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          itemTitle: { type: "string", description: "Titolo (anche parziale) della voce." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          itemTitle: { type: "STRING", description: "Titolo (anche parziale) della voce." },
         },
         required: ["hobbyName", "itemTitle"],
       },
@@ -260,11 +264,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_oggetto_inventario_hobby",
       description: "Aggiunge un oggetto a un blocco Inventario di un hobby (es. collezione).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          name: { type: "string", description: "Nome dell'oggetto." },
-          quantity: { type: "number", description: "Quantità posseduta. Default 1." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          name: { type: "STRING", description: "Nome dell'oggetto." },
+          quantity: { type: "NUMBER", description: "Quantità posseduta. Default 1." },
         },
         required: ["hobbyName", "name"],
       },
@@ -291,10 +295,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_oggetto_inventario_hobby",
       description: "Rimuove un oggetto da un blocco Inventario, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          itemName: { type: "string", description: "Nome (anche parziale) dell'oggetto." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          itemName: { type: "STRING", description: "Nome (anche parziale) dell'oggetto." },
         },
         required: ["hobbyName", "itemName"],
       },
@@ -319,11 +323,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_progetto_hobby",
       description: "Aggiunge un progetto a un blocco Progetti di un hobby.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          name: { type: "string", description: "Nome del progetto." },
-          status: { type: "string", enum: PROJECT_STATUSES, description: "Stato iniziale. Default 'idea'." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          name: { type: "STRING", description: "Nome del progetto." },
+          status: { type: "STRING", enum: PROJECT_STATUSES, description: "Stato iniziale. Default 'idea'." },
         },
         required: ["hobbyName", "name"],
       },
@@ -344,11 +348,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiorna_stato_progetto_hobby",
       description: "Aggiorna lo stato di un progetto, cercandolo per nome.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          projectName: { type: "string", description: "Nome (anche parziale) del progetto." },
-          status: { type: "string", enum: PROJECT_STATUSES, description: "Nuovo stato." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          projectName: { type: "STRING", description: "Nome (anche parziale) del progetto." },
+          status: { type: "STRING", enum: PROJECT_STATUSES, description: "Nuovo stato." },
         },
         required: ["hobbyName", "projectName", "status"],
       },
@@ -372,10 +376,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_progetto_hobby",
       description: "Rimuove un progetto, cercandolo per nome. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          projectName: { type: "string", description: "Nome (anche parziale) del progetto." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          projectName: { type: "STRING", description: "Nome (anche parziale) del progetto." },
         },
         required: ["hobbyName", "projectName"],
       },
@@ -400,11 +404,11 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiungi_libreria_hobby",
       description: "Aggiunge un elemento (libro, film, gioco...) a un blocco Libreria di un hobby.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          title: { type: "string", description: "Titolo dell'elemento." },
-          status: { type: "string", enum: LIBRARY_STATUSES, description: "Stato iniziale. Default 'da-provare'." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          title: { type: "STRING", description: "Titolo dell'elemento." },
+          status: { type: "STRING", enum: LIBRARY_STATUSES, description: "Stato iniziale. Default 'da-provare'." },
         },
         required: ["hobbyName", "title"],
       },
@@ -425,12 +429,12 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "aggiorna_stato_libreria_hobby",
       description: "Aggiorna stato e/o valutazione di un elemento della Libreria, cercandolo per titolo.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          itemTitle: { type: "string", description: "Titolo (anche parziale) dell'elemento." },
-          status: { type: "string", enum: LIBRARY_STATUSES, description: "Nuovo stato." },
-          rating: { type: "number", description: "Valutazione da 1 a 5." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          itemTitle: { type: "STRING", description: "Titolo (anche parziale) dell'elemento." },
+          status: { type: "STRING", enum: LIBRARY_STATUSES, description: "Nuovo stato." },
+          rating: { type: "NUMBER", description: "Valutazione da 1 a 5." },
         },
         required: ["hobbyName", "itemTitle"],
       },
@@ -457,10 +461,10 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_libreria_hobby",
       description: "Rimuove un elemento dalla Libreria, cercandolo per titolo. Azione distruttiva.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          itemTitle: { type: "string", description: "Titolo (anche parziale) dell'elemento." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          itemTitle: { type: "STRING", description: "Titolo (anche parziale) dell'elemento." },
         },
         required: ["hobbyName", "itemTitle"],
       },
@@ -485,13 +489,13 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "registra_partita_hobby",
       description: "Registra una partita/incontro in un blocco Partite di un hobby.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          hobbyName: { type: "string", description: "Nome dell'hobby." },
-          opponent: { type: "string", description: "Nome dell'avversario/squadra avversaria." },
-          result: { type: "string", enum: MATCH_RESULTS, description: "Esito della partita." },
-          date: { type: "string", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
-          score: { type: "string", description: "Punteggio, se rilevante." },
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          opponent: { type: "STRING", description: "Nome dell'avversario/squadra avversaria." },
+          result: { type: "STRING", enum: MATCH_RESULTS, description: "Esito della partita." },
+          date: { type: "STRING", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
+          score: { type: "STRING", description: "Punteggio, se rilevante." },
         },
         required: ["hobbyName", "result"],
       },
@@ -517,8 +521,8 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       name: "rimuovi_partita_hobby",
       description: "Rimuove l'ultima partita registrata in un blocco Partite di un hobby. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { hobbyName: { type: "string", description: "Nome dell'hobby." } },
+        type: "OBJECT",
+        properties: { hobbyName: { type: "STRING", description: "Nome dell'hobby." } },
         required: ["hobbyName"],
       },
     },
@@ -536,11 +540,102 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
     },
   },
 
+  aggiungi_statistica_hobby: {
+    declaration: {
+      name: "aggiungi_statistica_hobby",
+      description:
+        "Aggiunge una voce a un blocco Statistiche di un hobby (es. una skill di un personaggio), con valore iniziale e limiti facoltativi.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          name: { type: "STRING", description: "Nome della statistica (es. 'Furtività')." },
+          value: { type: "NUMBER", description: "Valore iniziale." },
+          min: { type: "NUMBER", description: "Valore minimo. Se omesso, 0." },
+          max: { type: "NUMBER", description: "Valore massimo, se la statistica ha un tetto naturale." },
+          step: { type: "NUMBER", description: "Incremento a ogni tocco di +/-. Se omesso, 1." },
+        },
+        required: ["hobbyName", "name", "value"],
+      },
+    },
+    execute: (args, ctx) => {
+      const { hobbies, addStatEntry } = hobbyCtx(ctx);
+      const hobby = findHobbyByName(hobbies, String(args.hobbyName));
+      if (!hobby) return `Non ho trovato nessun hobby con nome simile a "${args.hobbyName}".`;
+      const block = findBlock(hobby, "statistiche");
+      if (!block) return `L'hobby "${hobby.name}" non ha nessun blocco Statistiche.`;
+      addStatEntry(hobby.id, block.id, {
+        name: String(args.name),
+        value: Number(args.value),
+        min: args.min !== undefined ? Number(args.min) : 0,
+        max: args.max !== undefined ? Number(args.max) : undefined,
+        step: args.step !== undefined ? Number(args.step) : 1,
+      });
+      return `Statistica "${args.name}" aggiunta a "${block.title}" con valore ${args.value}.`;
+    },
+  },
+
+  modifica_valore_statistica: {
+    declaration: {
+      name: "modifica_valore_statistica",
+      description: "Imposta il valore di una statistica esistente (non un incremento relativo, il valore finale esatto), cercandola per nome.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          statName: { type: "STRING", description: "Nome (anche parziale) della statistica." },
+          value: { type: "NUMBER", description: "Nuovo valore." },
+        },
+        required: ["hobbyName", "statName", "value"],
+      },
+    },
+    execute: (args, ctx) => {
+      const { hobbies, updateStatEntry } = hobbyCtx(ctx);
+      const hobby = findHobbyByName(hobbies, String(args.hobbyName));
+      if (!hobby) return `Non ho trovato nessun hobby con nome simile a "${args.hobbyName}".`;
+      const block = findBlock(hobby, "statistiche");
+      if (!block || block.kind !== "statistiche") return `L'hobby "${hobby.name}" non ha nessun blocco Statistiche.`;
+      const needle = String(args.statName).trim().toLowerCase();
+      const entry = block.entries.find((e) => e.name.trim().toLowerCase().includes(needle));
+      if (!entry) return `Non ho trovato nessuna statistica simile a "${args.statName}" in "${block.title}".`;
+      updateStatEntry(hobby.id, block.id, entry.id, { value: Number(args.value) });
+      return `"${entry.name}" impostata a ${args.value}.`;
+    },
+  },
+
+  elimina_statistica_hobby: {
+    declaration: {
+      name: "elimina_statistica_hobby",
+      description: "Rimuove una voce da un blocco Statistiche, cercandola per nome. Azione distruttiva.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          hobbyName: { type: "STRING", description: "Nome dell'hobby." },
+          statName: { type: "STRING", description: "Nome (anche parziale) della statistica." },
+        },
+        required: ["hobbyName", "statName"],
+      },
+    },
+    destructive: true,
+    execute: (args, ctx) => {
+      const { hobbies, removeStatEntry } = hobbyCtx(ctx);
+      const hobby = findHobbyByName(hobbies, String(args.hobbyName));
+      if (!hobby) return `Non ho trovato nessun hobby con nome simile a "${args.hobbyName}".`;
+      const block = findBlock(hobby, "statistiche");
+      if (!block || block.kind !== "statistiche") return `L'hobby "${hobby.name}" non ha nessun blocco Statistiche.`;
+      const needle = String(args.statName).trim().toLowerCase();
+      const entry = block.entries.find((e) => e.name.trim().toLowerCase().includes(needle));
+      if (!entry) return `Non ho trovato nessuna statistica simile a "${args.statName}" in "${block.title}".`;
+      removeStatEntry(hobby.id, block.id, entry.id);
+      return `"${entry.name}" rimossa.`;
+    },
+  },
+
   elenca_hobby: {
     declaration: {
       name: "elenca_hobby",
       description: "Elenca gli hobby registrati in Vitae.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { hobbies } = hobbyCtx(ctx);

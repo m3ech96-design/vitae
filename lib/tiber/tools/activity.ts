@@ -38,12 +38,12 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "registra_allenamento",
       description: "Registra una sessione di attività fisica svolta (es. corsa, palestra, nuoto), con durata in minuti.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          activityName: { type: "string", description: "Nome dell'attività (es. 'Corsa', 'Pesi', 'Nuoto')." },
-          minutes: { type: "number", description: "Durata in minuti." },
-          distanceKm: { type: "number", description: "Distanza percorsa in km, se rilevante." },
-          date: { type: "string", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
+          activityName: { type: "STRING", description: "Nome dell'attività (es. 'Corsa', 'Pesi', 'Nuoto')." },
+          minutes: { type: "NUMBER", description: "Durata in minuti." },
+          distanceKm: { type: "NUMBER", description: "Distanza percorsa in km, se rilevante." },
+          date: { type: "STRING", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
         },
         required: ["activityName", "minutes"],
       },
@@ -64,8 +64,8 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "elimina_allenamento",
       description: "Elimina l'allenamento più recente che corrisponde a un'attività indicata. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { activityName: { type: "string", description: "Nome (anche parziale) dell'attività." } },
+        type: "OBJECT",
+        properties: { activityName: { type: "STRING", description: "Nome (anche parziale) dell'attività." } },
         required: ["activityName"],
       },
     },
@@ -86,10 +86,10 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "registra_peso",
       description: "Registra una pesata dell'utente.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          value: { type: "number", description: "Peso in kg." },
-          date: { type: "string", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
+          value: { type: "NUMBER", description: "Peso in kg." },
+          date: { type: "STRING", description: "Data YYYY-MM-DD. Se omessa, usa oggi." },
         },
         required: ["value"],
       },
@@ -106,7 +106,7 @@ export const activityTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "elimina_peso",
       description: "Rimuove l'ultima pesata registrata. Azione distruttiva.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     destructive: true,
     execute: (_args, ctx) => {
@@ -123,8 +123,8 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "imposta_obiettivo_peso",
       description: "Imposta o rimuove l'obiettivo di peso.",
       parameters: {
-        type: "object",
-        properties: { value: { type: "number", description: "Peso obiettivo in kg. Ometti per rimuoverlo." } },
+        type: "OBJECT",
+        properties: { value: { type: "NUMBER", description: "Peso obiettivo in kg. Ometti per rimuoverlo." } },
       },
     },
     execute: (args, ctx) => {
@@ -143,10 +143,10 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "imposta_obiettivo_settimanale_attivita",
       description: "Imposta l'obiettivo settimanale di attività fisica (minuti, sessioni o calorie).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          type: { type: "string", enum: WEEKLY_GOAL_TYPES, description: "Tipo di obiettivo." },
-          target: { type: "number", description: "Valore obiettivo." },
+          type: { type: "STRING", enum: WEEKLY_GOAL_TYPES, description: "Tipo di obiettivo." },
+          target: { type: "NUMBER", description: "Valore obiettivo." },
         },
         required: ["type", "target"],
       },
@@ -163,11 +163,11 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "registra_misura_corporea",
       description: "Registra una misura corporea (es. vita, petto, braccia).",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          name: { type: "string", description: "Nome della misura (es. 'Vita')." },
-          value: { type: "number", description: "Valore misurato." },
-          unit: { type: "string", description: "Unità di misura (es. 'cm')." },
+          name: { type: "STRING", description: "Nome della misura (es. 'Vita')." },
+          value: { type: "NUMBER", description: "Valore misurato." },
+          unit: { type: "STRING", description: "Unità di misura (es. 'cm')." },
         },
         required: ["name", "value", "unit"],
       },
@@ -184,8 +184,8 @@ export const activityTools: Record<string, TiberToolDefinition> = {
       name: "elimina_misura_corporea",
       description: "Rimuove l'ultima misura corporea registrata per un dato nome. Azione distruttiva.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string", description: "Nome (anche parziale) della misura." } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING", description: "Nome (anche parziale) della misura." } },
         required: ["name"],
       },
     },
@@ -204,7 +204,7 @@ export const activityTools: Record<string, TiberToolDefinition> = {
     declaration: {
       name: "stato_attivita",
       description: "Restituisce l'ultimo peso registrato e il numero di allenamenti fatti negli ultimi 7 giorni.",
-      parameters: { type: "object", properties: {} },
+      parameters: { type: "OBJECT", properties: {} },
     },
     execute: (_args, ctx) => {
       const { workouts, weightEntries } = activityCtx(ctx);
