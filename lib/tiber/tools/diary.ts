@@ -83,4 +83,37 @@ export const diaryTools: Record<string, TiberToolDefinition> = {
       return "Voce di diario eliminata.";
     },
   },
+
+  /**
+   * Corretto secondo le istruzioni: questo modulo aveva solo azioni di scrittura (scrivi/
+   * modifica/elimina) — nessun modo per Tiber di rileggere cosa contenesse davvero il
+   * diario, quindi "cosa ho scritto ieri" non aveva alcun tool a cui appoggiarsi.
+   */
+  leggi_diario: {
+    declaration: {
+      name: "leggi_diario",
+      description:
+        "Legge le voci del Diario personale — le più recenti di default, oppure filtrate per data esatta e/o per una parola chiave nel testo. Usalo per rispondere a domande su cosa è stato scritto nel diario, prima di dire che non puoi saperlo.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          date: { type: "STRING", description: "Data esatta YYYY-MM-DD da cercare, se richiesta." },
+          query: { type: "STRING", description: "Parola o frase da cercare nel testo delle voci, se richiesta." },
+          limit: { type: "NUMBER", description: "Quante voci restituire al massimo. Default 5." },
+        },
+      },
+    },
+    execute: (args, ctx) => {
+      const { entries } = diaryCtx(ctx);
+      let filtered = [...entries].sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
+      if (args.date) filtered = filtered.filter((e) => e.date === String(args.date));
+      if (args.query) {
+        const needle = String(args.query).trim().toLowerCase();
+        filtered = filtered.filter((e) => e.text.trim().toLowerCase().includes(needle));
+      }
+      if (filtered.length === 0) return "Nessuna voce di diario trovata con questi criteri.";
+      const limit = args.limit !== undefined ? Number(args.limit) : 5;
+      return filtered.slice(0, limit).map((e) => `${e.date} ${e.time}: ${e.text}`).join("\n");
+    },
+  },
 };

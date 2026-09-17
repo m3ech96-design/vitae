@@ -1,6 +1,7 @@
 import { TiberToolDefinition, ctxField, TiberExecutionContext } from "../tool-types";
 import {
   Hobby,
+  HobbyBlock,
   HobbyBlockKind,
   MetricEntry,
   ChecklistItem,
@@ -64,6 +65,60 @@ function findBlock(hobby: Hobby, kind: HobbyBlockKind, blockTitle?: string) {
   if (!blockTitle) return blocks[0];
   const needle = blockTitle.trim().toLowerCase();
   return blocks.find((b) => b.title.trim().toLowerCase().includes(needle)) ?? blocks[0];
+}
+
+/**
+ * Corretto secondo le istruzioni: prima Tiber poteva solo elencare i NOMI degli hobby
+ * (`elenca_hobby`, sotto) o scrivere alla cieca dentro un blocco (aggiungere una voce,
+ * aggiornarne una) — nessun tool restituiva mai il contenuto vero di un blocco, quindi a una
+ * domanda tipo "quali titoli ho in libreria" o "cosa c'è nel mio hobby Skyrim" non poteva
+ * rispondere, nemmeno sapendo dove guardare. Non era una scelta voluta: altri moduli
+ * (`stato_finanze`, `stato_salute`...) hanno sempre avuto un tool di lettura che restituisce
+ * i dati veri, non solo un elenco di nomi — mancava l'equivalente qui. Aggiunto
+ * `dettagli_hobby`, che descrive il contenuto vero di ogni blocco di un hobby: i titoli in
+ * Libreria (con stato e voto), le voci di una Checklist, gli oggetti in Inventario, e così
+ * via per ogni tipo di blocco.
+ */
+function describeBlock(block: HobbyBlock): string {
+  switch (block.kind) {
+    case "checklist": {
+      if (block.items.length === 0) return `- ${block.title} (Checklist): vuota.`;
+      const list = block.items.map((i) => `${i.title} (${i.status})`).join(", ");
+      return `- ${block.title} (Checklist): ${list}`;
+    }
+    case "metrica": {
+      if (block.entries.length === 0) return `- ${block.title} (Metrica, unità ${block.unit}): nessuna voce registrata.`;
+      const last = [...block.entries].sort((a, b) => b.date.localeCompare(a.date))[0];
+      return `- ${block.title} (Metrica, unità ${block.unit}): ${block.entries.length} voci registrate, ultima ${last.value} ${block.unit} il ${last.date}.`;
+    }
+    case "inventario": {
+      if (block.items.length === 0) return `- ${block.title} (Inventario): vuoto.`;
+      const list = block.items.map((i) => (i.quantity > 1 ? `${i.name} ×${i.quantity}` : i.name)).join(", ");
+      return `- ${block.title} (Inventario): ${list}`;
+    }
+    case "progetti": {
+      if (block.projects.length === 0) return `- ${block.title} (Progetti): nessun progetto.`;
+      const list = block.projects.map((p) => `${p.name} (${p.status})`).join(", ");
+      return `- ${block.title} (Progetti): ${list}`;
+    }
+    case "libreria": {
+      if (block.items.length === 0) return `- ${block.title} (Libreria): vuota.`;
+      const list = block.items.map((i) => `${i.title} (${i.status}${i.rating ? `, voto ${i.rating}/5` : ""})`).join(", ");
+      return `- ${block.title} (Libreria): ${list}`;
+    }
+    case "partite": {
+      if (block.matches.length === 0) return `- ${block.title} (Partite): nessuna partita registrata.`;
+      const wins = block.matches.filter((m) => m.result === "vittoria").length;
+      const losses = block.matches.filter((m) => m.result === "sconfitta").length;
+      const draws = block.matches.filter((m) => m.result === "pareggio").length;
+      return `- ${block.title} (Partite): ${block.matches.length} partite registrate (${wins} vittorie, ${losses} sconfitte, ${draws} pareggi).`;
+    }
+    case "statistiche": {
+      if (block.entries.length === 0) return `- ${block.title} (Statistiche): nessuna voce.`;
+      const list = block.entries.map((e) => `${e.name}: ${e.value}${e.max !== undefined ? `/${e.max}` : ""}`).join(", ");
+      return `- ${block.title} (Statistiche): ${list}`;
+    }
+  }
 }
 
 export const hobbyTools: Record<string, TiberToolDefinition> = {
@@ -641,6 +696,26 @@ export const hobbyTools: Record<string, TiberToolDefinition> = {
       const { hobbies } = hobbyCtx(ctx);
       if (hobbies.length === 0) return "Nessun hobby registrato.";
       return hobbies.map((h) => h.name).join(", ");
+    },
+  },
+
+  dettagli_hobby: {
+    declaration: {
+      name: "dettagli_hobby",
+      description:
+        "Restituisce il contenuto vero di un hobby — i suoi blocchi e le voci salvate al loro interno (i titoli in Libreria con stato e voto, le voci di una Checklist, gli oggetti in Inventario, i progetti, le partite, le statistiche...), non solo il nome. Usalo per rispondere a qualunque domanda su COSA c'è dentro un hobby specifico, prima di dire che non puoi saperlo.",
+      parameters: {
+        type: "OBJECT",
+        properties: { hobbyName: { type: "STRING", description: "Nome (anche parziale) dell'hobby." } },
+        required: ["hobbyName"],
+      },
+    },
+    execute: (args, ctx) => {
+      const { hobbies } = hobbyCtx(ctx);
+      const hobby = findHobbyByName(hobbies, String(args.hobbyName));
+      if (!hobby) return `Non ho trovato nessun hobby con nome simile a "${args.hobbyName}".`;
+      if (hobby.blocks.length === 0) return `"${hobby.name}" non ha ancora nessun blocco.`;
+      return `"${hobby.name}":\n${hobby.blocks.map(describeBlock).join("\n")}`;
     },
   },
 };

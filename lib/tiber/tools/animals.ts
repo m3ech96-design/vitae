@@ -8,7 +8,7 @@ import {
   AnimalAllergy,
   AnimalWeightEntry,
 } from "@/lib/animal-health-context";
-import { FoodProduct, FoodScope } from "@/lib/animal-food-context";
+import { FoodProduct, FoodScope, matchesScope } from "@/lib/animal-food-context";
 import { todayIso } from "@/lib/date-format";
 
 interface AnimalHealthCtx {
@@ -426,6 +426,70 @@ export const animalTools: Record<string, TiberToolDefinition> = {
       if (!product) return `Non ho trovato nessun prodotto con nome simile a "${args.productName}".`;
       food.removeProduct(product.id);
       return `Prodotto "${product.name}" eliminato.`;
+    },
+  },
+
+  /**
+   * Corretto secondo le istruzioni: questo intero modulo aveva solo azioni di scrittura
+   * (registra/aggiungi/elimina) — nessun tool restituiva mai i dati veri di un animale, non
+   * c'era nemmeno un modo per sapere quali animali fossero registrati. Una domanda come "che
+   * vaccinazioni ha fatto Luna" non aveva alcun tool a cui appoggiarsi. Aggiunti i due tool
+   * che mancavano, sullo stesso schema già in uso altrove (`stato_finanze`, `stato_salute`).
+   */
+  elenca_animali: {
+    declaration: {
+      name: "elenca_animali",
+      description: "Elenca gli animali domestici registrati in Vitae, con la specie.",
+      parameters: { type: "OBJECT", properties: {} },
+    },
+    execute: (_args, ctx) => {
+      const { people } = animalsCtx(ctx);
+      const animals = people.filter((p) => ANIMAL_KINDS.includes(p.kind));
+      if (animals.length === 0) return "Nessun animale registrato.";
+      return animals.map((a) => `${a.firstName} (${a.kind})`).join(", ");
+    },
+  },
+
+  stato_animale: {
+    declaration: {
+      name: "stato_animale",
+      description:
+        "Restituisce il quadro completo di un animale — vaccinazioni, farmaci, prossimi appuntamenti, referti, allergie, ultimo peso registrato e prodotti alimentari assegnati. Usalo per rispondere a qualunque domanda su UN animale specifico, prima di dire che non puoi saperlo.",
+      parameters: {
+        type: "OBJECT",
+        properties: { animalName: { type: "STRING", description: "Nome dell'animale." } },
+        required: ["animalName"],
+      },
+    },
+    execute: (args, ctx) => {
+      const { people, health, food } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
+
+      const vax = health.vaccinations.filter((v) => v.animalId === animal.id);
+      const meds = health.medications.filter((m) => m.animalId === animal.id);
+      const today = todayIso();
+      const upcomingAppts = health.appointments.filter((a) => a.animalId === animal.id && !a.completed && a.date >= today);
+      const reports = health.reports.filter((r) => r.animalId === animal.id);
+      const allergies = health.allergies.filter((a) => a.animalId === animal.id);
+      const weights = health.weightEntries.filter((w) => w.animalId === animal.id).sort((a, b) => b.date.localeCompare(a.date));
+      const products = food.products.filter((p) => matchesScope(p, animal) && !p.exhausted);
+
+      const parts = [
+        vax.length > 0
+          ? `Vaccinazioni: ${vax.map((v) => `${v.name} (${v.date}${v.nextDueDate ? `, richiamo ${v.nextDueDate}` : ""})`).join(", ")}.`
+          : "Nessuna vaccinazione registrata.",
+        meds.length > 0 ? `Farmaci: ${meds.map((m) => `${m.name}${m.dosage ? ` (${m.dosage})` : ""}`).join(", ")}.` : "Nessun farmaco registrato.",
+        upcomingAppts.length > 0
+          ? `Prossimi appuntamenti: ${upcomingAppts.map((a) => `${a.title} il ${a.date}${a.vetName ? ` con ${a.vetName}` : ""}`).join(", ")}.`
+          : "Nessun appuntamento in programma.",
+        allergies.length > 0 ? `Allergie: ${allergies.map((a) => `${a.name}${a.severity ? ` (${a.severity})` : ""}`).join(", ")}.` : "Nessuna allergia registrata.",
+        weights.length > 0 ? `Ultimo peso: ${weights[0].value}kg (${weights[0].date}).` : "Nessun peso registrato.",
+        reports.length > 0 ? `Referti: ${reports.map((r) => `${r.title} (${r.type}, ${r.date})`).join(", ")}.` : "Nessun referto registrato.",
+        products.length > 0 ? `Cibo assegnato: ${products.map((p) => p.name).join(", ")}.` : "Nessun prodotto alimentare assegnato.",
+      ];
+
+      return `${animal.firstName} (${animal.kind}): ${parts.join(" ")}`;
     },
   },
 };

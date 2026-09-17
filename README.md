@@ -3856,3 +3856,37 @@ context.tsx) — sia per le chiamate eseguite subito sia per quelle della fascia
 rimaste in attesa di conferma. Le conversazioni già salvate prima di questa correzione non
 vanno perse né richiedono di essere azzerate: Google valida la firma solo per le chiamate
 del turno più recente, non per quelle dei turni precedenti già in cronologia.
+
+## Checkpoint 126 — Tiber: colmato un vuoto reale di lettura in Hobby e in altri quattro moduli
+
+Chiesto perché Tiber non riuscisse a dire cosa ci fosse nella Libreria di un hobby (aveva
+risposto di saper vedere che l'hobby esisteva, ma non di poter leggere i titoli salvati al
+suo interno) — non era una scelta voluta, era un vuoto reale: **`elenca_hobby` restituiva
+solo i nomi degli hobby**, mai il contenuto dei loro blocchi. Nessun tool, in tutto il
+modulo Hobby, aveva mai restituito il contenuto vero di un blocco (i titoli in Libreria, le
+voci di una Checklist, gli oggetti in Inventario...) — solo azioni per scriverci alla cieca.
+
+Controllando lo stesso schema negli altri moduli, trovato un vuoto identico, e più grande,
+in **altri quattro moduli interi**: Animali, Diario, Stato d'animo e Note avevano SOLO
+azioni di scrittura (registra/aggiungi/modifica/elimina) — zero modo per Tiber di rileggere
+qualunque cosa vi fosse già dentro. Non era una scelta di design (altri moduli come Finanze
+e Salute hanno sempre avuto un tool di lettura, `stato_finanze`/`stato_salute`) — era
+semplicemente rimasto incompleto.
+
+Aggiunti i tool di lettura mancanti, sullo stesso schema già in uso altrove:
+- **Hobby**: `dettagli_hobby` — descrive ogni blocco di un hobby con il suo contenuto vero
+  (titoli e stati in Libreria, voci di Checklist, oggetti in Inventario, progetti, record
+  delle Partite, valori delle Statistiche).
+- **Animali**: `elenca_animali` (prima non esisteva nemmeno un modo per sapere quali animali
+  fossero registrati) e `stato_animale` — vaccinazioni, farmaci, prossimi appuntamenti,
+  referti, allergie, ultimo peso e cibo assegnato per un animale specifico.
+- **Diario**: `leggi_diario` — le voci più recenti, o filtrate per data esatta e/o parola
+  chiave nel testo.
+- **Stato d'animo**: `stato_animo_attuale` — lo stato d'animo attivo adesso e i bisogni
+  settimanali ancora da esaudire.
+- **Note**: `elenca_note` e `leggi_nota` — il contenuto vero di una lista (voci con stato
+  fatto/da fare) o di una nota testuale (il suo testo).
+
+Ogni nuovo tool descrive esplicitamente nel proprio prompt di aiutarsi con quello strumento
+"prima di dire che non puoi saperlo" — lo stesso punto debole colto nella risposta di Tiber
+su Skyrim.

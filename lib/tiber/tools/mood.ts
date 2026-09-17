@@ -3,6 +3,10 @@ import { MoodDefinition } from "@/lib/mood-catalog";
 
 interface MoodModuleCtx {
   allMoods: MoodDefinition[];
+  /** Non dichiarato prima — bastava widenare l'interfaccia qui: l'oggetto vero passato da
+   * execution-bundle.ts è già lo `useMood()` completo, questo tipo locale ne limitava solo
+   * la vista disponibile ai tool di questo file. */
+  activeMood: { moodId: string } | null;
   setMoodManually: (moodId: string) => void;
   clearMood: () => void;
   addCustomMood: (label: string) => string;
@@ -163,6 +167,28 @@ export const moodTools: Record<string, TiberToolDefinition> = {
       if (!found) return `Non ho trovato nessun bisogno attivo simile a "${args.label}".`;
       needs.cancelNeed(found.id);
       return `Bisogno "${found.label}" annullato.`;
+    },
+  },
+
+  /**
+   * Corretto secondo le istruzioni: questo modulo aveva solo azioni di scrittura (imposta/
+   * azzera/crea/elimina/aggiungi/esaudisci/annulla) — nessun tool restituiva mai come si
+   * sente l'utente ADESSO, quindi "come mi sento oggi" non aveva alcun tool a cui appoggiarsi.
+   */
+  stato_animo_attuale: {
+    declaration: {
+      name: "stato_animo_attuale",
+      description:
+        "Restituisce lo stato d'animo attivo dell'utente in questo momento e i bisogni settimanali ancora da esaudire. Usalo per rispondere a domande su come si sente l'utente adesso, prima di dire che non puoi saperlo.",
+      parameters: { type: "OBJECT", properties: {} },
+    },
+    execute: (_args, ctx) => {
+      const { mood, needs } = moodCtx(ctx);
+      const active = mood.activeMood ? mood.allMoods.find((m) => m.id === mood.activeMood!.moodId) : null;
+      const moodText = active ? `Stato d'animo attuale: ${active.label}.` : "Nessuno stato d'animo impostato manualmente al momento (neutro).";
+      const needsText =
+        needs.needs.length > 0 ? `Bisogni settimanali da esaudire: ${needs.needs.map((n) => n.label).join(", ")}.` : "Nessun bisogno settimanale in sospeso.";
+      return `${moodText} ${needsText}`;
     },
   },
 };

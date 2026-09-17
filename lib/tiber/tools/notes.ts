@@ -237,4 +237,46 @@ export const notesTools: Record<string, TiberToolDefinition> = {
       return `"${found.title}" eliminata.`;
     },
   },
+
+  /**
+   * Corretto secondo le istruzioni: questo modulo aveva solo azioni di scrittura (aggiungi/
+   * segna/rimuovi/crea/rinomina/scrivi/fissa/elimina) — nessun tool restituiva mai il
+   * contenuto vero di una lista o nota, quindi "cosa c'è nella lista della spesa" non aveva
+   * alcun tool a cui appoggiarsi.
+   */
+  elenca_note: {
+    declaration: {
+      name: "elenca_note",
+      description: "Elenca le liste e le note testuali salvate in 'Liste e note', con tipo e se sono fissate in cima.",
+      parameters: { type: "OBJECT", properties: {} },
+    },
+    execute: (_args, ctx) => {
+      const { entries } = notesCtx(ctx);
+      if (entries.length === 0) return "Nessuna lista o nota salvata.";
+      return entries.map((e) => `${e.title} (${e.kind === "list" ? "lista" : "nota"}${e.pinned ? ", fissata" : ""})`).join(", ");
+    },
+  },
+
+  leggi_nota: {
+    declaration: {
+      name: "leggi_nota",
+      description:
+        "Legge il contenuto vero di una lista o nota — le voci di una lista (con stato fatto/da fare) oppure il testo di una nota, cercandola per titolo. Usalo per rispondere a domande su COSA contiene una lista o nota specifica, prima di dire che non puoi saperlo.",
+      parameters: {
+        type: "OBJECT",
+        properties: { title: { type: "STRING", description: "Titolo (anche parziale) della lista/nota." } },
+        required: ["title"],
+      },
+    },
+    execute: (args, ctx) => {
+      const { entries } = notesCtx(ctx);
+      const found = findEntryByTitle(entries, String(args.title));
+      if (!found) return `Non ho trovato nessuna lista/nota con titolo simile a "${args.title}".`;
+      if (found.kind === "list") {
+        if (found.items.length === 0) return `"${found.title}" è una lista vuota.`;
+        return `"${found.title}": ${found.items.map((i) => `${i.text} (${i.done ? "fatto" : "da fare"})`).join(", ")}`;
+      }
+      return found.body.trim() ? `"${found.title}": ${found.body}` : `"${found.title}" è vuota.`;
+    },
+  },
 };
