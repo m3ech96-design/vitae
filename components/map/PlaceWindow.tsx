@@ -146,16 +146,12 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
         className="glass-strong flex max-h-[90dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-xl3 sm:rounded-xl3"
       >
         <div className="relative z-10 w-full shrink-0" style={{ height: 176 }}>
-          {galleryPhotoKeys.length > 0 ? (
-            <PlaceGallery photoKeys={galleryPhotoKeys} height={176} />
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${meta.color}33, transparent)` }}
-            >
-              <Icon size={34} style={{ color: meta.color }} />
-            </div>
-          )}
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${meta.color}33, transparent)` }}
+          >
+            <Icon size={34} style={{ color: meta.color }} />
+          </div>
           <button
             onClick={onClose}
             className="focus-ring absolute right-3 top-3 z-10 rounded-full bg-void-950/70 p-1.5 text-ink-100"
@@ -290,6 +286,13 @@ export function PlaceWindow({ place, onClose }: { place: Place; onClose: () => v
             >
               <Star size={13} /> Valuta questo luogo
             </button>
+          )}
+
+          {galleryPhotoKeys.length > 0 && (
+            <div>
+              <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Foto</p>
+              <PlaceGallery photoKeys={galleryPhotoKeys} height={200} />
+            </div>
           )}
 
           {!isHome && (

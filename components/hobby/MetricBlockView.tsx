@@ -77,7 +77,11 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
         <p className="text-xs text-ink-800">Ancora nessuna voce registrata.</p>
       ) : (
         <>
-          <MiniLineChart points={block.entries.map((e) => ({ date: e.date, value: e.value }))} unit={block.unit} />
+          <MiniLineChart
+            points={block.entries.map((e) => ({ date: e.date, value: e.value }))}
+            unit={block.unit}
+            hideCurrentValue={block.isTimeBased}
+          />
 
           {block.isTimeBased && (
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -100,7 +104,8 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
                 <div className="h-full rounded-full bg-aura-gradient transition-all" style={{ width: `${goalPct}%` }} />
               </div>
               <p className="mt-1.5 text-[11px] text-ink-600">
-                Obiettivo: {block.goalValue} {block.unit} {block.goalDeadline ? `entro il ${formatDateShort(block.goalDeadline)}` : ""} · {goalPct}%
+                Obiettivo: {block.isTimeBased ? formatMinutesDuration(block.goalValue) : `${block.goalValue} ${block.unit}`}{" "}
+                {block.goalDeadline ? `entro il ${formatDateShort(block.goalDeadline)}` : ""} · {goalPct}%
               </p>
             </div>
           )}
@@ -109,7 +114,9 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
             {record && (
               <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-3 py-2">
                 <p className="flex items-center gap-1 text-[10px] uppercase tracking-[0.1em] text-ink-600"><Trophy size={11} /> Record</p>
-                <p className="mt-0.5 text-sm text-ink-100">{record.value} {block.unit}</p>
+                <p className="mt-0.5 text-sm text-ink-100">
+                  {block.isTimeBased ? formatMinutesDuration(record.value) : `${record.value} ${block.unit}`}
+                </p>
               </div>
             )}
             {comparison.deltaPct !== null && (
@@ -139,7 +146,7 @@ export function MetricBlockView({ hobbyId, block }: { hobbyId: string; block: Me
                   onClick={() => setEditId(e.id)}
                   className="focus-ring rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-ink-400 transition hover:border-aura-violet/50 hover:text-ink-100"
                 >
-                  {e.value} {block.unit} · {formatDateShort(e.date)}
+                  {block.isTimeBased ? formatMinutesDuration(e.value) : `${e.value} ${block.unit}`} · {formatDateShort(e.date)}
                 </button>
               ))}
           </div>

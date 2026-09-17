@@ -23,17 +23,16 @@ export interface ShoppingListItem {
   fromLowStock?: boolean;
 }
 
+/** Solo il nome dell'ingrediente — niente peso/quantità nell'etichetta che finisce nella
+ * lista della spesa vera e propria (task "Spesa" o lista in "Liste e note", vedi i due punti
+ * che chiamano questa funzione in app/alimentazione/dispensa/page.tsx): un grammo o un
+ * millilitro preciso non è comunque quello che si spunta al supermercato, dove si comprano
+ * confezioni intere — la quantità calcolata resta comunque nel modello (ShoppingListItem),
+ * solo non compare più in questo testo. "· sta finendo" resta: a differenza del peso è
+ * un'informazione che aiuta davvero a decidere cosa comprare, non solo un dettaglio da
+ * scartare al banco. */
 export function formatShoppingListItem(item: ShoppingListItem): string {
-  const base =
-    item.unit === "g"
-      ? `${item.ingredientName} · ${Math.ceil(item.quantity)} g`
-      : item.unit === "ml"
-      ? `${item.ingredientName} · ${Math.ceil(item.quantity)} ml`
-      : // Niente pluralizzazione automatica dell'unità (es. "uovo" → "uova" non è una semplice
-        // regola meccanica in italiano) — mostriamo il conteggio e l'etichetta singolare così
-        // com'è stata scritta dall'utente, onesto anche se a volte grammaticalmente imperfetto.
-        `${item.ingredientName} · ${Math.ceil(item.quantity)} × ${item.unitLabel || "unità"}`;
-  return item.fromLowStock ? `${base} · sta finendo` : base;
+  return item.fromLowStock ? `${item.ingredientName} · sta finendo` : item.ingredientName;
 }
 
 /**

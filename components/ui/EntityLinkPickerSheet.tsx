@@ -111,7 +111,7 @@ export function EntityLinkPickerSheet({
                     }}
                     className="focus-ring"
                   >
-                    <EntityLinkCard entity={resolved} />
+                    <EntityLinkCard entity={resolved} disableNavigation />
                   </button>
                 );
               })}

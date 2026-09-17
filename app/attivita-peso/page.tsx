@@ -19,6 +19,7 @@ import { BodyMeasurementsSection } from "@/components/health/BodyMeasurementsSec
 import { ProgressPhotosSection } from "@/components/health/ProgressPhotosSection";
 import { BmiBadge } from "@/components/health/BmiBadge";
 import { ScheduleWorkoutModal } from "@/components/health/ScheduleWorkoutModal";
+import { WeatherCard } from "@/components/health/WeatherCard";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
 import Link from "next/link";
@@ -94,6 +95,10 @@ export default function AttivitaPesoPage() {
     <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <p className="font-display text-xs uppercase tracking-[0.28em] text-ink-600">Attività e peso</p>
       <h1 className="mt-1 font-display text-2xl text-ink-100">Energia, settimana dopo settimana</h1>
+
+      <div className="mt-5">
+        <WeatherCard />
+      </div>
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         <GlassCard className="p-3.5 text-center">

@@ -7,10 +7,18 @@ export function MiniLineChart({
   points: raw,
   unit,
   color = "#7C5CFF",
+  hideCurrentValue = false,
 }: {
   points: { date: string; value: number }[];
   unit: string;
   color?: string;
+  /** Nasconde la riga "valore corrente" sotto il grafico — usata dal blocco Metrica degli
+   * Hobby quando la metrica è cronometrata (isTimeBased in lib/hobby-types.ts): lì quel
+   * valore è lo stesso già mostrato, con l'unità di tempo corretta, nella casella "Ultimo
+   * cronometraggio" (vedi MetricBlockView.tsx) — ripeterlo qui sotto sarebbe un numero
+   * duplicato, e per di più privo di unità quando `unit` (il campo libero della metrica) è
+   * lasciato vuoto perché non serve più scriverlo a mano con il cronometro. */
+  hideCurrentValue?: boolean;
 }) {
   const sorted = [...raw].sort((a, b) => a.date.localeCompare(b.date)).slice(-20);
 
@@ -43,9 +51,11 @@ export function MiniLineChart({
           <circle key={i} cx={p.x} cy={p.y} r={i === points.length - 1 ? 3.5 : 2} fill={color} />
         ))}
       </svg>
-      <p className="mt-1 font-display text-lg text-ink-100">
-        {current} <span className="text-xs text-ink-600">{unit}</span>
-      </p>
+      {!hideCurrentValue && (
+        <p className="mt-1 font-display text-lg text-ink-100">
+          {current} <span className="text-xs text-ink-600">{unit}</span>
+        </p>
+      )}
     </div>
   );
 }

@@ -15,7 +15,24 @@ import { useResolvedImage } from "@/lib/use-resolved-image";
  * 3. Task/ingredienti/schede/note: una chip colorata con icona — non hanno una foto propria
  *    nell'app, quindi non ne inventiamo una: l'icona di categoria è già un'identità chiara.
  */
-export function EntityLinkCard({ entity, onRemove }: { entity: ResolvedEntity; onRemove?: () => void }) {
+export function EntityLinkCard({
+  entity,
+  onRemove,
+  disableNavigation = false,
+}: {
+  entity: ResolvedEntity;
+  onRemove?: () => void;
+  /** Disattiva il `<Link>` di navigazione — necessario quando questa card viene messa
+   * dentro un `<button>` che deve invece eseguire una selezione (vedi
+   * EntityLinkPickerSheet.tsx: scegliere un risultato di ricerca deve collegarlo alla voce,
+   * non aprire la sua scheda). Un `<Link>` (un `<a>`) dentro un `<button>` non è solo HTML
+   * non valido: il click viene intercettato dal link, che naviga, invece di eseguire
+   * l'onClick del bottone esterno — la card veniva sempre resa così, a prescindere da dove
+   * fosse usata, ed è per questo che "Collega" apriva la scheda dell'entità invece di
+   * collegarla. Di serie `false`: l'uso più comune (mostrare un collegamento già fatto,
+   * vedi EntityLinksSection.tsx) deve restare cliccabile per andare a vedere l'entità. */
+  disableNavigation?: boolean;
+}) {
   const resolvedPhotoUrl = useResolvedImage(entity.photoKey);
   const photo = entity.imageUrl ?? resolvedPhotoUrl;
   const Icon = entity.icon;
@@ -82,8 +99,8 @@ export function EntityLinkCard({ entity, onRemove }: { entity: ResolvedEntity; o
           <X size={11} />
         </button>
       )}
-      {entity.missing ? (
-        <div className="cursor-default opacity-60">{inner}</div>
+      {entity.missing || disableNavigation ? (
+        <div className={entity.missing ? "cursor-default opacity-60" : undefined}>{inner}</div>
       ) : (
         <Link href={entity.href} className="focus-ring block">
           {inner}

@@ -114,7 +114,7 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
             <div className="flex flex-wrap gap-3">
               {entries.map((e) => (
                 <button key={`${e.type}-${e.id}`} onClick={() => goTo({ type: e.type, id: e.id })} className="focus-ring">
-                  <EntityLinkCard entity={resolve({ type: e.type, id: e.id })} />
+                  <EntityLinkCard entity={resolve({ type: e.type, id: e.id })} disableNavigation />
                 </button>
               ))}
             </div>

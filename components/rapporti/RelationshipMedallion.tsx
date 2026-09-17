@@ -30,6 +30,18 @@ export function RelationshipMedallion({
   const radius = isAnimal ? 22 * scale : undefined;
   const badgeSize = Math.max(16, Math.round(24 * scale));
   const badgeIconSize = Math.max(9, Math.round(13 * scale));
+  /** Percentuale del giro dell'anello colorata dal punteggio — non solo un colore uniforme:
+   * un rapporto appena percettibile (intensity vicino a 0) mostra solo una piccola fetta
+   * colorata, un rapporto fortissimo (intensity vicino a 1) riempie quasi l'intero anello.
+   * Un minimo del 4% resta sempre visibile anche a intensità zero, altrimenti un rapporto
+   * "Indifferenza" (relationshipScore a 0) sparirebbe del tutto invece di leggersi come "un
+   * anello quasi vuoto" — coerente con `color` che in quel caso è già un grigio neutro
+   * (#565B77), non uno dei colori "forti" degli altri stati.
+   * Il gradiente resta un conic-gradient, come prima (mai cambiato in un SVG o altro
+   * meccanismo): stesso colore, stesso spessore (ringWidth) di prima, solo l'estensione
+   * dell'arco pieno cambia in base al punteggio invece di coprire sempre l'intero giro. */
+  const filledPercent = Math.max(4, Math.round(intensity * 100));
+  const trackColor = "rgba(255,255,255,0.08)";
 
   return (
     <button onClick={onOpen} className="focus-ring flex flex-col items-center gap-2">
@@ -42,7 +54,7 @@ export function RelationshipMedallion({
           className={isAnimal ? "relative flex items-center justify-center" : "relative flex items-center justify-center rounded-full"}
           style={{
             padding: ringWidth,
-            background: `conic-gradient(${color}, ${color}55, ${color})`,
+            background: `conic-gradient(${color} ${filledPercent}%, ${trackColor} ${filledPercent}%)`,
             boxShadow: `0 0 ${10 + intensity * 18}px ${color}99`,
             borderRadius: radius,
           }}

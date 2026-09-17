@@ -3247,3 +3247,99 @@ Apri http://localhost:3000
    "Aggiungi a Home" per installarla come app.
 
 Ogni volta che invii nuovi commit al repository, Vercel ripubblica automaticamente.
+
+## Checkpoint 109 — niente più peso nella voce della lista della spesa
+
+`formatShoppingListItem` (lib/shopping-list.ts) — l'unica funzione che genera il testo delle
+voci sia per la task "Spesa" sia per la lista in "Liste e note" — ora scrive solo il nome
+dell'ingrediente, senza più il peso/quantità calcolato ("200 g", "3 × uovo"): al
+supermercato si comprano confezioni intere, non grammi esatti. L'indicazione "· sta finendo"
+per gli articoli in scorta bassa (vedi checkpoint 108) resta, perché a differenza del peso è
+un'informazione che aiuta davvero a decidere cosa comprare. Il calcolo della quantità resta
+comunque nel modello dei dati, semplicemente non compare più in questo testo.
+
+## Checkpoint 110 — meteo in Attività e peso, galleria mappa intera, anello Rapporti a riempimento
+
+Tre richieste distinte:
+
+- **Card meteo** in cima alla scheda Attività e peso: temperatura attuale, icona e un
+  consiglio breve sull'attività fisica outdoor ("Ottima giornata...", "È sconsigliato...",
+  "...con un k-way", ecc.), calcolato — non scritto a mano — da soglie tutte cercate e
+  citate nel codice (`lib/weather-advice.ts`): intensità della pioggia (classificazione
+  italiana standard, mm/h), caldo (SIMFER, 30°C/35°C), freddo (ACSM, -15°C), vento forte
+  (soglia Protezione Civile). Cliccando la card si apre uno sheet con il consiglio esteso,
+  la fascia oraria migliore per uscire oggi ("dalle ore X alle ore Y") e le previsioni
+  orarie scorrevoli per oggi + i 2 giorni successivi. Dati da Open-Meteo (gratuita, senza
+  chiave) via `app/api/weather/route.ts`; posizione rilevata con il GPS (una tantum, non un
+  tracking continuo), con ripiego sulla Casa salvata se il permesso è negato — mai un meteo
+  mostrato senza dire per quale luogo, vedi `lib/use-weather.ts`.
+- **Galleria foto di un luogo** (Mappa): non più nell'header a altezza fissa (dove
+  `object-cover` tagliava sistematicamente le immagini fuori da quel rapporto d'aspetto) —
+  spostata sotto il blocco di valutazione, con `object-contain` (foto sempre intere) e ogni
+  foto ora apribile a schermo intero con un tocco (`PhotoLightbox` in
+  `components/map/PlaceGallery.tsx`).
+- **Anello attorno agli avatar** in Rapporti: prima un colore uniforme su tutto il giro,
+  ora un vero riempimento proporzionale al punteggio del rapporto (stessa `intensity` già
+  usata per lo spessore dell'anello) — un rapporto debole mostra solo una piccola fetta
+  colorata, uno fortissimo quasi l'intero anello. Colore e spessore restano esattamente gli
+  stessi di prima, come richiesto: cambiato solo il `background` del conic-gradient in
+  `components/rapporti/RelationshipMedallion.tsx`, un minimo del 4% resta sempre visibile
+  anche a punteggio zero.
+
+Fatto anche un audit di tutte le 19 schede principali dell'app per verificare raggruppamenti
+e posizionamento dei contenuti: la quasi totalità era già ben organizzata, nessuna modifica
+forzata dove non ce n'era una motivazione concreta.
+
+## Checkpoint 109 — niente più peso nella voce della lista della spesa
+
+`formatShoppingListItem` (lib/shopping-list.ts) — l'unica funzione che genera il testo delle
+voci sia per la task "Spesa" sia per la lista in "Liste e note" — ora scrive solo il nome
+dell'ingrediente, senza più il peso/quantità calcolato ("200 g", "3 × uovo"): al
+supermercato si comprano confezioni intere, non grammi esatti. L'indicazione "· sta finendo"
+per gli articoli in scorta bassa (vedi checkpoint 108) resta, perché a differenza del peso è
+un'informazione che aiuta davvero a decidere cosa comprare. Il calcolo della quantità resta
+comunque nel modello dei dati, semplicemente non compare più in questo testo.
+
+## Checkpoint 111 — rimosso il numero senza unità sotto il grafico delle metriche cronometrate
+
+Segnalato uno screenshot: un numero grande ("25.3") compariva sotto il grafico del blocco
+Metrica, senza alcuna unità accanto — proprio il problema di cui si parlava in un
+checkpoint precedente, sfuggito in tre punti che quel giro non erano stati toccati.
+
+La causa: `MiniLineChart` (components/medical/MiniLineChart.tsx, condiviso da più schede)
+mostra sempre "valore corrente + unità" sotto il grafico, ma per un blocco Metrica
+cronometrato (isTimeBased) quell'unità è il campo libero `block.unit`, che l'utente ormai
+non ha più motivo di scrivere a mano dato che il tempo si gestisce con il cronometro — da
+qui il numero nudo. È anche un doppione: lo stesso valore compare già, con l'unità di tempo
+corretta, nella casella "Ultimo cronometraggio" appena sotto.
+
+- `MiniLineChart` ha un nuovo parametro opzionale `hideCurrentValue` (default `false`,
+  nessun impatto sugli altri sette punti dell'app che lo usano) — attivato solo dal blocco
+  Metrica quando `isTimeBased`, per non ripetere quel valore.
+- Individuati e corretti altri due punti dello stesso blocco con lo stesso problema, sfuggiti
+  al giro precedente perché preesistenti: la casella "Record" e l'elenco delle voci recenti
+  mostravano anch'essi `{valore} {block.unit}` nudo per le metriche cronometrate — ora usano
+  `formatMinutesDuration` come già fanno "Totale cronometrato" e "Ultimo cronometraggio".
+  Stessa correzione applicata anche alla riga "Obiettivo".
+
+## Checkpoint 112 — corretto "Collega" nel Diario (e ovunque il collegamento generico compare)
+
+Segnalato: cliccare un risultato dentro "Collega qualcosa" apriva la scheda dell'entità
+invece di collegarla alla voce del diario.
+
+Causa: `EntityLinkCard` (components/ui/EntityLinkCard.tsx, la card condivisa che rappresenta
+un collegamento ovunque nell'app) avvolge sempre il proprio contenuto in un `<Link>` di
+Next.js quando l'entità esiste. Nel picker di selezione (`EntityLinkPickerSheet.tsx`) quella
+stessa card veniva messa dentro un `<button onClick={...}>` che avrebbe dovuto eseguire il
+collegamento — ma un `<Link>` (un `<a>`) dentro un `<button>` non è solo HTML non valido: il
+click viene intercettato dal link, che naviga, prima che l'`onClick` del bottone esterno
+abbia la sua occasione. Lo stesso identico problema c'era anche nella Ricerca globale
+(`GlobalSearchSheet.tsx`), dove faceva sparire la chiusura dello sheet dopo la navigazione
+invece di impedire un'azione — meno visibile, ma la stessa causa.
+
+`EntityLinkCard` ha ora un parametro `disableNavigation` (di serie `false`, quindi il suo
+uso più comune — mostrare un collegamento già fatto — resta invariato): attivato nei due
+punti dove la card sta dentro un bottone con un proprio significato (il picker per
+collegare, la ricerca globale per navigare+chiudere), lasciato disattivato dove la card è
+la sola cosa cliccabile e deve legittimamente aprire la scheda dell'entità (Diario, Liste e
+note, dopo che un collegamento esiste già).
