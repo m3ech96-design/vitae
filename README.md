@@ -3343,3 +3343,184 @@ punti dove la card sta dentro un bottone con un proprio significato (il picker p
 collegare, la ricerca globale per navigare+chiudere), lasciato disattivato dove la card è
 la sola cosa cliccabile e deve legittimamente aprire la scheda dell'entità (Diario, Liste e
 note, dopo che un collegamento esiste già).
+
+## Checkpoint 113 — limite di 5 righe per Cronologia spese e Cronologia versamenti
+
+Richiesto: nella scheda Finanze, il contenuto visibile di Cronologia (spese) e, separatamente,
+Cronologia versamenti deve avere un limite di 5, seguito da un "Mostra altro" che apre una
+pagina con i restanti movimenti — al posto del "Carica altre/altri" che prima aggiungeva
+altre righe nella stessa scheda.
+
+- `ChronologicalExpensesTable.tsx` (Cronologia spese, dentro il pannello a tendina): non più
+  paginazione progressiva (20 alla volta), ma un tetto fisso di 5 righe visibili; oltre
+  quel numero, "Mostra altro" porta alla nuova pagina `/finanze/cronologia`, che elenca
+  tutti i movimenti senza alcun limite, con lo stesso dato `allExpenseItems` già usato dalla
+  scheda Finanze.
+- `SavingsSection.tsx` (Cronologia versamenti, dentro Risparmi): stesso cambiamento — tetto
+  fisso di 5 righe, "Mostra altro" verso la nuova pagina `/finanze/cronologia-versamenti`
+  con l'elenco completo di `savingsEntries` (i versamenti/prelievi del salvadanaio, non lo
+  storico per singolo obiettivo, che resta dove già era nel dettaglio obiettivo).
+- Entrambe le nuove pagine seguono lo stesso schema già usato per `/attivita-peso/cronologia`
+  (freccia indietro, titolo, conteggio totale, elenco).
+
+## Checkpoint 113 — Tiber, il maggiordomo IA di Vitae
+
+Introdotto un assistente conversazionale ("maggiordomo", ispirato a Jarvis) integrato in
+Vitae: legge lo stato dei dati dell'app tramite un catalogo di azioni ("tool") e può
+eseguirle direttamente, invece di limitarsi a rispondere.
+
+**Autonomia**: piena su tutte le azioni tecnicamente disponibili — l'unica eccezione è la
+fascia "distruttiva" (cancellazioni, prelievi di denaro, eliminazione di persone/animali),
+per cui basta un "Sei sicuro?" prima di eseguire, non una revisione del dettaglio dell'azione.
+
+**Modello**: Google Gemini (piano gratuito, `gemini-2.5-flash`), con function calling nativo
+dell'API — Tiber decide da solo quando e quali tool chiamare in base alla richiesta.
+Chiamato direttamente dal browser a Google, senza alcun server nel mezzo (Vitae non ha un
+backend proprio). La chiave API si imposta nella pagina di Tiber stessa e vive sotto il
+prefisso `tiber-secret:` in localStorage — deliberatamente diverso da `vitae:` — così il
+meccanismo di backup (che salva automaticamente tutto ciò che inizia per `vitae:`, senza
+eccezioni verificate) non la include mai per costruzione, né in export né in import.
+
+**Architettura** (`lib/tiber/`):
+- `types.ts` / `tool-types.ts` — forma comune di messaggio e di ogni tool (dichiarazione per
+  il modello + funzione di esecuzione vera sui context dell'app).
+- `tools/*.ts` — un file per modulo (Task, Finanze, Liste e note, Alimentazione, Salute,
+  Animali, Rapporti/Persone, Mappa/Luoghi, Hobby, Wishlist, Diario, Mood/Bisogni, Attività e
+  peso), ciascuno con le proprie azioni: creare, modificare, eliminare, interrogare. Ogni
+  tool esegue chiamando le stesse funzioni che l'app già usa quando l'utente tocca un
+  bottone — Tiber non ha un canale a parte verso i dati.
+- `registry.ts` — unisce tutti i moduli in un unico catalogo; aggiungere un modulo futuro
+  significa aggiungere un file e una riga qui, senza toccare gli altri.
+- `execution-bundle.ts` — hook che chiama una volta tutti i context necessari e li assembla
+  nella forma piatta che i tool si aspettano.
+- `gemini.ts` — chiamata REST a `generateContent` con `tools: [{ functionDeclarations }]`,
+  gestione degli errori (limite del piano gratuito, chiave non valida).
+- `context.tsx` — cronologia conversazione, ciclo multi-turno (il modello può incatenare più
+  chiamate tool prima di rispondere in chiaro, fino a un tetto di sicurezza), e lo stop
+  automatico su un'azione distruttiva in attesa di conferma.
+
+**Interfaccia**: pagina dedicata `/tiber` (non un pannello inline) con chat, bolle messaggio
+che mostrano anche l'esito delle azioni eseguite, e il prompt "Sei sicuro?" inline sotto il
+messaggio per le azioni distruttive. La barra "Scrivi ai membri della casa" in Home (vedi
+`HouseholdMessageBar.tsx`) è diventata l'accesso rapido a Tiber — il testo scritto lì apre
+`/tiber` con il messaggio già pronto, inviato automaticamente all'apertura. Il canale di
+messaggi tra membri della casa (`HouseholdMessagesFeed`, `household-messages-context.tsx`)
+resta invariato, solo la barra di scrittura è stata riconvertita.
+
+**Nota sulla mole**: dato il numero di moduli coinvolti, il lavoro è stato condotto a fette
+nella stessa sessione (impalcatura, poi tool modulo per modulo, poi verifica tipi/build
+finale) invece che in un unico blocco — coerente con l'accordo di procedere su più sessioni
+se necessario, pur dando a Tiber accesso a tutti i moduli fin da subito.
+
+## Checkpoint 114 — Tiber: colmate le lacune del primo giro
+
+Riletta con attenzione la richiesta originale ("tutto quello che i tool tecnicamente
+permettono, per le azioni distruttive un semplice 'Sei sicuro?'") contro quanto
+effettivamente costruito al checkpoint 113: emerso un bug reale e una copertura molto più
+parziale del promesso.
+
+**Bug corretto**: il prelievo di denaro (dal salvadanaio generale e da un obiettivo di
+risparmio) non era marcato come azione distruttiva, nonostante "prelievi di denaro" fosse
+esplicitamente nella lista delle eccezioni richieste. Le due funzioni "deposita/preleva"
+sono state separate in tool distinti (`deposita_nel_salvadanaio`/`preleva_dal_salvadanaio`,
+`versa_su_obiettivo`/`preleva_da_obiettivo`) proprio per poter marcare come distruttivo solo
+il prelievo, non il deposito — un singolo tool non può avere un'autonomia condizionata al
+segno dell'importo.
+
+**Copertura completata modulo per modulo** (da un sottoinsieme parziale, per lo più solo
+azioni di aggiunta, a una copertura piena di ogni funzione di scrittura esposta dai
+rispettivi context): Finanze (spese ricorrenti/pianificate, ciclo budget, ripartizione
+stipendio), Task (riapertura, spesa task, sottotask, voci spesa), Liste e note (rinomina,
+contenuto nota, fissa, tag), Alimentazione (modifica/elimina ingrediente, elimina pasto
+registrato, rimuovi da dispensa, obiettivi alimentari), Salute (copertura piena di referti,
+esami del sangue, farmaci, condizioni, interventi, familiarità, contatti, sintomi, valori
+vitali — prima solo una piccola parte), Animali (stessa estensione per salute animale, più
+creazione prodotti alimentari), Rapporti (**crea_persona** — mancava del tutto la possibilità
+di aggiungere una nuova persona o animale), Mappa (**crea_luogo** — mancava del tutto,
+geocodifica l'indirizzo con Nominatim; più registrazione visita), Hobby (da un solo blocco
+Metrica a tutti e 6 i tipi: Checklist, Inventario, Progetti, Libreria, Partite, oltre a
+creazione/eliminazione hobby e blocchi), Wishlist (modifica, esaudimento/riapertura), Diario
+(modifica voce), Mood/Bisogni (stati d'animo personalizzati, annulla bisogno), Attività e
+peso (obiettivi, misure corporee).
+
+**Nuovo modulo aggiunto** (mancava per intero): Schede allenamento (`workout-plans.ts`) —
+creare/eliminare schede e tabelle, aggiungere/eliminare esercizi, registrare sessioni svolte
+(peso/ripetizioni/serie).
+
+Tool totali passati da 63 a 150, di cui 49 nella fascia distruttiva (conferma "Sei sicuro?").
+
+**Lasciato fuori consapevolmente** (per non introdurre comportamenti rischiosi senza
+verificarli a dovere): il collegamento diretto di un articolo Wishlist a un obiettivo di
+risparmio (`setLinkedTo`) — richiede coordinare Wishlist e Finanze insieme, oggi fatto solo
+nei componenti che vedono entrambi i contesti; alcuni editor di configurazione cosmetica in
+Hobby (rinomina blocco, foto di copertina blocco Partite, configurazione unità/direzione di
+un blocco Metrica); `setTrackingEnabled` per il rilevamento posizione automatico. Nessuna di
+queste tocca dati con conseguenze pratiche gravi se rimandata a un giro successivo.
+
+## Checkpoint 115 — Tiber: due correzioni trovate rileggendo il codice a freddo
+
+Mai testato con una vera chiamata a Gemini finora — rileggendo con attenzione il codice
+scritto, emersi due problemi che l'uso reale avrebbe fatto emergere quasi subito.
+
+**Nome campo sbagliato nella richiesta REST**: l'istruzione di sistema veniva mandata come
+`system_instruction` (snake_case) invece di `systemInstruction` (camelCase) — il resto del
+corpo della richiesta (`contents`, `tools`, `functionDeclarations`) è già in camelCase, ed è
+quella la forma corretta per l'endpoint `generateContent`. Un endpoint severo può rifiutare
+o ignorare silenziosamente il campo scritto nella forma sbagliata: nel peggiore dei casi,
+Tiber avrebbe risposto ignorando completamente le istruzioni di comportamento date nel
+prompt di sistema, anche alla primissima chiamata.
+
+**Cronologia conversazione ricostruita in modo scorretto** (`historyToGemini` in
+`context.tsx`): quando un nuovo messaggio veniva inviato, la cronologia passata a Gemini
+riproponeva le chiamate a tool fatte nei turni precedenti (`functionCall`) ma senza mai
+includere il relativo esito (`functionResponse`) — obbligatorio subito dopo, secondo il
+formato richiesto da Gemini. Il problema non si vedeva nel giro di andata e ritorno dentro
+la stessa risposta (lì l'esito veniva già accodato correttamente), ma sarebbe scattato al
+messaggio successivo di qualunque conversazione in cui Tiber avesse già usato un tool —
+praticamente ogni conversazione reale. Corretto: ogni messaggio dell'assistente con
+chiamate a tool ora si accompagna sempre al proprio esito quando la cronologia viene
+ricostruita, con un segnaposto ("in attesa di conferma") per le azioni distruttive non
+ancora confermate al momento dell'invio del messaggio successivo.
+
+Nessuna delle due cose era verificabile con una build o un controllo di tipi — solo
+rileggendo la logica a mente fredda, confrontandola con la documentazione reale dell'API.
+
+## Checkpoint 116 — corretto "Invalid Date" nel meteo di Attività e peso
+
+Segnalato: le etichette dei giorni ("Domani", "Dopodomani") nello sheet delle previsioni
+della card Meteo mostravano "Invalid Date" invece del nome del giorno.
+
+Causa: `weekdayShort` (lib/date-format.ts) prende in ingresso una data semplice
+("YYYY-MM-DD") e ci aggiunge da sé l'orario prima di crearne un `Date` — è il contratto
+che rispettano tutti gli altri punti dell'app che la chiamano. `WeatherCard.tsx` era l'unico
+punto a passarle già una data-ora completa (`"YYYY-MM-DDT12:00:00"`), risultando in una
+stringa doppia e non valida ("...T12:00:00T00:00:00"). Corretto passando la sola data, come
+ovunque altrove.
+
+## Checkpoint 117 — Amazon: chiarito perché il prezzo non si aggiorna (non è un bug di parsing)
+
+Segnalato: l'aggiornamento prezzo per gli articoli Amazon continuava a fallire con "prezzo
+non trovato" anche dopo l'estrattore dedicato già scritto in precedenza.
+
+Verificato che la causa reale è strutturale, non di codice: Amazon protegge le sue pagine
+con un sistema anti-bot a più livelli (AWS WAF Bot Control) che blocca per reputazione
+dell'IP le richieste provenienti da server "da datacenter" — la categoria a cui appartiene
+qualunque funzione serverless su Vercel, compresa questa route — ancora prima di mostrare
+la pagina prodotto vera: al suo posto arriva una pagina di verifica ("Robot Check" /
+CAPTCHA), dove non può comparire nessun prezzo, indipendentemente da quanto sia buono
+l'estrattore. È un problema ampiamente documentato, non risolvibile cambiando header o
+User-Agent — i servizi che riescono a leggere Amazon in modo affidabile lo fanno tramite
+proxy residenziali a pagamento, sproporzionati per questa app.
+
+Non essendo risolvibile da qui, corretta almeno l'onestà della diagnosi: `route.ts` ora
+riconosce le firme tipiche di questa pagina di blocco (titolo "Robot Check", frase "Enter
+the characters you see below", percorso `/errors/validateCaptcha`) e restituisce un errore
+distinto ("Amazon ha bloccato questa richiesta automatica") invece del fuorviante "prezzo
+non trovato nella pagina", che lasciava credere a un problema di markup risolvibile con un
+fix di parsing. Il messaggio compare così com'è sia nel controllo prezzo singolo
+(`WishlistPriceHistorySection.tsx`) sia in quello in blocco (`BulkPriceCheckSheet.tsx`),
+nessuna modifica necessaria in quei due componenti.
+
+Per gli articoli Amazon, l'aggiornamento prezzo resta quindi da fare a mano — non per una
+lacuna di questa app, ma per una barriera che Amazon stessa impone a qualunque richiesta
+automatica da un server.

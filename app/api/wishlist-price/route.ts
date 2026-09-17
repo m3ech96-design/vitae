@@ -27,10 +27,42 @@ import { NextRequest, NextResponse } from "next/server";
  * due metà del prezzo, `a-offscreen` come stringa unica di riserva per la lettura da
  * screen-reader) — vedi extractAmazonPrice più sotto, provato solo quando il dominio è
  * Amazon e solo dopo aver già cercato invano gli standard universali.
+ *
+ * LIMITE STRUTTURALE, non risolvibile da qui — verificato dopo una segnalazione che
+ * l'aggiornamento prezzo Amazon continuava a fallire anche con l'estrattore sopra: Amazon
+ * protegge le sue pagine con un sistema anti-bot a più livelli (AWS WAF Bot Control) che
+ * blocca per reputazione dell'IP le richieste provenienti da datacenter — la categoria a cui
+ * appartiene qualunque funzione serverless su Vercel — ancora prima che la richiesta riceva
+ * la pagina prodotto vera: al suo posto arriva una pagina di verifica ("Robot Check" /
+ * CAPTCHA), dove ovviamente nessun prezzo può comparire, indipendentemente da quanto sia
+ * buono l'estrattore. Non è un problema di parsing né risolvibile cambiando header o
+ * User-Agent (ampiamente documentato anche da servizi a pagamento specializzati proprio in
+ * questo, che infatti usano proxy residenziali a pagamento, sproporzionati per questa app) —
+ * `isAmazonBotChallengePage` sotto riconosce questa pagina di blocco e restituisce un errore
+ * onesto ("bloccato da Amazon") invece del fuorviante "prezzo non trovato", che lascerebbe
+ * credere a un problema di markup risolvibile con un fix di parsing.
  */
 
 function isAmazonHost(hostname: string): boolean {
   return /(^|\.)amazon\.[a-z.]+$/i.test(hostname);
+}
+
+/**
+ * Amazon protegge le sue pagine con un sistema anti-bot a più livelli (AWS WAF Bot Control)
+ * che blocca in blocco gli IP "da datacenter" — esattamente il tipo di IP con cui gira una
+ * funzione serverless su Vercel — ancora prima di mostrare la pagina prodotto vera: al posto
+ * suo arriva una pagina di verifica ("Robot Check" / CAPTCHA). Nessuna delle tre firme sotto
+ * dipende dal markup del prodotto, quindi il controllo vale per qualunque pagina Amazon,
+ * indipendentemente da cosa si stesse cercando di leggere. Distinguerla da un genuino
+ * "prezzo assente" è onesto verso l'utente: non è un caso che aggiustare la regex di
+ * estrazione risolverebbe, è la richiesta stessa a non ricevere mai il contenuto vero.
+ */
+function isAmazonBotChallengePage(html: string): boolean {
+  return (
+    /Robot Check/i.test(html) ||
+    /Enter the characters you see below/i.test(html) ||
+    /\/errors\/validateCaptcha/i.test(html)
+  );
 }
 
 function extractAmazonPrice(html: string): number | null {
@@ -113,6 +145,14 @@ export async function GET(request: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: "pagina non raggiungibile" }, { status: 502 });
 
     const html = await res.text();
+
+    if (isAmazonHost(parsedUrl.hostname) && isAmazonBotChallengePage(html)) {
+      return NextResponse.json(
+        { error: "Amazon ha bloccato questa richiesta automatica (verifica anti-bot) — per questo articolo il prezzo va aggiornato a mano." },
+        { status: 502 }
+      );
+    }
+
     const price =
       extractJsonLdPrice(html) ??
       extractMetaPrice(html, "product:price:amount") ??

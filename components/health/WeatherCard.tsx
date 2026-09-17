@@ -33,7 +33,7 @@ function groupUpcomingByDay(hourly: HourlyPoint[], nowIso: string): { dayLabel: 
 
   const today = nowIso.slice(0, 10);
   return [...byDay.entries()].map(([day, points]) => ({
-    dayLabel: day === today ? "Oggi" : weekdayShort(`${day}T12:00:00`),
+    dayLabel: day === today ? "Oggi" : weekdayShort(day),
     points,
   }));
 }

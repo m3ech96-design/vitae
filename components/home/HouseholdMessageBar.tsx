@@ -1,55 +1,48 @@
 "use client";
 import { useState } from "react";
-import { Send } from "lucide-react";
-import { useHouseholdMessages, MessageUrgency } from "@/lib/household-messages-context";
+import { useRouter } from "next/navigation";
+import { Send, Sparkles } from "lucide-react";
 import { GlassCard } from "../ui/GlassCard";
 
-const URGENCY_META: { id: MessageUrgency; label: string; color: string }[] = [
-  { id: "normale", label: "Normale", color: "#00E5C7" },
-  { id: "importante", label: "Importante", color: "#FFB454" },
-  { id: "urgente", label: "Urgente", color: "#FF4D6D" },
-];
-
 /**
- * "Delle dimensioni delle notifiche" — stessa altezza/stile compatto di una card di
- * notifica, non un editor grande: scrivere ai membri della casa deve restare un gesto
- * rapido, non un modulo.
+ * Corretto secondo le istruzioni: questa barra scriveva ai membri della casa (vedi
+ * lib/household-messages-context.tsx, HouseholdMessagesFeed più sopra in Home, ancora
+ * intatti — quel canale di messaggi umani resta invariato) — ora è l'accesso rapido al
+ * maggiordomo Tiber. Stesso ingombro "delle dimensioni delle notifiche" di prima: scrivere
+ * a Tiber da qui deve restare un gesto rapido, non un modulo.
+ *
+ * Non tenta di rispondere qui stesso (niente chat inline in Home): il messaggio scritto
+ * apre la pagina dedicata /tiber già con quel testo pronto nell'URL, dove la conversazione
+ * vera comincia — un solo posto dove Tiber vive e ha memoria del contesto, non due canali
+ * paralleli che rischierebbero di disallinearsi.
  */
 export function HouseholdMessageBar() {
-  const { addMessage } = useHouseholdMessages();
+  const router = useRouter();
   const [text, setText] = useState("");
-  const [urgency, setUrgency] = useState<MessageUrgency>("normale");
-  const meta = URGENCY_META.find((u) => u.id === urgency)!;
 
   const send = () => {
-    if (!text.trim()) return;
-    addMessage(text.trim(), urgency);
-    setText("");
-    setUrgency("normale");
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    router.push(`/tiber?q=${encodeURIComponent(trimmed)}`);
   };
 
   return (
     <GlassCard className="flex items-center gap-2 p-2.5">
-      <button
-        onClick={() => setUrgency(URGENCY_META[(URGENCY_META.findIndex((u) => u.id === urgency) + 1) % URGENCY_META.length].id)}
-        className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition"
-        style={{ borderColor: `${meta.color}55`, background: `${meta.color}18` }}
-        title={`Urgenza: ${meta.label} — tocca per cambiare`}
-      >
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: meta.color }} />
-      </button>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-aura-violet/40 bg-aura-violet/15">
+        <Sparkles size={14} className="text-aura-violet" />
+      </span>
       <input
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && send()}
-        placeholder="Scrivi ai membri della casa..."
+        placeholder="Chiedi qualcosa a Tiber..."
         className="focus-ring min-w-0 flex-1 bg-transparent text-sm text-ink-100 placeholder:text-ink-800"
       />
       <button
         onClick={send}
         disabled={!text.trim()}
         className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-aura-gradient text-void-950 disabled:opacity-30"
-        aria-label="Invia"
+        aria-label="Invia a Tiber"
       >
         <Send size={14} />
       </button>

@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { History, Briefcase, MapPin, Receipt, ChevronDown } from "lucide-react";
 import { MonthlyExpenseItem } from "@/lib/finance";
 import { EXPENSE_CATEGORY_META } from "@/lib/finance-meta";
@@ -8,25 +9,28 @@ import { formatDateShort } from "@/lib/date-format";
 const SOURCE_ICON = { task: Briefcase, luogo: MapPin, manuale: Receipt } as const;
 const SOURCE_LABEL = { task: "Task", luogo: "Luogo", manuale: "Manuale" } as const;
 
-const PAGE_SIZE = 20;
+const VISIBLE_LIMIT = 5;
 
 /**
  * Ogni spesa reale di sempre (task completate, visite a un luogo, spese manuali — mai le
  * ricorrenti, che sono configurazione e non un evento databile), più recente prima. Il dato
- * arriva già pronto da `allExpenseItems` (lib/finance.ts): questa è solo la vetrina. "Carica
- * altre" invece di scrollare tutto insieme — con mesi di storia la lista può diventare lunga,
- * meglio caricarla a pezzi che bloccare il primo render con centinaia di righe.
+ * arriva già pronto da `allExpenseItems` (lib/finance.ts): questa è solo la vetrina.
  *
  * Chiusa di default (tendina): con le Spese Singole che dopo 24h confluiscono qui (vedi
  * SingleExpensesSection), la Cronologia può diventare lunga in fretta e occupare da sola
  * tutto lo schermo della scheda Finanze — un pannello richiudibile la tiene fuori dai piedi
  * finché non serve davvero consultarla, invece di essere sempre spalancata sotto tutto il
  * resto.
+ *
+ * Contenuto visibile sempre limitato a VISIBLE_LIMIT righe (invece di caricare pagine
+ * progressive qui dentro): oltre quel tetto, "Mostra altro" porta alla pagina dedicata
+ * /finanze/cronologia con l'elenco completo — la scheda Finanze resta corta anche con mesi
+ * di storia accumulata.
  */
 export function ChronologicalExpensesTable({ items }: { items: MonthlyExpenseItem[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const visible = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
+  const visible = items.slice(0, VISIBLE_LIMIT);
 
   const header = (
     <button
@@ -86,12 +90,12 @@ export function ChronologicalExpensesTable({ items }: { items: MonthlyExpenseIte
         })}
       </div>
 
-      {visibleCount < items.length && (
+      {items.length > VISIBLE_LIMIT && (
         <button
-          onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+          onClick={() => router.push("/finanze/cronologia")}
           className="focus-ring mt-3 w-full rounded-xl2 border border-white/10 py-2.5 text-xs text-ink-400 hover:border-white/20 hover:text-ink-100"
         >
-          Carica altre ({items.length - visibleCount} rimaste)
+          Mostra altro ({items.length - VISIBLE_LIMIT} rimasti)
         </button>
       )}
     </div>

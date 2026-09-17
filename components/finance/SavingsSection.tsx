@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { PiggyBank, Target, History } from "lucide-react";
 import { capitalizeWords } from "@/lib/text";
 import { formatDateShort } from "@/lib/date-format";
@@ -9,9 +10,10 @@ import { InlineAddPanel } from "../ui/InlineAddPanel";
 import { SavingsVessel } from "./SavingsVessel";
 import { SavingsGoalDetailSheet } from "./SavingsGoalDetailSheet";
 
-const HISTORY_PAGE_SIZE = 10;
+const HISTORY_VISIBLE_LIMIT = 5;
 
 export function SavingsSection() {
+  const router = useRouter();
   const { savingsGoals, addSavingsGoal, contributeSavingsGoal, removeSavingsGoal, savingsEntries, addSavingsEntry, goalContributions } =
     useFinance();
   const [goalLabel, setGoalLabel] = useState("");
@@ -19,7 +21,6 @@ export function SavingsSection() {
   const [depositAmount, setDepositAmount] = useState("");
   const [depositMode, setDepositMode] = useState<"deposita" | "preleva">("deposita");
   const [depositing, setDepositing] = useState(false);
-  const [historyVisible, setHistoryVisible] = useState(HISTORY_PAGE_SIZE);
   const [openGoalId, setOpenGoalId] = useState<string | null>(null);
 
   const balance = savingsEntries.reduce((s, e) => s + e.amount, 0);
@@ -113,7 +114,7 @@ export function SavingsSection() {
             <History size={12} /> Cronologia versamenti
           </p>
           <div className="space-y-1.5">
-            {recentEntries.slice(0, historyVisible).map((entry) => (
+            {recentEntries.slice(0, HISTORY_VISIBLE_LIMIT).map((entry) => (
               <div
                 key={entry.id}
                 className="flex items-center gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5"
@@ -129,12 +130,12 @@ export function SavingsSection() {
               </div>
             ))}
           </div>
-          {historyVisible < recentEntries.length && (
+          {recentEntries.length > HISTORY_VISIBLE_LIMIT && (
             <button
-              onClick={() => setHistoryVisible((v) => v + HISTORY_PAGE_SIZE)}
+              onClick={() => router.push("/finanze/cronologia-versamenti")}
               className="focus-ring mt-2 w-full rounded-xl2 border border-white/10 py-2 text-xs text-ink-400 hover:border-white/20 hover:text-ink-100"
             >
-              Carica altri ({recentEntries.length - historyVisible} rimasti)
+              Mostra altro ({recentEntries.length - HISTORY_VISIBLE_LIMIT} rimasti)
             </button>
           )}
         </div>
