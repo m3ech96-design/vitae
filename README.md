@@ -4142,3 +4142,361 @@ secondi aspettare, il dato più diretto possibile invece di indovinare dal tipo 
 Se anche questo risultasse assente (Google non li include sempre entrambi), il modo più
 diretto per sapere il numero vero resta quello che l'errore stesso indica esplicitamente:
 https://ai.dev/rate-limit, il pannello ufficiale di utilizzo per l'account specifico.
+
+## Checkpoint 135 — Stati d'animo: catalogo trigger aggiornato con tutto ciò che l'app ha imparato a fare da allora
+
+Chiesto se il catalogo dei trigger di Stati d'animo fosse rimasto al passo con l'evoluzione
+dell'app. Risposta, dopo un audit riga per riga di ogni trigger E di dove viene davvero
+attivato nel codice (non solo cosa dice il catalogo): no, non del tutto — trovati due bug
+veri e tre schede intere mai collegate, introdotte dopo che questo catalogo fu scritto.
+
+**Due bug corretti**:
+- **"Stipendio diviso"** (calcolatore in Finanze) attivava già un trigger nel codice, ma
+  quel trigger non esisteva nel catalogo — invisibile, non configurabile, non faceva
+  letteralmente nulla. Aggiunto.
+- **"Nuovo legame in famiglia"** esisteva nel catalogo, configurabile dall'utente, ma non
+  veniva mai attivato da nessuna parte del codice — cercato un punto d'aggancio reale
+  (un'eventuale struttura di "albero genealogico" o legami di parentela) e non trovato:
+  non esiste nel modello dati attuale. Rimosso invece di lasciarlo come opzione fantasma
+  che non avrebbe mai potuto scattare.
+
+(Anche "Esaudire un bisogno" era di fatto superato — non un bug, una scelta di design
+precedente mai ripulita dal catalogo: ogni bisogno sceglie ormai il proprio stato d'animo
+individualmente, non più un trigger unico fisso per tutti. Rimosso per pulizia.)
+
+**Tre schede mai collegate, ora agganciate — con criterio, non per riempire caselle**:
+- **Hobby**: libro/film completato in Libreria con voto alto o basso (stessa idea già in
+  uso per la valutazione di un luogo — solo agli estremi, mai per un voto medio), abbandono
+  di un libro o un progetto, un progetto finito, una partita vinta o persa, un nuovo record
+  personale in una Metrica (confrontato col record precedente, non un valore qualunque —
+  un solo dato non "batte" nulla), una voce di Checklist completata, un nuovo pezzo in
+  Inventario. Volutamente NON toccato il blocco Statistiche: una serie di numeri non ha un
+  momento emotivo naturale da agganciare, forzarne uno sarebbe stato riempire una casella
+  senza motivo.
+- **Wishlist**: un articolo segnato come ottenuto, un calo di prezzo di almeno il 10% (una
+  soglia dichiarata, non una qualunque oscillazione) durante un controllo prezzo — singolo
+  o in blocco.
+- **Liste e note**: spuntare l'ultima voce rimasta di una lista — confrontato con tutte le
+  altre voci, non un conteggio a caso.
+
+Aggiunto anche un trigger mancante in Salute per le schede di allenamento strutturate
+(sessione completata), distinto dal semplice log di un allenamento già esistente.
+
+**Deliberatamente lasciati fuori, con una ragione**: Alimentazione e Diario. La dispensa non
+ha un momento "emotivo" naturale che non sia già coperto dagli avvisi di scorta esistenti;
+per il Diario, dedurre uno stato d'animo dal tono di ciò che viene scritto significherebbe
+interpretare un testo personale invece di limitarsi a un evento oggettivo come tutti gli
+altri trigger del catalogo — un confine deliberato, non una dimenticanza.
+
+Ogni nuovo trigger distingue un vero cambiamento di stato da un semplice re-salvataggio
+(riaprire e risalvare un libro già completato non lo fa scattare di nuovo) — stesso principio
+già in uso per gli inneschi esistenti, verificato file per file prima di scrivere.
+
+## Checkpoint 136 — Trovato lo stesso concetto altrove: le voci di Diario non erano collegabili né cercabili
+
+Chiesto di verificare se lo stesso tipo di problema del catalogo Stati d'animo (un elenco
+scritto una volta, mai esteso quando l'app si è evoluta) esistesse anche altrove. Controllato
+il sistema di collegamento generico tra entità (`lib/entity-link.ts`) e la ricerca globale —
+entrambi derivano da un solo elenco condiviso (`LinkableType`), quindi non possono andare
+fuori sincrono tra loro per costruzione. Ma quell'elenco stesso non includeva "diario".
+
+**Il vuoto reale**: il Diario può collegarsi ad altre entità (persone, luoghi, task...) — è
+uno dei due "consumatori" del link generico, insieme a Liste e note — ma nulla poteva
+collegarsi A una voce di diario, e le voci di diario non comparivano mai nella ricerca
+globale (Cerca in tutta l'app, da Home). Stesso concetto del catalogo di Stati d'animo
+rimasto indietro, applicato qui a cosa può essere linkato/cercato invece che a cosa
+suggerisce uno stato d'animo — quasi certamente perché il Diario esisteva prima ancora che
+questo sistema di collegamento generico venisse costruito.
+
+Corretto in tre file, tutti derivati dallo stesso tipo condiviso: aggiunto "diario" a
+`LinkableType` (lib/entity-link.ts), la sua risoluzione in `lib/entity-resolver.ts` (un
+estratto delle prime parole del testo, dato che una voce di diario non ha un titolo — stessa
+idea già usata per Tiber in `leggi_diario`), e la sua presenza sia nella ricerca globale sia
+nel selettore "Collega" (entrambi ancora due liste scritte a mano separatamente, non derivate
+in automatico dal tipo condiviso — un'altra piccola parte dello stesso concetto, annotata ma
+non ristrutturata qui: funzionano correttamente finché si aggiorna ogni copia insieme, come
+fatto qui).
+
+Controllato anche il catalogo dei widget di Home (`lib/widgets/registry.ts`): già completo,
+con una definizione per ciascun modulo compreso Hobby/Wishlist/Diario — nessun vuoto trovato
+lì.
+
+## Checkpoint 137 — Tiber ora può parlare a voce: lettura automatica delle risposte, microfono per rispondergli, intromissioni spontanee con conferma prima dell'audio
+
+Richiesta progettata su più scambi prima di essere costruita (vedi l'area
+vitae-assistente-ia): un nuovo interruttore nelle impostazioni di Tiber, "Tiber ti parla"
+(spento di default), che quando acceso attiva insieme tre cose, mai separatamente.
+
+**Le tre cose, tutte dietro lo stesso interruttore**:
+- In chat normale (`/tiber`): ogni risposta di Tiber viene letta ad alta voce non appena
+  arriva, senza chiedere conferma (l'utente è già davanti allo schermo), e un'icona
+  microfono accanto al campo di testo permette di rispondergli a voce — tieni premuto,
+  parla, rilascia, parte da sola.
+- Nelle intromissioni spontanee (bolla flottante globale): un suono più il testo generico
+  "Tiber vorrebbe parlarti" (mai il messaggio vero, non ancora) con una spunta per
+  accettare o una X per rifiutare. Solo accettando si sente l'audio E si legge il testo
+  vero — esattamente come già succedeva, più l'audio. Dopo l'accettazione, un microfono e
+  un pulsante "termina conversazione" restano attaccati alla bolla per continuare a voce
+  senza dover aprire la chat.
+- Spento (il default, invariato per chi non lo accende): la bolla flottante si comporta
+  esattamente come prima che questa funzionalità esistesse — un ramo di codice a sé, non
+  una versione "silenziata" dello stesso: nessun permesso del microfono viene mai chiesto,
+  nessuna sintesi vocale viene mai avviata.
+
+**Come arriva l'audio a Gemini**: mai trascritto dal telefono. Il microfono registra
+(`MediaRecorder`, stesso meccanismo già in uso in Diario per le note vocali — vedi
+`components/diario/VoiceRecorderInput.tsx` — qui riorganizzato in un hook condiviso,
+`lib/tiber/use-voice-recorder.ts`, usato sia dalla bolla sia dalla chat) e il blob audio
+grezzo va a Gemini così com'è (`inlineData`, formato preso da `MediaRecorder.mimeType` senza
+forzature — verificato sulla documentazione ufficiale Gemini che sia webm/opus
+(Chrome/Android) sia mp4/aac (Safari/iPhone) rientrano tra i formati audio accettati, e che
+`gemini-3.5-flash-lite` — il modello già in uso — supporta input audio). In chat, il
+messaggio dell'utente compare come l'etichetta fissa "🎤 Messaggio vocale", mai una
+trascrizione — è quell'etichetta, non l'audio, a essere riproposta a Gemini nei turni
+successivi tramite la finestra di contesto: l'audio vero viene capito una volta sola.
+
+**Le risposte restano testo**: è il telefono a leggerle ad alta voce (`SpeechSynthesis`,
+gratuita, nessun costo aggiuntivo), non un audio generato da Gemini. Controllato sempre sul
+ruolo del messaggio (`assistant`, mai `user`), mai su "l'ultimo arrivato" — la propria
+etichetta "🎤 Messaggio vocale" non viene quindi mai letta ad alta voce.
+
+**Una sola richiesta a Gemini per messaggio vocale**, esattamente come per un messaggio
+scritto — non consuma il tetto giornaliero più in fretta, solo qualche decina di token in
+più per il peso dell'audio stesso (~32 token/secondo, per un utilizzo personale via via
+irrilevante rispetto al tetto giornaliero).
+
+**Refactoring necessario, non opzionale**: il ciclo multi-turno che esegue i tool e gestisce
+la fascia distruttiva viveva solo dentro `sendMessage` (`lib/tiber/context.tsx`) — estratto
+in una funzione condivisa (`runTurnLoop`) invece di duplicarlo per il nuovo
+`sendVoiceMessage`, che differisce solo per come nasce il turno iniziale (testo o audio).
+Copiarlo avrebbe creato due implementazioni dello stesso ciclo destinate a divergere nel
+tempo — lo stesso tipo di duplicazione già cercata ed eliminata altrove in questo progetto.
+La stessa funzione condivisa gestisce anche la lettura automatica, in un solo punto.
+
+**Limite onesto, non un bug**: su iPhone, `SpeechSynthesis.speak()` è affidabile solo se
+chiamato in modo sincrono dentro un gesto dell'utente — l'attesa della risposta di Gemini,
+in mezzo, a volte rompe quel collegamento e la lettura automatica successiva al primo
+scambio vocale può uscire muta, senza alcun errore visibile. Applicato un correttivo noto
+(si "riarma" il motore vocale nell'istante stesso in cui il microfono viene rilasciato,
+prima di aspettare Gemini, sia sulla bolla sia in chat) ma è un comportamento documentato di
+Safari, non dell'app — non garantito solo dal codice, va verificato su un iPhone vero. Il
+testo della risposta resta comunque sempre leggibile in chat a prescindere dall'audio.
+
+**File nuovi**: `lib/tiber/speech.ts` (lettura ad alta voce, il correttivo per Safari, il
+suono dell'intromissione generato con Web Audio — nessun file .mp3/.wav da caricare o poter
+mancare), `lib/tiber/use-voice-recorder.ts` (registrazione "tieni premuto" condivisa tra
+bolla e chat).
+
+**File toccati**: `lib/tiber/gemini.ts` (turno audio + conversione blob→base64),
+`lib/tiber/types.ts` (flag `voice` sul messaggio), `lib/tiber/settings-context.tsx`
+(l'interruttore, persistito come gli altri), `lib/tiber/context.tsx` (il refactoring sopra +
+`sendVoiceMessage`), `components/tiber/TiberFloatingBubble.tsx` (il nuovo gate +
+microfono/termina, con un ramo separato e invariato per interruttore spento),
+`app/tiber/page.tsx` (icona microfono in chat), `app/tiber/impostazioni/page.tsx` (il
+toggle, con la nota onesta sul limite di Safari scritta anche lì per l'utente).
+
+Verificato con `tsc --noEmit` e una build di produzione completa (`next build`) prima della
+consegna — entrambi puliti, nessun errore. Non verificabile da qui, per costruzione: il
+comportamento reale della sintesi vocale e della registrazione su un iPhone fisico, incluso
+se il correttivo per il limite di Safari basta davvero.
+
+## Checkpoint 138 — Audit approfondito di Tiber: due bug reali corretti, uno strutturale segnalato
+
+Chiesto un audit a fondo di tutto Tiber (non solo la voce, checkpoint 137) per capire quali
+bug potessero sorgere dal suo utilizzo. Letto ogni file di tool (`lib/tiber/tools/*.ts`),
+`context.tsx`, `registry.ts`, e i context dell'app più esposti alle chiamate concorrenti di
+un singolo turno (`finance-context.tsx`, `tasks-context.tsx`, `hobby-context.tsx`).
+
+**Corretto: cinque cancellazioni in `animals.ts` potevano colpire l'animale sbagliato.**
+`elimina_vaccinazione_animale`, `elimina_farmaco_animale`, `elimina_allergia_animale`,
+`elimina_appuntamento_veterinario`, `elimina_referto_animale` cercavano la voce da eliminare
+per nome/titolo in un array che contiene i dati di TUTTI gli animali, senza nessun parametro
+che scopisse la ricerca a un animale preciso — a differenza dei loro equivalenti "aggiungi" e
+di `elimina_peso_animale`, che invece risolve prima l'animale. Con due animali che hanno una
+vaccinazione o un farmaco dal nome simile, si poteva cancellare quello dell'animale
+sbagliato, senza che nulla lo segnalasse. Aggiunto `animalName` come parametro richiesto a
+tutti e cinque, con la stessa risoluzione in due passi già usata altrove nel modulo (prima
+l'animale, poi la voce solo tra le sue).
+
+**Corretto: un'azione distruttiva vocale poteva restare bloccata per sempre.** Bug introdotto
+dalla funzione vocale del checkpoint 137, non preesistente. Né `sendMessage` né
+`sendVoiceMessage` (`lib/tiber/context.tsx`) avevano una guardia contro chiamate sovrapposte.
+In chat testuale non poteva capitare (`send()` e il pulsante Invia controllano già `sending`
+in `app/tiber/page.tsx`), ma il microfono della bolla flottante nello stato "accettata"
+(`TiberFloatingBubble.tsx`) non aveva l'equivalente `disabled={sending}` presente invece sul
+microfono della chat. Tenendolo premuto una seconda volta mentre Tiber stava ancora
+rispondendo alla richiesta precedente, partiva una seconda `sendVoiceMessage` in parallelo:
+se entrambe proponevano un'azione distruttiva, `setPendingConfirmation` (un solo valore, non
+una coda) veniva sovrascritto dalla seconda, lasciando il riquadro "Sei sicuro?" del primo
+messaggio visibile in chat ma senza i pulsanti ✓/✗ (`TiberMessageBubble.tsx` li mostra solo
+se `pendingConfirmation?.toolCall.id` combacia) — bloccato per sempre, risolvibile solo
+azzerando la conversazione. Corretto su due livelli: `disabled={sending}` sul microfono della
+bolla (difesa nella UI, come già in chat) e una guardia `if (sendingRef.current) return;`
+dentro `sendMessage`/`sendVoiceMessage` stesse (difesa vera, non affidata solo a chi le
+chiama — stesso principio già usato in `triggerReflection`).
+
+**Verificato e scartato**: un'ipotesi di race condition da `Promise.all` nell'esecuzione
+concorrente di più tool nello stesso turno di Tiber — letti `finance-context.tsx`,
+`tasks-context.tsx`, `hobby-context.tsx` (i più esposti), tutti coerenti con la forma
+funzionale `setState(prev => ...)` già corretta negli audit passati (checkpoint 86): nessun
+lost-update possibile, il fix di allora tiene anche sotto il nuovo percorso concorrente.
+Verificata anche l'assenza di collisioni tra nomi di tool di moduli diversi in `registry.ts`
+(nessuna trovata).
+
+**Segnalato, non corretto qui**: il riquadro "Sei sicuro?" non mostra mai quale voce
+specifica verrà colpita, perché in quasi ogni tool distruttivo del catalogo la ricerca fuzzy
+del record (nome esatto se c'è, altrimenti sottostringa) avviene solo DOPO la conferma
+dell'utente — un limite strutturale del pattern usato in tutti i moduli (task, finanze,
+salute, hobby, note, wishlist, luoghi, persone...), non isolabile in un singolo file senza
+un cambio di architettura più ampio (una funzione di anteprima per ciascuno dei circa 45 tool
+distruttivi del catalogo). Non affrontato in questo checkpoint per restare nel perimetro
+concreto richiesto; resta un candidato per un checkpoint dedicato.
+
+Verificato con `tsc --noEmit` e `next build` dopo ogni correttivo — puliti, nessun errore.
+
+## Checkpoint 139 — Anteprima prima di entrare in un hobby, e il blocco Statistiche ridisegnato
+
+**Anteprima prima di entrare.** Toccare un hobby nella scheda non apre più subito
+`/hobby/[id]`: apre prima un foglio (`components/hobby/HobbyPreviewSheet.tsx`, nuovo) con il
+titolo, l'immagine incorniciata più grande di quella della card, un resoconto di cosa
+contiene ogni blocco, e "Entra" in fondo per aprire davvero la pagina. `HobbyCard.tsx` non
+usa più `<Link>`: un bottone apre il foglio, reso come fratello (non genitore) nell'albero
+React — nessun rischio del doppio-apri per risalita di eventi già corretto altrove in
+`PersonalCardSheet.tsx`, perché qui la struttura non lo espone.
+
+Il resoconto per blocco usa una nuova funzione condivisa, `summarizeBlock` in
+`lib/hobby-stats.ts`, che riusa gli stessi helper già esistenti (`metricCurrentValue`,
+`inventoryTotalValue`, `projectsTotalCost`, `matchRecord`) invece di ricalcolare la stessa
+sostanza una terza volta. Le icone per tipo di blocco, prima scritte solo dentro
+`AddBlockSheet.tsx`, sono ora in `lib/hobby-block-meta.ts` — un solo posto, riusato da
+entrambi invece di due mappe destinate a disallinearsi.
+
+**Blocco Statistiche: barre verticali invece di orizzontali, più ricche.** La vecchia vista
+(`BarChart` in `StatisticsBlockView.tsx`) era una fila di barre orizzontali piatte — sostituita
+con colonne verticali affiancate (lettura più immediata per un confronto tra voci, la stessa
+di un istogramma), con sfumatura invece di un colore piatto, un bagliore intorno alla colonna
+attiva, ed è possibile toccarne una per un'etichetta precisa (valore/tetto) invece di dover
+scrivere il numero ovunque in permanenza. Scorrimento orizzontale invece di stringere le
+colonne quando le voci sono tante, per restare leggibili anche con una scheda personaggio
+piena di abilità. Comportamento invariato per il resto: stessa scala condivisa tra le voci,
+stessi indicatori di voce più alta/più bassa, stesso tetto tratteggiato quando una voce ha un
+`max` inferiore alla scala. La vista radar (l'alternativa già esistente) non è stata toccata.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 140 — Trovato il punto più spoglio dell'app: `MiniLineChart`, usato in nove posti
+
+Chiesto di trovare cos'altro nell'app potesse essere raffinato graficamente. Passati in
+rassegna tutti i componenti di visualizzazione dati (`BudgetRing`, `CategoryDonut`,
+`SavingsRing`, `WeightChart`, `RelationshipChart`, `RelationshipGauge`/`LoveGauge`,
+`FrequencyChart`, `ActivityHeatmap`/`HeatmapGrid`) — già coerenti tra loro: sfumature,
+bagliori (`drop-shadow`/`feGaussianBlur`), animazioni a molla, contatori che scorrono.
+
+**Lo stonato: `components/medical/MiniLineChart.tsx`.** Il proprio commento in cima al file
+dice di essere "estratto dalla stessa logica di WeightChart.tsx" — ma nella generalizzazione
+aveva perso tutta la resa visiva della fonte: restava una linea sottile a tinta piatta, senza
+area sfumata sotto né bagliore, mentre WeightChart (la sua fonte dichiarata) ha entrambi. Non
+un dettaglio isolato: usato in nove punti diversi dell'app — parametri vitali, analisi del
+sangue, peso degli animali, metriche Hobby, misure corporee, tempo di permanenza nei luoghi
+(`VitalsSection`, `BloodTestsSection`, `AnimalWeightSection`, `MetricBlockView`,
+`BodyMeasurementsSection`, `PlaceWindow`, il widget peso di Home) — un solo file, quindi un
+solo correttivo che le eleva tutte insieme.
+
+Riportato alla stessa ricchezza di `WeightChart`: area sfumata sotto la linea (stesso colore
+del grafico, mai fisso), bagliore sulla linea stessa (`feGaussianBlur`), punto finale più
+grande ed evidenziato. Un dettaglio in più non presente nella fonte: l'id dei `<defs>` SVG
+(gradiente, sfocatura) è generato per istanza con `useId()` invece che scritto fisso come in
+WeightChart — necessario qui perché, a differenza di WeightChart (una sola volta per pagina),
+questo componente compare spesso più volte insieme sulla stessa schermata (più valori del
+sangue in fila, per esempio): un id fisso avrebbe fatto sì che il browser usasse la prima
+definizione trovata nel DOM per tutte le istanze successive con lo stesso id, sbagliando
+silenziosamente i colori delle altre. Firma della funzione invariata (`points`, `unit`,
+`color`, `hideCurrentValue`) — tutti e nove i richiami ne beneficiano senza dover toccare
+nulla altrove.
+
+**Controllato anche, senza intervenire**: `ActivityHeatmap`/`HeatmapGrid` (quadratini stile
+GitHub) sono deliberatamente minimali per leggibilità a colpo d'occhio, non spogli per
+trascuratezza — stesso linguaggio in entrambi i file, coerente. `RecurringExpensesSection` e
+simili elenchi di impostazioni sono liste piatte per scelta, non grafici mancati.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 141 — Una scheda Impostazioni unica, ultima icona fissa della barra
+
+Chiesto di raccogliere tutte le impostazioni sparse per l'app in un'unica scheda ordinata e
+ricca graficamente, di metterla come ultima icona (fissa) della barra di navigazione al posto
+di "Altro", e di controllare ogni sezione dell'app per personalizzazioni mancanti.
+
+**Inventario.** Passate in rassegna tutte le `vitae:*` chiavi di localStorage per separare le
+vere impostazioni (configurazione che cambia come si comporta l'app) dai dati di contenuto
+(cose che l'utente registra): trovate sparse in Home (rilevamento posizione dentro la card
+Famiglia, widget, scorciatoie, il backup — mai importato da nessuna pagina finché non
+raggiunto da qui), Finanze (ciclo del budget e suddivisione stipendio, editabili solo dentro
+`app/finanze/page.tsx`), Salute (obiettivo di peso, editabile solo aggiungendo una NUOVA
+pesata — l'obiettivo settimanale di attività non aveva alcuna interfaccia), Alimentazione
+(`FoodGoalsModal`, raggiungibile solo da dentro la scheda), Diario (`scrubPreviewEnabled`,
+un interruttore già scritto ma senza alcuna centralità), News (`/news/fonti`, una pagina
+dedicata già ottima) e Tiber (`/tiber/impostazioni`, una pagina già completa a sé).
+
+**`app/impostazioni/page.tsx`.** Una `GlassCard` per argomento — bolla colorata per icona
+(violetto/ciano/rosa/ambra/smeraldo/blu cielo, la stessa tavolozza `aura-*` del resto
+dell'app, mai casuale: un colore fisso per argomento), titolo e sottotitolo — non un elenco
+piatto di interruttori. Le impostazioni con già una UI ricca e collaudata altrove (obiettivi
+alimentari, fonti News, impostazioni Tiber) si aprono dal loro stesso modulo — un pulsante o
+un link — invece di essere riscritte una seconda volta qui, per restare un'unica fonte di
+verità; quelle senza una vera casa propria (rilevamento posizione, ciclo del budget,
+suddivisione stipendio di default, obiettivi di peso e attività, backup) vivono qui per
+intero, con la stessa cura per gli stati intermedi (campo vuoto, testo a metà) già stabilita
+altrove nell'app — mai un `NaN` o uno "0" forzato mentre si scrive.
+
+Due sezioni in più, pensate per non perdere nulla spostando "Altro": "Schede in barra" (le
+tre posizioni personalizzabili, ora cambiabili anche con un tocco qui, non solo con una
+pressione lunga sull'icona — `SlotPicker` estratto da `components/BottomNav.tsx` a
+`components/nav/SlotPicker.tsx` per essere richiamabile da entrambi i punti) e "Tutte le
+schede" (la stessa griglia di 14 schede che il foglio "Altro" mostrava, con un'etichetta "in
+barra" su quelle già presenti nei tre slot).
+
+**`components/BottomNav.tsx`.** Il pulsante "Altro" (apriva un foglio con le schede non in
+barra) sostituito da un'icona Impostazioni fissa, ultima della fila, mai riassegnabile con la
+pressione lunga — esattamente come Home. Nessuna scheda diventata irraggiungibile: le 11 non
+in barra restano tutte a un tocco, ora dentro Impostazioni → "Tutte le schede" invece che nel
+foglio "Altro".
+
+**Migrato per davvero, non solo linkato**: `BackupSection` spostata da in fondo alla Home
+(dove viveva isolata, l'unico punto di servizio in mezzo a card di contenuto) dentro
+Impostazioni → "Backup e dati".
+
+**Nuove impostazioni, dove mancavano davvero (non ovvie, non un interruttore a caso).**
+Controllate tutte le 14 schede principali per personalizzazioni reali: Task, Wishlist, Liste
+e note e Mappa avevano tutte un selettore di vista o ordinamento perfettamente funzionante ma
+**mai persistito** — ripartiva sempre dal valore di default a ogni apertura della scheda,
+costringendo a rifare la stessa scelta ogni volta. Introdotto `lib/use-persisted-choice.ts`
+(un hook generico per ricordare una scelta testuale tra opzioni valide, senza il giro
+completo di un `*-context.tsx` per un singolo valore per pagina) e collegato alle quattro
+schede: Task (vista Elenco/Calendario), Liste e note e Mappa (l'ordinamento che già avevano),
+Wishlist (vista griglia/verticale, **più un ordinamento che prima non esisteva affatto** —
+solo "più recenti" fisso: ora anche meno recenti, prezzo crescente/decrescente, con gli
+articoli senza prezzo sempre in fondo invece di comparire come "0€"). Raccolte anche in
+Impostazioni → "Viste predefinite", con un pulsante "Reimposta" per scheda.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 141.1 — "Altro" torna, come piccola icona sovrapposta al pill
+
+Richiesto subito dopo il Checkpoint 141: Impostazioni resta l'ultima icona fissa della barra,
+ma "Altro" (il foglio con le schede non in barra) torna anche lei, non più come scheda della
+fila ma come una piccola icona a parte, in basso a destra, leggermente sovrapposta al pill.
+
+Il rischio esplicitamente segnalato — un tocco sull'icona sovrapposta che attiva anche
+l'elemento sotto — è un difetto reale già incontrato più volte in questo progetto (vedi
+PersonalCardMenu.tsx, PersonCard, HobbyPreviewSheet.tsx), ma non è mai la sovrapposizione
+visiva in sé: è sempre un elemento annidato DENTRO un antenato cliccabile (un bottone dentro
+un `<Link>`, un menu dentro una card con il proprio `onClick`), la cui risalita degli eventi
+React attiva anche il gestore dell'antenato. Qui il bottone "Altro" è un fratello del pill
+nell'albero — figlio dello stesso `<div className="relative">` che li contiene entrambi, non
+annidato dentro il `<Link>` di Impostazioni su cui visivamente si sovrappone — quindi nessuna
+risalita possibile per costruzione, non solo per convenzione: il browser consegna comunque il
+click al solo elemento più in alto nello stacking (`stopPropagation` lasciato per coerenza con
+lo stesso pattern altrove, ma qui ridondante).
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.

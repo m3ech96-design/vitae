@@ -33,7 +33,8 @@ export interface GeminiTurnResult {
 type GeminiPart =
   | { text: string }
   | { functionCall: { name: string; args: Record<string, unknown> }; thoughtSignature?: string }
-  | { functionResponse: { name: string; response: Record<string, unknown> } };
+  | { functionResponse: { name: string; response: Record<string, unknown> } }
+  | { inlineData: { mimeType: string; data: string } };
 
 interface GeminiContent {
   role: "user" | "model";
@@ -139,6 +140,36 @@ export async function callGemini(
 
 export function userTurn(text: string): GeminiContent {
   return { role: "user", parts: [{ text }] };
+}
+
+/** Turno utente costruito da un messaggio vocale — un solo part `inlineData`, niente testo di
+ * accompagnamento: l'audio grezzo registrato dal microfono viene capito da Gemini direttamente
+ * (nessuna trascrizione lato browser, per scelta esplicita — vedi la nota su TiberMessage.voice
+ * in types.ts). `mimeType` va preso da `MediaRecorder.mimeType` così com'è, non forzato a un
+ * valore fisso: browser diversi producono contenitori diversi (webm/opus su Chrome/Android,
+ * mp4/aac su Safari/iPhone) ed entrambi rientrano nei formati audio che l'API Gemini accetta
+ * per `inlineData` — verificato sulla documentazione ufficiale prima di scrivere questa
+ * funzione, non per assunzione. */
+export function userAudioTurn(base64Data: string, mimeType: string): GeminiContent {
+  return { role: "user", parts: [{ inlineData: { mimeType, data: base64Data } }] };
+}
+
+/** Converte un Blob audio (quello che esce da MediaRecorder) nella stringa base64 pura che
+ * l'API Gemini si aspetta in `inlineData.data` — senza il prefisso "data:audio/...;base64,"
+ * che FileReader.readAsDataURL restituisce insieme al contenuto vero. Stesso giro già usato in
+ * lib/audio-store.ts (blobToDataUrl) per lo stesso motivo tecnico, qui isolato a parte perché
+ * il consumatore (context.tsx) ha bisogno solo della parte base64, mai dell'intera data URL. */
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const commaIndex = result.indexOf(",");
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 export function modelTurn(text: string, functionCalls: GeminiFunctionCall[]): GeminiContent {

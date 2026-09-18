@@ -6,6 +6,7 @@ import {
   Project,
   MatchesBlock,
   Match,
+  HobbyBlock,
 } from "./hobby-types";
 import { addDaysIso, todayIso } from "./date-format";
 
@@ -181,4 +182,54 @@ export function matchRecord(block: MatchesBlock): MatchRecord {
     currentStreak: currentStreakResult ? { result: currentStreakResult, count: currentStreakCount } : null,
     longestWinStreak,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Anteprima
+// ---------------------------------------------------------------------------
+
+/** Una riga di riepilogo per blocco — stessa sostanza dei sottotitoli già calcolati dentro
+ * ciascun *BlockView per l'header a tendina (vedi HobbyBlockCard), ma qui in un unico punto
+ * condiviso: usata dal foglio di anteprima di un hobby (HobbyPreviewSheet.tsx), che deve
+ * riassumere TUTTI i blocchi insieme prima ancora di entrare nella pagina vera, non solo
+ * quello aperto in quel momento. Mai "vuoto" silenzioso: un blocco senza contenuto lo dice
+ * esplicitamente invece di sparire dall'elenco. */
+export function summarizeBlock(block: HobbyBlock): string {
+  switch (block.kind) {
+    case "checklist": {
+      if (block.items.length === 0) return "Ancora vuoto";
+      const done = block.items.filter((i) => i.status === "fatta").length;
+      return `${done} di ${block.items.length} fatte`;
+    }
+    case "metrica": {
+      if (block.entries.length === 0) return "Ancora vuoto";
+      const label = block.aggregation === "cumulativa" ? "Totale" : "Ultimo valore";
+      const value = metricCurrentValue(block);
+      return `${label} ${value}${block.unit ? ` ${block.unit}` : ""} · ${block.entries.length} voci`;
+    }
+    case "inventario": {
+      if (block.items.length === 0) return "Ancora vuoto";
+      const value = inventoryTotalValue(block);
+      return `${block.items.length} pezzi${value > 0 ? ` · valore ${value.toLocaleString("it-IT")}€` : ""}`;
+    }
+    case "progetti": {
+      if (block.projects.length === 0) return "Ancora vuoto";
+      const cost = projectsTotalCost(block);
+      return `${block.projects.length} progetti${cost > 0 ? ` · ${cost.toLocaleString("it-IT")}€ investiti` : ""}`;
+    }
+    case "libreria": {
+      if (block.items.length === 0) return "Ancora vuoto";
+      const done = block.items.filter((i) => i.status === "completato").length;
+      return `${done} completati su ${block.items.length}`;
+    }
+    case "partite": {
+      if (block.matches.length === 0) return "Ancora vuoto";
+      const record = matchRecord(block);
+      return `${record.wins}V ${record.losses}S ${record.draws}P · ${Math.round(record.winRatePct)}%`;
+    }
+    case "statistiche": {
+      if (block.entries.length === 0) return "Ancora vuoto";
+      return `${block.entries.length} voci`;
+    }
+  }
 }

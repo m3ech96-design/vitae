@@ -24,43 +24,75 @@ function sharedScale(entries: StatEntry[]): number {
   return Math.max(1, ...entries.map((e) => e.max ?? e.value));
 }
 
+/** Altezza fissa dell'area colonne, in pixel — le percentuali dei valori sono relative a
+ * questa, non a `vh`/`%` del blocco (che cambierebbe a seconda di quante voci ci sono,
+ * rendendo le colonne più basse o più alte da un hobby all'altro senza motivo). */
+const BAR_AREA_HEIGHT = 168;
+
+/**
+ * Corretto secondo le istruzioni: la vecchia vista a barre era orizzontale (una fila di
+ * "linee" impilate) — sostituita con colonne verticali affiancate, più leggibili a colpo
+ * d'occhio come confronto tra voci (la stessa lettura di un istogramma) e più ricche
+ * graficamente: sfumatura invece di un colore piatto, bagliore intorno alla colonna, ed è
+ * possibile toccarne una per un'etichetta precisa (valore/tetto) senza dover fare spazio a
+ * un numero scritto ovunque in permanenza. Scorrimento orizzontale invece di stringere le
+ * colonne quando le voci sono tante — restano leggibili anche con una scheda personaggio
+ * piena di abilità, mai schiacciate una sull'altra. */
 function BarChart({ entries }: { entries: StatEntry[] }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
   const scale = sharedScale(entries);
   const sorted = [...entries].sort((a, b) => b.value - a.value);
   const highestId = sorted[0]?.id;
   const lowestId = sorted[sorted.length - 1]?.id;
 
   return (
-    <div className="space-y-2.5">
+    <div className="flex items-end gap-3 overflow-x-auto px-0.5 pb-1" style={{ height: BAR_AREA_HEIGHT + 56 }}>
       {sorted.map((entry) => {
-        const pct = Math.max(2, (entry.value / scale) * 100);
+        const idx = entries.findIndex((e) => e.id === entry.id);
+        const color = colorFor(entry, idx);
+        const pct = Math.max(3, (entry.value / scale) * 100);
         const capPct = entry.max ? Math.min(100, (entry.max / scale) * 100) : null;
         const isHighest = entry.id === highestId && sorted.length > 1;
         const isLowest = entry.id === lowestId && sorted.length > 1;
-        const idx = entries.findIndex((e) => e.id === entry.id);
+        const isActive = activeId === entry.id;
         return (
-          <div key={entry.id}>
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1 text-ink-200">
-                {isHighest && <TrendingUp size={11} className="text-aura-emerald" />}
-                {isLowest && <TrendingDown size={11} className="text-aura-pink" />}
-                {entry.name}
-              </span>
-              <span className="tabular-nums text-ink-600">
+          <button
+            key={entry.id}
+            onClick={() => setActiveId(isActive ? null : entry.id)}
+            className="focus-ring relative flex shrink-0 flex-col items-center gap-1.5"
+            style={{ width: 46 }}
+            aria-label={`${entry.name}: ${entry.value}${entry.max ? ` su ${entry.max}` : ""}`}
+          >
+            {isActive && (
+              <span className="absolute -top-7 z-10 whitespace-nowrap rounded-full border border-white/10 bg-void-950 px-2.5 py-1 text-[10px] text-ink-100 shadow-glass">
                 {entry.value}
                 {entry.max ? ` / ${entry.max}` : ""}
               </span>
-            </div>
-            <div className="relative h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+            )}
+            <span className="flex items-center gap-0.5 text-[10px] tabular-nums text-ink-400">
+              {isHighest && <TrendingUp size={9} className="text-aura-emerald" />}
+              {isLowest && <TrendingDown size={9} className="text-aura-pink" />}
+              {entry.value}
+            </span>
+            <div
+              className="relative flex w-full items-end overflow-hidden rounded-t-lg bg-white/[0.05]"
+              style={{ height: BAR_AREA_HEIGHT }}
+            >
               {capPct !== null && capPct < 100 && (
-                <span className="absolute inset-y-0 border-r border-dashed border-white/25" style={{ left: `${capPct}%` }} />
+                <span className="absolute inset-x-0 border-t border-dashed border-white/25" style={{ bottom: `${capPct}%` }} />
               )}
               <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${pct}%`, background: colorFor(entry, idx), opacity: isLowest ? 0.6 : 1 }}
+                className="w-full rounded-t-lg transition-all duration-300"
+                style={{
+                  height: `${pct}%`,
+                  background: `linear-gradient(180deg, ${color}, ${color}99)`,
+                  boxShadow: isActive ? `0 0 16px ${color}99` : `0 0 8px ${color}40`,
+                  opacity: isLowest ? 0.75 : 1,
+                }}
               />
             </div>
-          </div>
+            <span className="max-w-[46px] truncate text-[10px] text-ink-600">{entry.name}</span>
+          </button>
         );
       })}
     </div>

@@ -12,6 +12,7 @@ import { ratingLabel, ratingColor } from "@/lib/rating";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { DEFAULT_MAP_CENTER } from "@/lib/geo";
 import { stalePlaces } from "@/lib/stale-places";
+import { usePersistedChoice } from "@/lib/use-persisted-choice";
 
 function PlaceIcon({ place }: { place: Place }) {
   const meta = PLACE_TYPE_META[place.type];
@@ -46,7 +47,14 @@ export default function MapPage() {
   const { home } = useHousehold();
   const [addOpen, setAddOpen] = useState(false);
   const [openPlaceId, setOpenPlaceId] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortMode>("rating-desc");
+  // Corretto secondo le istruzioni: l'ordinamento ripartiva sempre da "Valutazione ↓" a ogni
+  // apertura della Mappa — ora la scelta resta da una sessione all'altra (vedi
+  // lib/use-persisted-choice.ts).
+  const [sort, setSort] = usePersistedChoice<SortMode>(
+    "vitae:map-sort",
+    "rating-desc",
+    ["rating-desc", "rating-asc", "visits-desc", "visits-asc"] as const
+  );
   const [flyToPlace, setFlyToPlace] = useState<{ lat: number; lng: number; at: number } | null>(null);
   const [recenterOnUserAt, setRecenterOnUserAt] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<PlaceType | null>(null);

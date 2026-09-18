@@ -44,6 +44,13 @@ export interface TiberMessage {
    * globale, non un ruolo diverso: resta comunque un messaggio "assistant" a tutti gli
    * effetti nella cronologia mandata a Gemini. */
   proactive?: boolean;
+  /** true solo per un messaggio "user" nato da una registrazione vocale (vedi
+   * sendVoiceMessage in context.tsx) — mai per l'assistente. `text` in questo caso non è mai
+   * una trascrizione: contiene sempre la stessa etichetta fissa "🎤 Messaggio vocale" (scelta
+   * esplicita: l'audio vero va a Gemini una volta sola, nel turno in cui viene registrato, non
+   * viene ritrascritto né riproposto nei turni successivi). Pilota solo la resa in chat, non
+   * la cronologia mandata a Gemini, che riusa lo stesso campo `text` per entrambi i casi. */
+  voice?: boolean;
 }
 
 /** Una singola azione che un tool può proporre — usata sia per eseguire subito (fascia

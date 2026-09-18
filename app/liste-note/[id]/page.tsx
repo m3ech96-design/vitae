@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Pencil, Pin, Plus, Trash2 } from "lucide-react";
 import { useNotes } from "@/lib/notes-context";
+import { useMood } from "@/lib/mood-context";
 import { formatExactMoment } from "@/lib/date-format";
 import { TextArea } from "@/components/ui/TextField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -28,6 +29,7 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
     addLink,
     removeLink,
   } = useNotes();
+  const { fireTrigger } = useMood();
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -196,7 +198,15 @@ export default function NoteEntryDetailPage({ params }: { params: { id: string }
                   item={item}
                   isFirst={index === 0}
                   isLast={index === entry.items.length - 1}
-                  onToggle={() => updateListItem(entry.id, item.id, { done: !item.done })}
+                  onToggle={() => {
+                    const newDone = !item.done;
+                    updateListItem(entry.id, item.id, { done: newDone });
+                    // Spuntare l'ULTIMA voce rimasta, non una qualunque — confrontato con
+                    // tutte le altre voci della stessa lista, non con questa soltanto.
+                    if (newDone && entry.items.filter((i) => i.id !== item.id).every((i) => i.done)) {
+                      fireTrigger("note:lista-completata");
+                    }
+                  }}
                   onMoveUp={() => moveListItem(entry.id, item.id, "up")}
                   onMoveDown={() => moveListItem(entry.id, item.id, "down")}
                   onRemove={() => removeListItem(entry.id, item.id)}

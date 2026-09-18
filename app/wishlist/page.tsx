@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Plus, LayoutGrid, GalleryVertical, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, LayoutGrid, GalleryVertical, RefreshCw, ArrowUpDown } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { isFulfilled, unlockThreshold } from "@/lib/wishlist-types";
 import { useFinance } from "@/lib/finance-context";
+import { usePersistedChoice } from "@/lib/use-persisted-choice";
+import { WishlistSortMode, WISHLIST_SORT_LABEL } from "@/lib/wishlist-sort";
 import { WishlistCard } from "@/components/wishlist/WishlistCard";
 import { WishlistShortView } from "@/components/wishlist/WishlistShortView";
 import { WishlistItemSheet } from "@/components/wishlist/WishlistItemSheet";
@@ -15,7 +17,17 @@ type ViewMode = "griglia" | "verticale";
 export default function WishlistPage() {
   const { hydrated, items, setSavedAmount, updateItem } = useWishlist();
   const { savingsGoals, savingsEntries } = useFinance();
-  const [view, setView] = useState<ViewMode>("griglia");
+  // Corretto secondo le istruzioni: prima solo la vista (griglia/verticale) esisteva come
+  // scelta, e nemmeno lei ricordata da una sessione all'altra; l'ordinamento era fisso su
+  // "più recenti prima", senza alcun modo di cambiarlo. Ora entrambi sono impostazioni vere
+  // (vedi lib/use-persisted-choice.ts) — l'ordine per prezzo in particolare serve a chi
+  // confronta più desideri diversi, non solo a chi vuole vedere l'ultimo aggiunto.
+  const [view, setView] = usePersistedChoice<ViewMode>("vitae:wishlist-view", "griglia", ["griglia", "verticale"] as const);
+  const [sort, setSort] = usePersistedChoice<WishlistSortMode>(
+    "vitae:wishlist-sort",
+    "recenti",
+    ["recenti", "meno-recenti", "prezzo-asc", "prezzo-desc"] as const
+  );
   const [addOpen, setAddOpen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [bulkCheckOpen, setBulkCheckOpen] = useState(false);
@@ -64,7 +76,22 @@ export default function WishlistPage() {
   }, [items, savingsGoals, generalBalance]);
 
   const openItem = items.find((i) => i.id === openItemId) ?? null;
-  const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Un articolo senza prezzo (item.price === null) non ha una posizione naturale in un
+  // ordinamento per prezzo — resta sempre in fondo, in entrambe le direzioni, invece di
+  // comparire come "0€" e finire tra i più economici.
+  const sorted = useMemo(() => {
+    const arr = [...items];
+    arr.sort((a, b) => {
+      if (sort === "recenti") return b.createdAt.localeCompare(a.createdAt);
+      if (sort === "meno-recenti") return a.createdAt.localeCompare(b.createdAt);
+      const hasA = a.price !== null;
+      const hasB = b.price !== null;
+      if (hasA !== hasB) return hasA ? -1 : 1;
+      if (!hasA) return 0;
+      return sort === "prezzo-asc" ? (a.price as number) - (b.price as number) : (b.price as number) - (a.price as number);
+    });
+    return arr;
+  }, [items, sort]);
 
   if (!hydrated) return null;
 
@@ -113,6 +140,23 @@ export default function WishlistPage() {
           >
             <GalleryVertical size={13} /> Verticale
           </button>
+        </div>
+      )}
+
+      {sorted.length > 1 && (
+        <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <ArrowUpDown size={12} className="shrink-0 text-ink-800" />
+          {(Object.keys(WISHLIST_SORT_LABEL) as WishlistSortMode[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSort(s)}
+              className={`focus-ring shrink-0 rounded-full border px-3 py-1.5 text-[11px] transition ${
+                sort === s ? "border-aura-cyan/60 bg-aura-cyan/15 text-ink-100" : "border-white/10 text-ink-800"
+              }`}
+            >
+              {WISHLIST_SORT_LABEL[s]}
+            </button>
+          ))}
         </div>
       )}
 

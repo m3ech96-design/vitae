@@ -9,6 +9,7 @@ import { useHobby } from "@/lib/hobby-context";
 import { useWishlist } from "@/lib/wishlist-context";
 import { useWorkoutPlans } from "@/lib/workout-plans-context";
 import { useNotes } from "@/lib/notes-context";
+import { useDiary } from "@/lib/diary-context";
 import { ANIMAL_KINDS } from "@/lib/types";
 import { EntityLink, LinkableType, LINKABLE_TYPE_LABEL } from "@/lib/entity-link";
 import { useEntityResolver } from "@/lib/entity-resolver";
@@ -47,6 +48,7 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
   const { items: wishlistItems } = useWishlist();
   const { plans: workoutPlans } = useWorkoutPlans();
   const { entries: noteEntries } = useNotes();
+  const { entries: diaryEntries } = useDiary();
   const { resolve } = useEntityResolver();
 
   const allEntries: SearchableEntry[] = useMemo(
@@ -62,8 +64,12 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
       ...wishlistItems.map((w) => ({ type: "wishlist" as const, id: w.id, name: w.name })),
       ...workoutPlans.map((wp) => ({ type: "scheda-allenamento" as const, id: wp.id, name: wp.name })),
       ...noteEntries.map((n) => ({ type: "nota" as const, id: n.id, name: n.title || "Senza titolo" })),
+      // Trovato mancante in un audit mirato: il Diario può collegarsi ad altre entità, ma
+      // le sue voci non comparivano mai qui — lo stesso concetto del catalogo di Stati
+      // d'animo rimasto indietro, applicato alla ricerca invece che ai trigger.
+      ...diaryEntries.map((d) => ({ type: "diario" as const, id: d.id, name: d.text })),
     ],
-    [people, places, tasks, ingredients, hobbies, wishlistItems, workoutPlans, noteEntries]
+    [people, places, tasks, ingredients, hobbies, wishlistItems, workoutPlans, noteEntries, diaryEntries]
   );
 
   const results = useMemo(() => {
@@ -102,8 +108,8 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
 
         {!query.trim() && (
           <p className="text-xs text-ink-800">
-            Scrivi un nome per cercare tra persone, animali, luoghi, task, ricette, hobby, wishlist, schede allenamento e
-            note.
+            Scrivi un nome per cercare tra persone, animali, luoghi, task, ricette, hobby, wishlist, schede allenamento,
+            note e voci di diario.
           </p>
         )}
         {query.trim() && results.length === 0 && <p className="text-xs text-ink-800">Nessun risultato per &quot;{query}&quot;.</p>}

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, KeyRound, ExternalLink, Trash2, Sparkles, ShieldCheck, Check, MessageCircleDashed, LayoutGrid } from "lucide-react";
+import { ArrowLeft, KeyRound, ExternalLink, Trash2, Sparkles, ShieldCheck, Check, MessageCircleDashed, LayoutGrid, Volume2 } from "lucide-react";
 import { useTiber } from "@/lib/tiber/context";
 import { useTiberSettings } from "@/lib/tiber/settings-context";
 import { TIBER_MODULES } from "@/lib/tiber/registry";
@@ -11,7 +11,15 @@ import { Button } from "@/components/ui/Button";
 export default function TiberSettingsPage() {
   const router = useRouter();
   const { hydrated, apiKey, setApiKey, messages, clearConversation } = useTiber();
-  const { hydrated: settingsHydrated, disabledModules, toggleModule, proactiveEnabled, setProactiveEnabled } = useTiberSettings();
+  const {
+    hydrated: settingsHydrated,
+    disabledModules,
+    toggleModule,
+    proactiveEnabled,
+    setProactiveEnabled,
+    voiceEnabled,
+    setVoiceEnabled,
+  } = useTiberSettings();
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -131,6 +139,40 @@ export default function TiberSettingsPage() {
             voce d'Hobby, del Diario o della Wishlist) e, solo allora — mai a orario fisso — decide se dire qualcosa: un'osservazione,
             una domanda, un parere. Una bolla flottante te lo fa sapere ovunque tu sia nell'app. Nessuna categoria fissa: decide
             lui, ogni volta, se e cosa dire — spesso, anche, di non dire nulla.
+          </p>
+        </GlassCard>
+
+        <GlassCard className="p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Volume2 size={16} className="text-aura-violet" />
+              <p className="font-display text-sm text-ink-100">Tiber ti parla</p>
+            </div>
+            <button
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full transition ${voiceEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
+              aria-label={voiceEnabled ? "Disattiva" : "Attiva"}
+              role="switch"
+              aria-checked={voiceEnabled}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${voiceEnabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+              />
+            </button>
+          </div>
+          <p className="text-xs text-ink-600">
+            Spento di default. Acceso: le risposte di Tiber (sia in chat sia dopo un'intromissione spontanea che hai
+            accettato) vengono lette ad alta voce dal telefono, un'icona di microfono compare accanto al campo di
+            testo per rispondergli a voce (tieni premuto, parla, rilascia), e un'intromissione spontanea passa prima
+            da un piccolo popup con un suono — "Tiber vorrebbe parlarti", spunta per sentirla, X per ignorarla come
+            sempre — invece di leggerti subito il messaggio ad alta voce senza chiedere. Spento, nessuna di queste tre
+            cose esiste nell'interfaccia: niente permesso del microfono richiesto, niente lettura vocale avviata.
+          </p>
+          <p className="mt-2 text-xs text-ink-600">
+            Il tuo audio va così com'è a Gemini (mai trascritto dal telefono) — in chat compare come "🎤 Messaggio
+            vocale" invece del testo esatto detto. Su iPhone, dopo il primo scambio vocale la lettura automatica
+            della risposta successiva potrebbe talvolta uscire muta — un limite noto di Safari, non un errore
+            dell'app: si corregge da solo riprovando lo scambio.
           </p>
         </GlassCard>
 

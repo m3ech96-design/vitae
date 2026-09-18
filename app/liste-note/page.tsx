@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus, Search, StickyNote, X } from "lucide-react";
 import { useNotes } from "@/lib/notes-context";
 import { noteMatchesQuery } from "@/lib/notes-search";
+import { usePersistedChoice } from "@/lib/use-persisted-choice";
 import { NoteEntryCard } from "@/components/notes/NoteEntryCard";
 import { AddNoteEntrySheet } from "@/components/notes/AddNoteEntrySheet";
 
@@ -17,7 +18,10 @@ export default function ListeNotePage() {
   const { hydrated, entries, addList, addNote } = useNotes();
   const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortMode>("recenti");
+  // Corretto secondo le istruzioni: l'ordinamento ripartiva sempre da "Più recenti" a ogni
+  // apertura della scheda, anche per chi preferiva sempre l'ordine alfabetico — ora la
+  // scelta resta da una sessione all'altra (vedi lib/use-persisted-choice.ts).
+  const [sort, setSort] = usePersistedChoice<SortMode>("vitae:liste-note-sort", "recenti", ["recenti", "alfabetico"] as const);
 
   const filtered = useMemo(() => {
     const arr = entries.filter((e) => noteMatchesQuery(e, query));

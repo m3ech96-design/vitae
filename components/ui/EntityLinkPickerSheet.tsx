@@ -8,6 +8,7 @@ import { useHobby } from "@/lib/hobby-context";
 import { useWishlist } from "@/lib/wishlist-context";
 import { useWorkoutPlans } from "@/lib/workout-plans-context";
 import { useNotes } from "@/lib/notes-context";
+import { useDiary } from "@/lib/diary-context";
 import { ANIMAL_KINDS } from "@/lib/types";
 import { EntityLink, LinkableType, LINKABLE_TYPE_LABEL } from "@/lib/entity-link";
 import { useEntityResolver } from "@/lib/entity-resolver";
@@ -47,6 +48,7 @@ export function EntityLinkPickerSheet({
   const { items: wishlistItems } = useWishlist();
   const { plans: workoutPlans } = useWorkoutPlans();
   const { entries: noteEntries } = useNotes();
+  const { entries: diaryEntries } = useDiary();
   const { resolve } = useEntityResolver();
 
   const allEntries: SearchableEntry[] = useMemo(() => {
@@ -63,9 +65,10 @@ export function EntityLinkPickerSheet({
       ...wishlistItems.map((w) => ({ type: "wishlist" as const, id: w.id, name: w.name })),
       ...workoutPlans.map((wp) => ({ type: "scheda-allenamento" as const, id: wp.id, name: wp.name })),
       ...noteEntries.map((n) => ({ type: "nota" as const, id: n.id, name: n.title || "Senza titolo" })),
+      ...diaryEntries.map((d) => ({ type: "diario" as const, id: d.id, name: d.text })),
     ];
     return entries.filter((e) => !isAlreadyLinked(e.type, e.id));
-  }, [people, places, tasks, ingredients, hobbies, wishlistItems, workoutPlans, noteEntries, existingLinks]);
+  }, [people, places, tasks, ingredients, hobbies, wishlistItems, workoutPlans, noteEntries, diaryEntries, existingLinks]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

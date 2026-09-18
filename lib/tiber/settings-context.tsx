@@ -16,6 +16,15 @@ interface TiberSettingsValue {
    * chattare con lui normalmente, solo la sua iniziativa spontanea. */
   proactiveEnabled: boolean;
   setProactiveEnabled: (v: boolean) => void;
+  /** L'interruttore "Tiber ti parla" — spento di default. Accende insieme tre cose sempre
+   * come blocco unico, mai separatamente: la lettura ad alta voce delle risposte di Tiber
+   * (lib/tiber/speech.ts), il microfono nella chat normale, e il popup con conferma prima
+   * dell'audio per le intromissioni spontanee sulla bolla flottante (TiberFloatingBubble.tsx).
+   * Spento, quel popup non esiste nemmeno: la bolla si comporta esattamente come prima che
+   * questo interruttore esistesse — non un ramo "silenzioso" dello stesso codice, un ramo
+   * diverso che non chiama mai né speechSynthesis né getUserMedia. */
+  voiceEnabled: boolean;
+  setVoiceEnabled: (v: boolean) => void;
 }
 
 const TiberSettingsContext = createContext<TiberSettingsValue | null>(null);
@@ -23,14 +32,16 @@ const TiberSettingsContext = createContext<TiberSettingsValue | null>(null);
 interface StoredSettings {
   disabledModules: string[];
   proactiveEnabled: boolean;
+  voiceEnabled: boolean;
 }
 
-const DEFAULTS: StoredSettings = { disabledModules: [], proactiveEnabled: true };
+const DEFAULTS: StoredSettings = { disabledModules: [], proactiveEnabled: true, voiceEnabled: false };
 
 export function TiberSettingsProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [disabledModules, setDisabledModules] = useState<string[]>(DEFAULTS.disabledModules);
   const [proactiveEnabled, setProactiveEnabledState] = useState(DEFAULTS.proactiveEnabled);
+  const [voiceEnabled, setVoiceEnabledState] = useState(DEFAULTS.voiceEnabled);
 
   useEffect(() => {
     try {
@@ -43,6 +54,10 @@ export function TiberSettingsProvider({ children }: { children: React.ReactNode 
         const validIds = new Set(TIBER_MODULES.map((m) => m.id));
         setDisabledModules((parsed.disabledModules ?? []).filter((id) => validIds.has(id)));
         if (typeof parsed.proactiveEnabled === "boolean") setProactiveEnabledState(parsed.proactiveEnabled);
+        // Assente in ogni salvataggio fatto prima di questa funzionalità — resta il default
+        // (spento) invece di andare in errore o forzare `false` esplicitamente qui: è già
+        // `false` di suo in DEFAULTS, questo è solo il caso in cui il campo esiste davvero.
+        if (typeof parsed.voiceEnabled === "boolean") setVoiceEnabledState(parsed.voiceEnabled);
       }
     } catch {
       // dati locali non leggibili: si riparte dai default
@@ -63,22 +78,38 @@ export function TiberSettingsProvider({ children }: { children: React.ReactNode 
     (id: string, enabled: boolean) => {
       setDisabledModules((prev) => {
         const next = enabled ? prev.filter((x) => x !== id) : Array.from(new Set([...prev, id]));
-        persist({ disabledModules: next, proactiveEnabled });
+        persist({ disabledModules: next, proactiveEnabled, voiceEnabled });
         return next;
       });
     },
-    [persist, proactiveEnabled]
+    [persist, proactiveEnabled, voiceEnabled]
   );
 
   const setProactiveEnabled = useCallback(
     (v: boolean) => {
       setProactiveEnabledState(v);
-      persist({ disabledModules, proactiveEnabled: v });
+      persist({ disabledModules, proactiveEnabled: v, voiceEnabled });
     },
-    [persist, disabledModules]
+    [persist, disabledModules, voiceEnabled]
   );
 
-  const value: TiberSettingsValue = { hydrated, disabledModules, toggleModule, proactiveEnabled, setProactiveEnabled };
+  const setVoiceEnabled = useCallback(
+    (v: boolean) => {
+      setVoiceEnabledState(v);
+      persist({ disabledModules, proactiveEnabled, voiceEnabled: v });
+    },
+    [persist, disabledModules, proactiveEnabled]
+  );
+
+  const value: TiberSettingsValue = {
+    hydrated,
+    disabledModules,
+    toggleModule,
+    proactiveEnabled,
+    setProactiveEnabled,
+    voiceEnabled,
+    setVoiceEnabled,
+  };
   return <TiberSettingsContext.Provider value={value}>{children}</TiberSettingsContext.Provider>;
 }
 

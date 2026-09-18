@@ -5,6 +5,7 @@ import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { useHousehold } from "@/lib/household-context";
+import { useMood } from "@/lib/mood-context";
 import { LibraryItem, LibraryStatus } from "@/lib/hobby-types";
 import { TextField, TextArea } from "../ui/TextField";
 import { Button } from "../ui/Button";
@@ -33,6 +34,7 @@ export function LibraryItemModal({
 }) {
   const { addLibraryItem, updateLibraryItem, removeLibraryItem } = useHobby();
   const { people } = useHousehold();
+  const { fireTrigger } = useMood();
 
   const [title, setTitle] = useState(item?.title ?? "");
   const [photoKey, setPhotoKey] = useState<string | undefined>(item?.photoKey);
@@ -67,6 +69,16 @@ export function LibraryItemModal({
     };
     if (item) updateLibraryItem(hobbyId, blockId, item.id, payload);
     else addLibraryItem(hobbyId, blockId, payload);
+
+    // Un vero cambiamento di stato, non un semplice re-salvataggio di una voce già in quello
+    // stato — altrimenti riaprire e risalvare un libro già completato lo farebbe scattare
+    // di nuovo ogni volta, senza che sia successo nulla di nuovo davvero.
+    if (status === "completato" && item?.status !== "completato") {
+      if (rating !== undefined && rating >= 4) fireTrigger("hobby:libreria-completato-alto");
+      else if (rating !== undefined && rating <= 2) fireTrigger("hobby:libreria-completato-basso");
+    } else if (status === "abbandonato" && item?.status !== "abbandonato") {
+      fireTrigger("hobby:libreria-abbandonato");
+    }
     onClose();
   };
 

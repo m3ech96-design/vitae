@@ -4,9 +4,10 @@ import { newId } from "@/lib/id";
 import { TiberMessage, TiberToolCall } from "./types";
 import { TIBER_TOOLS, getEnabledTools, enabledToolDeclarations, isReadOnlyTool } from "./registry";
 import { TiberExecutionContext } from "./tool-types";
-import { callGemini, userTurn, modelTurn, functionResponseTurn, GeminiFunctionCall } from "./gemini";
+import { callGemini, userTurn, modelTurn, functionResponseTurn, userAudioTurn, blobToBase64, GeminiFunctionCall } from "./gemini";
 import { useTiberSettings } from "./settings-context";
 import { buildActivitySnapshot } from "./activity-snapshot";
+import { speakTiberMessage } from "./speech";
 
 /** Prefisso deliberatamente diverso da "vitae:" — il backup dell'app (lib/backup.ts) salva
  * automaticamente TUTTO ciò che inizia per "vitae:", senza eccezioni verificate: la chiave
@@ -76,6 +77,11 @@ interface TiberContextValue {
    * in sequenza, mai tutte insieme silenziosamente. */
   pendingConfirmation: { messageId: string; toolCall: TiberToolCall } | null;
   sendMessage: (text: string) => Promise<void>;
+  /** Equivalente di sendMessage per un messaggio registrato a voce — stesso ciclo, stessa
+   * gestione di errori, unica differenza: il turno iniziale mandato a Gemini è l'audio grezzo
+   * (vedi userAudioTurn in gemini.ts), mai una trascrizione. `mimeType` va preso così com'è
+   * da MediaRecorder.mimeType (vedi use-voice-recorder.ts), mai forzato a un valore fisso. */
+  sendVoiceMessage: (blob: Blob, mimeType: string) => Promise<void>;
   confirmPendingAction: () => Promise<void>;
   cancelPendingAction: () => void;
   clearConversation: () => void;
@@ -104,7 +110,7 @@ export function TiberProvider({
    * bisogno sono già montati sopra di esso. */
   executionContext: TiberExecutionContext;
 }) {
-  const { disabledModules, proactiveEnabled } = useTiberSettings();
+  const { disabledModules, proactiveEnabled, voiceEnabled } = useTiberSettings();
   const [hydrated, setHydrated] = useState(false);
   const [apiKey, setApiKeyState] = useState<string | null>(null);
   const [messages, setMessages] = useState<TiberMessage[]>([]);
@@ -127,6 +133,13 @@ export function TiberProvider({
 
   const disabledModulesRef = useRef(disabledModules);
   disabledModulesRef.current = disabledModules;
+
+  // Stesso pattern ref-sempre-fresco di sopra — letto dentro runTurnLoop (una funzione non
+  // memoizzata, ricreata a ogni render, esattamente come runTool qui sotto) per decidere se
+  // leggere ad alta voce un messaggio appena prodotto senza dover ricreare sendMessage e
+  // sendVoiceMessage ogni volta che l'interruttore cambia.
+  const voiceEnabledRef = useRef(voiceEnabled);
+  voiceEnabledRef.current = voiceEnabled;
 
   const sendingRef = useRef(sending);
   sendingRef.current = sending;
@@ -235,8 +248,108 @@ export function TiberProvider({
     }
   }
 
+  /**
+   * Ciclo multi-turno condiviso da sendMessage e sendVoiceMessage qui sotto — prima di questo
+   * refactor viveva solo dentro sendMessage; copiarlo pari pari per il percorso vocale avrebbe
+   * creato due implementazioni dello stesso ciclo (esecuzione tool, stop per conferma sulla
+   * fascia distruttiva, richiamata a Gemini finché non risponde in chiaro) destinate a
+   * divergere nel tempo — esattamente il tipo di duplicazione che gli audit architetturali
+   * passati su quest'app hanno sempre cercato ed eliminato altrove. Le due funzioni differiscono
+   * solo in come nasce `initialHistory` (un turno di testo o un turno audio), non in come viene
+   * portato avanti da qui in poi.
+   *
+   * Occasione anche per la lettura ad alta voce automatica: ogni messaggio assistant prodotto
+   * QUI (mai un'intromissione spontanea, che nasce in triggerReflection più sotto e non passa
+   * da questa funzione — esclusa per costruzione, non serve ricontrollarlo) viene letto se
+   * l'interruttore "Tiber ti parla" è acceso in quel momento. Non parte mai per un messaggio
+   * role="user": `speakIfEnabled` riceve solo il testo dei messaggi assistant appena creati qui
+   * sotto, il ruolo è già garantito dal punto di chiamata, non da un controllo a parte.
+   */
+  async function runTurnLoop(apiKey: string, initialHistory: ReturnType<typeof userTurn>[]) {
+    let history = initialHistory;
+    const declarations = enabledToolDeclarations(disabledModulesRef.current);
+    let guard = 0;
+
+    const speakIfEnabled = (msg: TiberMessage) => {
+      if (voiceEnabledRef.current && msg.text) speakTiberMessage(msg.text);
+    };
+
+    // Ciclo multi-turno: il modello può incatenare più chiamate tool prima di rispondere in
+    // chiaro — 6 giri come tetto di sicurezza contro un loop infinito lato modello, ampiamente
+    // sufficiente per qualunque richiesta composita ragionevole.
+    while (guard < 6) {
+      guard += 1;
+      const turn = await callGemini(apiKey, SYSTEM_INSTRUCTION, history, declarations);
+
+      if (turn.functionCalls.length === 0) {
+        const assistantMsg: TiberMessage = {
+          id: newId(),
+          role: "assistant",
+          text: turn.text || "Fatto.",
+          createdAt: new Date().toISOString(),
+        };
+        persistMessages((prev) => [...prev, assistantMsg]);
+        speakIfEnabled(assistantMsg);
+        break;
+      }
+
+      // Se almeno una delle chiamate proposte in questo turno è distruttiva, ci si ferma qui:
+      // si mostra il messaggio con quella call in sospeso e si aspetta la conferma dell'utente
+      // invece di eseguirla ed eventualmente proseguire il ciclo da sola.
+      const destructiveCall = turn.functionCalls.find((fc) => TIBER_TOOLS[fc.name]?.destructive);
+      if (destructiveCall) {
+        const toolCall: TiberToolCall = {
+          id: newId(),
+          toolName: destructiveCall.name,
+          args: destructiveCall.args,
+          thoughtSignature: destructiveCall.thoughtSignature,
+          needsConfirmation: true,
+        };
+        const assistantMsg: TiberMessage = {
+          id: newId(),
+          role: "assistant",
+          text: turn.text,
+          toolCalls: [toolCall],
+          createdAt: new Date().toISOString(),
+        };
+        persistMessages((prev) => [...prev, assistantMsg]);
+        speakIfEnabled(assistantMsg);
+        setPendingConfirmation({ messageId: assistantMsg.id, toolCall });
+        break;
+      }
+
+      // Fascia normale: autonomia completa, eseguite subito senza alcuna conferma.
+      const results = await Promise.all(
+        turn.functionCalls.map(async (fc) => ({ name: fc.name, result: await runTool(fc, false) }))
+      );
+      const toolCalls: TiberToolCall[] = turn.functionCalls.map((fc, i) => ({
+        id: newId(),
+        toolName: fc.name,
+        args: fc.args,
+        thoughtSignature: fc.thoughtSignature,
+        result: results[i].result,
+      }));
+      const assistantMsg: TiberMessage = {
+        id: newId(),
+        role: "assistant",
+        text: turn.text,
+        toolCalls,
+        createdAt: new Date().toISOString(),
+      };
+      persistMessages((prev) => [...prev, assistantMsg]);
+      speakIfEnabled(assistantMsg);
+
+      history = [...history, modelTurn(turn.text, turn.functionCalls), functionResponseTurn(results)];
+    }
+  }
+
   const sendMessage = useCallback(
     async (text: string) => {
+      // Guardia contro chiamate sovrapposte — in chat testuale era già impossibile arrivarci
+      // (send() e il pulsante Invia controllano già `sending` in app/tiber/page.tsx), ma qui
+      // dentro è la difesa vera, non affidata solo alla UI che lo chiama: stesso principio già
+      // usato per triggerReflection più sotto (guardia su sendingRef.current).
+      if (sendingRef.current) return;
       if (!apiKey) {
         setError("Manca la chiave API di Gemini — impostala per parlare con Tiber.");
         return;
@@ -257,73 +370,73 @@ export function TiberProvider({
       persistMessages(workingMessages);
 
       try {
-        let history = recentHistory(workingMessages);
-        const declarations = enabledToolDeclarations(disabledModulesRef.current);
-        let guard = 0;
-        // Ciclo multi-turno: il modello può incatenare più chiamate tool prima di rispondere
-        // in chiaro — 6 giri come tetto di sicurezza contro un loop infinito lato modello,
-        // ampiamente sufficiente per qualunque richiesta composita ragionevole.
-        while (guard < 6) {
-          guard += 1;
-          const turn = await callGemini(apiKey, SYSTEM_INSTRUCTION, history, declarations);
+        const history = recentHistory(workingMessages);
+        await runTurnLoop(apiKey, history);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Errore di comunicazione con Tiber.");
+      } finally {
+        setSending(false);
+      }
+    },
+    [apiKey, persistMessages]
+  );
 
-          if (turn.functionCalls.length === 0) {
-            const assistantMsg: TiberMessage = {
-              id: newId(),
-              role: "assistant",
-              text: turn.text || "Fatto.",
-              createdAt: new Date().toISOString(),
-            };
-            persistMessages((prev) => [...prev, assistantMsg]);
-            break;
-          }
+  /**
+   * Equivalente di sendMessage per un messaggio registrato a voce — stesso runTurnLoop, stessa
+   * gestione di errori/stato. L'unica differenza reale è come nasce il turno iniziale mandato a
+   * Gemini: qui un `inlineData` con l'audio grezzo (vedi userAudioTurn in gemini.ts) invece di
+   * un turno di testo — mai una trascrizione lato browser, per scelta esplicita. Il messaggio
+   * salvato in cronologia (e mostrato in chat) usa invece l'etichetta fissa "🎤 Messaggio
+   * vocale" (vedi TiberMessage.voice in types.ts): è quel testo, non l'audio, che verrà
+   * riproposto a Gemini nei turni SUCCESSIVI tramite recentHistory — l'audio vero viene capito
+   * una volta sola, in QUESTA chiamata, mai riletto o rimandato più avanti nella conversazione.
+   *
+   * Una sola chiamata a Gemini per il turno iniziale (più le eventuali altre dello stesso ciclo
+   * di function-calling) — esattamente come sendMessage, nessuna richiesta aggiuntiva rispetto
+   * al percorso testuale: un messaggio vocale non consuma il tetto giornaliero più in fretta di
+   * uno scritto, solo qualche token in più per il peso dell'audio stesso.
+   */
+  const sendVoiceMessage = useCallback(
+    async (blob: Blob, mimeType: string) => {
+      // Corretto un bug reale: senza questa guardia, tenere premuto il microfono sulla bolla
+      // flottante una seconda volta mentre Tiber stava ancora rispondendo alla precedente
+      // avviava una seconda chiamata in parallelo — se ENTRAMBE proponevano un'azione
+      // distruttiva, `setPendingConfirmation` (un solo valore, non una coda) veniva
+      // sovrascritto dalla seconda: il riquadro "Sei sicuro?" della prima restava visibile in
+      // chat ma senza i pulsanti ✓/✗ (TiberMessageBubble li mostra solo se
+      // `pendingConfirmation?.toolCall.id` combacia), quindi bloccato per sempre. In chat
+      // testuale non poteva capitare (send() e il pulsante Invia controllano già `sending`),
+      // ma il microfono della bolla flottante non aveva alcun controllo equivalente — vedi il
+      // `disabled={sending}` aggiunto ora in TiberFloatingBubble.tsx. Questa guardia è la
+      // difesa vera, non affidata solo a quella UI, sullo stesso principio già usato per
+      // triggerReflection più sotto.
+      if (sendingRef.current) return;
+      if (!apiKey) {
+        setError("Manca la chiave API di Gemini — impostala per parlare con Tiber.");
+        return;
+      }
+      setError(null);
+      setSending(true);
 
-          // Se almeno una delle chiamate proposte in questo turno è distruttiva, ci si ferma
-          // qui: si mostra il messaggio con quella call in sospeso e si aspetta la conferma
-          // dell'utente invece di eseguirla ed eventualmente proseguire il ciclo da sola.
-          const destructiveCall = turn.functionCalls.find((fc) => TIBER_TOOLS[fc.name]?.destructive);
-          if (destructiveCall) {
-            const toolCall: TiberToolCall = {
-              id: newId(),
-              toolName: destructiveCall.name,
-              args: destructiveCall.args,
-              thoughtSignature: destructiveCall.thoughtSignature,
-              needsConfirmation: true,
-            };
-            const assistantMsg: TiberMessage = {
-              id: newId(),
-              role: "assistant",
-              text: turn.text,
-              toolCalls: [toolCall],
-              createdAt: new Date().toISOString(),
-            };
-            persistMessages((prev) => [...prev, assistantMsg]);
-            setPendingConfirmation({ messageId: assistantMsg.id, toolCall });
-            break;
-          }
+      // Catturato PRIMA di aggiungere il nuovo messaggio placeholder: è la cronologia su cui
+      // costruire il contesto per QUESTA chiamata, che poi riceve in coda il turno audio vero
+      // (mai il placeholder, che finirebbe per sostituire l'audio con la sua sola etichetta).
+      const previousMessages = messagesRef.current;
+      const userMsg: TiberMessage = {
+        id: newId(),
+        role: "user",
+        text: "🎤 Messaggio vocale",
+        voice: true,
+        createdAt: new Date().toISOString(),
+      };
+      const workingMessages = [...previousMessages, userMsg];
+      messagesRef.current = workingMessages;
+      persistMessages(workingMessages);
 
-          // Fascia normale: autonomia completa, eseguite subito senza alcuna conferma.
-          const results = await Promise.all(
-            turn.functionCalls.map(async (fc) => ({ name: fc.name, result: await runTool(fc, false) }))
-          );
-          const toolCalls: TiberToolCall[] = turn.functionCalls.map((fc, i) => ({
-            id: newId(),
-            toolName: fc.name,
-            args: fc.args,
-            thoughtSignature: fc.thoughtSignature,
-            result: results[i].result,
-          }));
-          const assistantMsg: TiberMessage = {
-            id: newId(),
-            role: "assistant",
-            text: turn.text,
-            toolCalls,
-            createdAt: new Date().toISOString(),
-          };
-          persistMessages((prev) => [...prev, assistantMsg]);
-
-          history = [...history, modelTurn(turn.text, turn.functionCalls), functionResponseTurn(results)];
-        }
+      try {
+        const base64 = await blobToBase64(blob);
+        const history = [...recentHistory(previousMessages), userAudioTurn(base64, mimeType)];
+        await runTurnLoop(apiKey, history);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Errore di comunicazione con Tiber.");
       } finally {
@@ -510,6 +623,7 @@ Non dire mai qualcosa solo per riempire il silenzio.]`;
     error,
     pendingConfirmation,
     sendMessage,
+    sendVoiceMessage,
     confirmPendingAction,
     cancelPendingAction,
     clearConversation,

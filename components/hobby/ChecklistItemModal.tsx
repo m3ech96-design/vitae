@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
+import { useMood } from "@/lib/mood-context";
 import { ChecklistItem, ChecklistStatus, Priority } from "@/lib/hobby-types";
 import { todayIso } from "@/lib/date-format";
 import { TextField, TextArea } from "../ui/TextField";
@@ -41,6 +42,7 @@ export function ChecklistItemModal({
   const { addChecklistItem, updateChecklistItem, removeChecklistItem } = useHobby();
   const { places } = usePlaces();
   const { people } = useHousehold();
+  const { fireTrigger } = useMood();
 
   const [title, setTitle] = useState(item?.title ?? "");
   const [status, setStatus] = useState<ChecklistStatus>(item?.status ?? "da-fare");
@@ -82,6 +84,7 @@ export function ChecklistItemModal({
     };
     if (item) updateChecklistItem(hobbyId, blockId, item.id, payload);
     else addChecklistItem(hobbyId, blockId, payload);
+    if (status === "fatta" && item?.status !== "fatta") fireTrigger("hobby:checklist-completata");
     onClose();
   };
 

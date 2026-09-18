@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { RefreshCw, TrendingDown, TrendingUp, History } from "lucide-react";
 import { WishlistItem } from "@/lib/wishlist-types";
+import { useMood } from "@/lib/mood-context";
 import { formatDateShort } from "@/lib/date-format";
 
 /**
@@ -21,6 +22,7 @@ export function WishlistPriceHistorySection({
 }) {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { fireTrigger } = useMood();
 
   const history = item.priceHistory ?? [];
   const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
@@ -39,6 +41,10 @@ export function WishlistPriceHistorySection({
       }
       const entry = { price: data.price, date: new Date().toISOString() };
       onPriceUpdated(data.price, [...history, entry]);
+      // "Parecchio" = almeno il 10% in meno rispetto all'ultimo controllo — una soglia, non
+      // un numero preso a caso: sotto quella percentuale è oscillazione normale di prezzo,
+      // non un vero calo degno di un commento.
+      if (previous && data.price <= previous.price * 0.9) fireTrigger("wishlist:prezzo-sceso");
     } catch {
       setError("Impossibile leggere la pagina in questo momento.");
     } finally {

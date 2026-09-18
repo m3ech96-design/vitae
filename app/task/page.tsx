@@ -10,6 +10,7 @@ import { spendCategoriesFor } from "@/lib/spending-categories";
 import { usePlaces } from "@/lib/places-context";
 import { useMood } from "@/lib/mood-context";
 import { todayIso, addDaysIso } from "@/lib/date-format";
+import { usePersistedChoice } from "@/lib/use-persisted-choice";
 import { TaskCard } from "@/components/task/TaskCard";
 import { TaskWindow } from "@/components/task/TaskWindow";
 import { NewTaskModal } from "@/components/task/NewTaskModal";
@@ -31,7 +32,10 @@ export default function TaskPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [spentPromptId, setSpentPromptId] = useState<string | null>(null);
-  const [view, setView] = useState<"elenco" | "calendario">("elenco");
+  // Corretto secondo le istruzioni: prima ripartiva sempre da "elenco" a ogni apertura della
+  // scheda — ora la scelta resta da una sessione all'altra, come tutte le vere impostazioni
+  // (vedi lib/use-persisted-choice.ts, e Impostazioni → "Viste predefinite").
+  const [view, setView] = usePersistedChoice<"elenco" | "calendario">("vitae:task-view", "elenco", ["elenco", "calendario"] as const);
   const [typeFilter, setTypeFilter] = useState<TaskType | "tutti">("tutti");
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory>("attive");
   const [selectedDay, setSelectedDay] = useState(todayIso());

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { X, Trash2, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
+import { useMood } from "@/lib/mood-context";
 import { Project, ProjectStatus, ProjectDestination, ProjectMaterial } from "@/lib/hobby-types";
 import { newId } from "@/lib/id";
 import { TextField, TextArea } from "../ui/TextField";
@@ -37,6 +38,7 @@ export function ProjectModal({
   onClose: () => void;
 }) {
   const { addProject, updateProject, removeProject } = useHobby();
+  const { fireTrigger } = useMood();
 
   const [name, setName] = useState(project?.name ?? "");
   const [photoKeys, setPhotoKeys] = useState<string[]>(project?.photoKeys ?? []);
@@ -81,6 +83,11 @@ export function ProjectModal({
     };
     if (project) updateProject(hobbyId, blockId, project.id, payload);
     else addProject(hobbyId, blockId, payload);
+
+    // Un vero cambiamento di stato, non un semplice re-salvataggio — stesso principio già
+    // applicato in LibraryItemModal.tsx.
+    if (status === "finito" && project?.status !== "finito") fireTrigger("hobby:progetto-finito");
+    else if (status === "abbandonato" && project?.status !== "abbandonato") fireTrigger("hobby:progetto-abbandonato");
     onClose();
   };
 

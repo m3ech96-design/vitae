@@ -4,6 +4,7 @@ import { ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { usePlaces } from "@/lib/places-context";
 import { useFinance } from "@/lib/finance-context";
+import { useMood } from "@/lib/mood-context";
 import { WishlistItem, unlockThreshold } from "@/lib/wishlist-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { PersonalCardSheet } from "../home/PersonalCardSheet";
@@ -36,6 +37,7 @@ function DetailPhoto({ photoKey, onClick }: { photoKey?: string; onClick: () => 
  */
 export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClose: () => void }) {
   const { removeItem, updateItem, setLinkedTo, fulfillItem, unfulfillItem } = useWishlist();
+  const { fireTrigger } = useMood();
   const { places } = usePlaces();
   const { savingsGoals, contributeSavingsGoal, addSavingsEntry } = useFinance();
   const [editing, setEditing] = useState(false);
@@ -94,6 +96,7 @@ export function WishlistItemSheet({ item, onClose }: { item: WishlistItem; onClo
     if (linkedTo?.kind === "general") addSavingsEntry(-amount, `Esaudito: ${item.name}`);
     else if (linkedTo?.kind === "goal") contributeSavingsGoal(linkedTo.goalId, -amount);
     fulfillItem(item.id, amount);
+    fireTrigger("wishlist:ottenuto");
   };
 
   // Riaprire: la quota torna a seguire la destinazione (se ancora collegata) — i soldi

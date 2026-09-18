@@ -99,20 +99,30 @@ export const animalTools: Record<string, TiberToolDefinition> = {
   elimina_vaccinazione_animale: {
     declaration: {
       name: "elimina_vaccinazione_animale",
-      description: "Rimuove una vaccinazione di un animale, cercandola per nome vaccino. Azione distruttiva.",
+      description: "Rimuove una vaccinazione di un animale specifico, cercandola per nome vaccino. Azione distruttiva.",
       parameters: {
         type: "OBJECT",
-        properties: { vaccineName: { type: "STRING", description: "Nome (anche parziale) del vaccino." } },
-        required: ["vaccineName"],
+        properties: {
+          animalName: { type: "STRING", description: "Nome dell'animale a cui appartiene la vaccinazione." },
+          vaccineName: { type: "STRING", description: "Nome (anche parziale) del vaccino." },
+        },
+        required: ["animalName", "vaccineName"],
       },
     },
     destructive: true,
+    // Corretto: prima cercava tra le vaccinazioni di TUTTI gli animali senza scoparle a uno
+    // solo — con due animali con una vaccinazione dal nome simile, poteva cancellare quella
+    // dell'animale sbagliato senza che nulla lo segnalasse. Ora si risolve prima l'animale,
+    // poi si cerca solo tra le sue vaccinazioni, esattamente come fa già registra_vaccinazione_animale.
     execute: (args, ctx) => {
-      const { health } = animalsCtx(ctx);
-      const found = byNameNeedle(health.vaccinations, String(args.vaccineName));
-      if (!found) return `Non ho trovato nessuna vaccinazione con nome simile a "${args.vaccineName}".`;
+      const { people, health } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
+      const scoped = health.vaccinations.filter((v) => v.animalId === animal.id);
+      const found = byNameNeedle(scoped, String(args.vaccineName));
+      if (!found) return `Non ho trovato nessuna vaccinazione con nome simile a "${args.vaccineName}" per ${animal.firstName}.`;
       health.removeVaccination(found.id);
-      return `Vaccinazione "${found.name}" rimossa.`;
+      return `Vaccinazione "${found.name}" di ${animal.firstName} rimossa.`;
     },
   },
 
@@ -142,20 +152,28 @@ export const animalTools: Record<string, TiberToolDefinition> = {
   elimina_farmaco_animale: {
     declaration: {
       name: "elimina_farmaco_animale",
-      description: "Rimuove un farmaco di un animale, cercandolo per nome. Azione distruttiva.",
+      description: "Rimuove un farmaco di un animale specifico, cercandolo per nome. Azione distruttiva.",
       parameters: {
         type: "OBJECT",
-        properties: { medicationName: { type: "STRING", description: "Nome (anche parziale) del farmaco." } },
-        required: ["medicationName"],
+        properties: {
+          animalName: { type: "STRING", description: "Nome dell'animale a cui appartiene il farmaco." },
+          medicationName: { type: "STRING", description: "Nome (anche parziale) del farmaco." },
+        },
+        required: ["animalName", "medicationName"],
       },
     },
     destructive: true,
+    // Stesso correttivo di elimina_vaccinazione_animale qui sopra: scoperto all'animale
+    // giusto PRIMA di cercare per nome, non su tutti i farmaci di tutti gli animali insieme.
     execute: (args, ctx) => {
-      const { health } = animalsCtx(ctx);
-      const found = byNameNeedle(health.medications, String(args.medicationName));
-      if (!found) return `Non ho trovato nessun farmaco con nome simile a "${args.medicationName}".`;
+      const { people, health } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
+      const scoped = health.medications.filter((m) => m.animalId === animal.id);
+      const found = byNameNeedle(scoped, String(args.medicationName));
+      if (!found) return `Non ho trovato nessun farmaco con nome simile a "${args.medicationName}" per ${animal.firstName}.`;
       health.removeMedication(found.id);
-      return `Farmaco "${found.name}" rimosso.`;
+      return `Farmaco "${found.name}" di ${animal.firstName} rimosso.`;
     },
   },
 
@@ -186,21 +204,27 @@ export const animalTools: Record<string, TiberToolDefinition> = {
   elimina_appuntamento_veterinario: {
     declaration: {
       name: "elimina_appuntamento_veterinario",
-      description: "Elimina un appuntamento veterinario, cercandolo per titolo. Azione distruttiva.",
+      description: "Elimina un appuntamento veterinario di un animale specifico, cercandolo per titolo. Azione distruttiva.",
       parameters: {
         type: "OBJECT",
-        properties: { title: { type: "STRING", description: "Titolo (anche parziale) dell'appuntamento." } },
-        required: ["title"],
+        properties: {
+          animalName: { type: "STRING", description: "Nome dell'animale a cui appartiene l'appuntamento." },
+          title: { type: "STRING", description: "Titolo (anche parziale) dell'appuntamento." },
+        },
+        required: ["animalName", "title"],
       },
     },
     destructive: true,
+    // Stesso correttivo: scoperto all'animale giusto prima di cercare per titolo.
     execute: (args, ctx) => {
-      const { health } = animalsCtx(ctx);
+      const { people, health } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
       const needle = String(args.title).trim().toLowerCase();
-      const found = health.appointments.find((a) => a.title.trim().toLowerCase().includes(needle));
-      if (!found) return `Non ho trovato nessun appuntamento con titolo simile a "${args.title}".`;
+      const found = health.appointments.find((a) => a.animalId === animal.id && a.title.trim().toLowerCase().includes(needle));
+      if (!found) return `Non ho trovato nessun appuntamento con titolo simile a "${args.title}" per ${animal.firstName}.`;
       health.removeAppointment(found.id);
-      return `Appuntamento "${found.title}" eliminato.`;
+      return `Appuntamento "${found.title}" di ${animal.firstName} eliminato.`;
     },
   },
 
@@ -231,21 +255,27 @@ export const animalTools: Record<string, TiberToolDefinition> = {
   elimina_referto_animale: {
     declaration: {
       name: "elimina_referto_animale",
-      description: "Rimuove un referto di un animale, cercandolo per titolo. Azione distruttiva.",
+      description: "Rimuove un referto di un animale specifico, cercandolo per titolo. Azione distruttiva.",
       parameters: {
         type: "OBJECT",
-        properties: { title: { type: "STRING", description: "Titolo (anche parziale) del referto." } },
-        required: ["title"],
+        properties: {
+          animalName: { type: "STRING", description: "Nome dell'animale a cui appartiene il referto." },
+          title: { type: "STRING", description: "Titolo (anche parziale) del referto." },
+        },
+        required: ["animalName", "title"],
       },
     },
     destructive: true,
+    // Stesso correttivo: scoperto all'animale giusto prima di cercare per titolo.
     execute: (args, ctx) => {
-      const { health } = animalsCtx(ctx);
+      const { people, health } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
       const needle = String(args.title).trim().toLowerCase();
-      const found = health.reports.find((r) => r.title.trim().toLowerCase().includes(needle));
-      if (!found) return `Non ho trovato nessun referto con titolo simile a "${args.title}".`;
+      const found = health.reports.find((r) => r.animalId === animal.id && r.title.trim().toLowerCase().includes(needle));
+      if (!found) return `Non ho trovato nessun referto con titolo simile a "${args.title}" per ${animal.firstName}.`;
       health.removeReport(found.id);
-      return `Referto "${found.title}" rimosso.`;
+      return `Referto "${found.title}" di ${animal.firstName} rimosso.`;
     },
   },
 
@@ -275,20 +305,27 @@ export const animalTools: Record<string, TiberToolDefinition> = {
   elimina_allergia_animale: {
     declaration: {
       name: "elimina_allergia_animale",
-      description: "Rimuove un'allergia di un animale, cercandola per nome allergene. Azione distruttiva.",
+      description: "Rimuove un'allergia di un animale specifico, cercandola per nome allergene. Azione distruttiva.",
       parameters: {
         type: "OBJECT",
-        properties: { name: { type: "STRING", description: "Nome (anche parziale) dell'allergene." } },
-        required: ["name"],
+        properties: {
+          animalName: { type: "STRING", description: "Nome dell'animale a cui appartiene l'allergia." },
+          name: { type: "STRING", description: "Nome (anche parziale) dell'allergene." },
+        },
+        required: ["animalName", "name"],
       },
     },
     destructive: true,
+    // Stesso correttivo: scoperto all'animale giusto prima di cercare per nome allergene.
     execute: (args, ctx) => {
-      const { health } = animalsCtx(ctx);
-      const found = byNameNeedle(health.allergies, String(args.name));
-      if (!found) return `Non ho trovato nessuna allergia con nome simile a "${args.name}".`;
+      const { people, health } = animalsCtx(ctx);
+      const animal = findAnimalByName(people, String(args.animalName));
+      if (!animal) return `Non ho trovato nessun animale con nome simile a "${args.animalName}".`;
+      const scoped = health.allergies.filter((a) => a.animalId === animal.id);
+      const found = byNameNeedle(scoped, String(args.name));
+      if (!found) return `Non ho trovato nessuna allergia con nome simile a "${args.name}" per ${animal.firstName}.`;
       health.removeAllergy(found.id);
-      return `Allergia a "${found.name}" rimossa.`;
+      return `Allergia a "${found.name}" di ${animal.firstName} rimossa.`;
     },
   },
 

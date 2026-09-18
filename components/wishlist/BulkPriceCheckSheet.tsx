@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { WishlistItem } from "@/lib/wishlist-types";
+import { useMood } from "@/lib/mood-context";
 import { PersonalCardSheet } from "@/components/home/PersonalCardSheet";
 import { Button } from "@/components/ui/Button";
 
@@ -49,6 +50,7 @@ export function BulkPriceCheckSheet({
   const [doneCount, setDoneCount] = useState(0);
   const [outcomes, setOutcomes] = useState<UpdateOutcome[]>([]);
   const [finished, setFinished] = useState(false);
+  const { fireTrigger } = useMood();
 
   const start = async () => {
     setRunning(true);
@@ -69,6 +71,9 @@ export function BulkPriceCheckSheet({
           const entry = { price: data.price, date: new Date().toISOString() };
           onItemUpdated(item.id, data.price, [...(item.priceHistory ?? []), entry]);
           setOutcomes((prev) => [...prev, { itemId: item.id, itemName: item.name, status: "ok" }]);
+          // Stessa soglia di WishlistPriceHistorySection.tsx (il controllo singolo) — "parecchio"
+          // vuol dire almeno il 10% in meno, non una qualunque oscillazione di prezzo.
+          if (item.price !== null && data.price <= item.price * 0.9) fireTrigger("wishlist:prezzo-sceso");
         }
       } catch {
         setOutcomes((prev) => [...prev, { itemId: item.id, itemName: item.name, status: "error", detail: "Errore di rete" }]);

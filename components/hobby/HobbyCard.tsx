@@ -1,9 +1,10 @@
 "use client";
+import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import Link from "next/link";
 import { Hobby, HOBBY_BLOCK_LABELS } from "@/lib/hobby-types";
 import { useResolvedImage } from "@/lib/use-resolved-image";
 import { GlassCard } from "../ui/GlassCard";
+import { HobbyPreviewSheet } from "./HobbyPreviewSheet";
 
 function CoverPhoto({ photoKey }: { photoKey?: string }) {
   const url = useResolvedImage(photoKey);
@@ -18,16 +19,26 @@ function CoverPhoto({ photoKey }: { photoKey?: string }) {
   return <img src={url} alt="" className="aspect-square w-full rounded-xl2 object-cover" />;
 }
 
+/**
+ * Corretto secondo le istruzioni: un tocco portava dritto dentro `/hobby/[id]` — ora si apre
+ * prima l'anteprima (HobbyPreviewSheet, fratello di questo bottone nell'albero React, non suo
+ * genitore: nessun rischio di doppio apri per risalita di eventi), con "Entra" a farla
+ * davvero da qui in avanti. */
 export function HobbyCard({ hobby }: { hobby: Hobby }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   return (
-    <Link href={`/hobby/${hobby.id}`}>
-      <GlassCard className="overflow-hidden p-2.5 transition hover:border-white/20">
-        <CoverPhoto photoKey={hobby.photoKey} />
-        <p className="mt-2 truncate font-display text-sm text-ink-100">{hobby.name}</p>
-        <p className="mt-0.5 truncate text-[11px] text-ink-600">
-          {hobby.blocks.length === 0 ? "Nessun blocco ancora" : hobby.blocks.map((b) => b.title || HOBBY_BLOCK_LABELS[b.kind]).join(" · ")}
-        </p>
-      </GlassCard>
-    </Link>
+    <>
+      <button onClick={() => setPreviewOpen(true)} className="focus-ring block w-full text-left">
+        <GlassCard className="overflow-hidden p-2.5 transition hover:border-white/20">
+          <CoverPhoto photoKey={hobby.photoKey} />
+          <p className="mt-2 truncate font-display text-sm text-ink-100">{hobby.name}</p>
+          <p className="mt-0.5 truncate text-[11px] text-ink-600">
+            {hobby.blocks.length === 0 ? "Nessun blocco ancora" : hobby.blocks.map((b) => b.title || HOBBY_BLOCK_LABELS[b.kind]).join(" · ")}
+          </p>
+        </GlassCard>
+      </button>
+      {previewOpen && <HobbyPreviewSheet hobby={hobby} onClose={() => setPreviewOpen(false)} />}
+    </>
   );
 }

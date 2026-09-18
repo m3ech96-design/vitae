@@ -1,9 +1,12 @@
 "use client";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, Loader2, Settings } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Settings, Mic } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTiber } from "@/lib/tiber/context";
+import { useTiberSettings } from "@/lib/tiber/settings-context";
+import { useVoiceRecorder } from "@/lib/tiber/use-voice-recorder";
+import { primeSpeechEngine } from "@/lib/tiber/speech";
 import { TiberMessageBubble } from "@/components/tiber/TiberMessageBubble";
 import { TiberApiKeySetup } from "@/components/tiber/TiberApiKeySetup";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
@@ -11,7 +14,20 @@ import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 function TiberChat() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hydrated, apiKey, messages, sending, error, sendMessage, markProactiveSeen } = useTiber();
+  const { hydrated, apiKey, messages, sending, error, sendMessage, sendVoiceMessage, markProactiveSeen } = useTiber();
+  const { voiceEnabled } = useTiberSettings();
+  // Chiamato sempre, incondizionatamente (regola dei hook React) — il pulsante che lo usa
+  // davvero compare solo se voiceEnabled più sotto, ma l'hook in sé non chiede mai il
+  // permesso del microfono finché `recorder.start()` non viene chiamato da un tocco vero.
+  const recorder = useVoiceRecorder(async (blob, mimeType) => {
+    await sendVoiceMessage(blob, mimeType);
+  });
+  const releaseMic = () => {
+    // Stesso correttivo per il limite noto di Safari già usato in TiberFloatingBubble.tsx —
+    // vedi la nota su primeSpeechEngine in lib/tiber/speech.ts.
+    primeSpeechEngine();
+    recorder.stop();
+  };
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
@@ -108,6 +124,26 @@ function TiberChat() {
                 disabled={sending}
                 className="focus-ring min-w-0 flex-1 bg-transparent px-3 text-sm text-ink-100 placeholder:text-ink-800"
               />
+              {voiceEnabled && (
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    recorder.start();
+                  }}
+                  onPointerUp={releaseMic}
+                  onPointerLeave={() => {
+                    if (recorder.phase === "recording") releaseMic();
+                  }}
+                  disabled={sending}
+                  style={{ touchAction: "none" }}
+                  aria-label="Tieni premuto per parlare"
+                  className={`focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-30 ${
+                    recorder.phase === "recording" ? "animate-pulseSoft bg-aura-pink text-void-950" : "border border-white/10 text-ink-300"
+                  }`}
+                >
+                  <Mic size={15} />
+                </button>
+              )}
               <button
                 onClick={send}
                 disabled={!input.trim() || sending}
@@ -117,6 +153,9 @@ function TiberChat() {
                 <Send size={14} />
               </button>
             </div>
+            {voiceEnabled && recorder.phase === "denied" && (
+              <p className="mt-1.5 text-center text-[11px] text-aura-pink">Microfono non disponibile.</p>
+            )}
           </motion.div>
         </>
       )}

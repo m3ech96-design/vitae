@@ -1,5 +1,5 @@
 "use client";
-import { LucideIcon, User, PawPrint, MapPin, ListTodo, UtensilsCrossed, Palette, Gift, Dumbbell, StickyNote } from "lucide-react";
+import { LucideIcon, User, PawPrint, MapPin, ListTodo, UtensilsCrossed, Palette, Gift, Dumbbell, StickyNote, BookOpen } from "lucide-react";
 import { useHousehold } from "./household-context";
 import { usePlaces } from "./places-context";
 import { useTasks } from "./tasks-context";
@@ -8,6 +8,7 @@ import { useHobby } from "./hobby-context";
 import { useWishlist } from "./wishlist-context";
 import { useWorkoutPlans } from "./workout-plans-context";
 import { useNotes } from "./notes-context";
+import { useDiary } from "./diary-context";
 import { ANIMAL_KINDS } from "./types";
 import { EntityLink, LinkableType } from "./entity-link";
 import { personColor } from "./person-color";
@@ -44,6 +45,7 @@ const TYPE_FALLBACK: Record<LinkableType, { color: string; icon: LucideIcon }> =
   wishlist: { color: "#FFB454", icon: Gift },
   "scheda-allenamento": { color: "#00E5C7", icon: Dumbbell },
   nota: { color: "#B7A6FF", icon: StickyNote },
+  diario: { color: "#FF8FB4", icon: BookOpen },
 };
 
 /**
@@ -63,6 +65,7 @@ export function useEntityResolver() {
   const { items: wishlistItems } = useWishlist();
   const { plans: workoutPlans } = useWorkoutPlans();
   const { entries: noteEntries } = useNotes();
+  const { entries: diaryEntries } = useDiary();
 
   function resolve(link: EntityLink): ResolvedEntity {
     const fallback = TYPE_FALLBACK[link.type];
@@ -170,6 +173,22 @@ export function useEntityResolver() {
           icon: fallback.icon,
           href: n ? `/liste-note/${n.id}` : "/liste-note",
           missing: !n,
+        };
+      }
+      case "diario": {
+        const d = diaryEntries.find((x) => x.id === link.id);
+        return {
+          link,
+          // Una voce di diario non ha un titolo (solo testo libero) — un estratto breve
+          // resta comunque riconoscibile, coerente con come Tiber la presenta già (vedi
+          // leggi_diario in lib/tiber/tools/diary.ts).
+          label: d ? `${d.text.slice(0, 40)}${d.text.length > 40 ? "…" : ""}` : "Voce eliminata",
+          color: fallback.color,
+          icon: fallback.icon,
+          // Nessuna pagina per singola voce (come "task" qui sopra) — porta al Diario in
+          // generale, non a un punto preciso al suo interno.
+          href: "/diario",
+          missing: !d,
         };
       }
     }

@@ -5,7 +5,9 @@ import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { usePlaces } from "@/lib/places-context";
+import { useMood } from "@/lib/mood-context";
 import { MetricBlock, MetricEntry } from "@/lib/hobby-types";
+import { metricPersonalRecord } from "@/lib/hobby-stats";
 import { todayIso } from "@/lib/date-format";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
@@ -27,6 +29,7 @@ export function MetricEntryModal({
 }) {
   const { addMetricEntry, updateMetricEntry, removeMetricEntry } = useHobby();
   const { places } = usePlaces();
+  const { fireTrigger } = useMood();
 
   const [date, setDate] = useState(entry?.date ?? todayIso());
   const [value, setValue] = useState(entry ? String(entry.value) : "");
@@ -39,8 +42,20 @@ export function MetricEntryModal({
   const submit = () => {
     if (!canSave) return;
     const payload = { date, value: parseFloat(value.replace(",", ".")), note: note.trim() || undefined, placeId: placeId || undefined, photoKey };
-    if (entry) updateMetricEntry(hobbyId, block.id, entry.id, payload);
-    else addMetricEntry(hobbyId, block.id, payload);
+    if (entry) {
+      updateMetricEntry(hobbyId, block.id, entry.id, payload);
+    } else {
+      // Il record PRIMA di aggiungere la voce nuova — un solo dato in assoluto non "batte"
+      // nulla, serve già un record da superare perché abbia senso festeggiarlo.
+      const previousBest = metricPersonalRecord(block);
+      const isNewRecord = previousBest
+        ? block.direction === "crescente"
+          ? payload.value > previousBest.value
+          : payload.value < previousBest.value
+        : false;
+      addMetricEntry(hobbyId, block.id, payload);
+      if (isNewRecord) fireTrigger("hobby:metrica-record");
+    }
     onClose();
   };
 

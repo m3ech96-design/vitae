@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
 import { usePlaces } from "@/lib/places-context";
 import { useHousehold } from "@/lib/household-context";
+import { useMood } from "@/lib/mood-context";
 import { Match, MatchResult } from "@/lib/hobby-types";
 import { todayIso } from "@/lib/date-format";
 import { TextField, TextArea } from "../ui/TextField";
@@ -33,6 +34,7 @@ export function MatchModal({
   const { addMatch, updateMatch, removeMatch } = useHobby();
   const { places } = usePlaces();
   const { people } = useHousehold();
+  const { fireTrigger } = useMood();
 
   const [opponent, setOpponent] = useState(match?.opponent ?? "");
   const [opponentPersonId, setOpponentPersonId] = useState<string | undefined>(match?.opponentPersonId);
@@ -62,6 +64,14 @@ export function MatchModal({
     };
     if (match) updateMatch(hobbyId, blockId, match.id, payload);
     else addMatch(hobbyId, blockId, payload);
+
+    // Solo per una partita NUOVA, non per una modifica a una già registrata — cambiare a
+    // posteriori il risultato di una partita vecchia non è il momento emotivo vero, quello è
+    // quando la si registra la prima volta.
+    if (!match) {
+      if (result === "vittoria") fireTrigger("hobby:partita-vinta");
+      else if (result === "sconfitta") fireTrigger("hobby:partita-persa");
+    }
     onClose();
   };
 

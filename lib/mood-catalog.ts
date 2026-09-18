@@ -56,7 +56,9 @@ export type TriggerCategory =
   | "Salute"
   | "Finanze"
   | "Animali"
-  | "Famiglia"
+  | "Hobby"
+  | "Wishlist"
+  | "Liste e note"
   | "Bisogni";
 
 export interface TriggerDefinition {
@@ -145,6 +147,12 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
     defaultMoodIds: ["felice", "nostalgico"],
   },
   { key: "salute:allenamento", label: "Registrare un allenamento", category: "Salute", defaultMoodIds: ["energico", "stanco"] },
+  {
+    key: "salute:scheda-allenamento-completata",
+    label: "Registrare una sessione completata in una scheda di allenamento",
+    category: "Salute",
+    defaultMoodIds: ["energico", "orgoglioso"],
+  },
   { key: "finanze:spesa-registrata", label: "Registrare una spesa", category: "Finanze", defaultMoodIds: [] },
   {
     key: "finanze:sopra-budget",
@@ -159,6 +167,12 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
     defaultMoodIds: ["sollevato", "orgoglioso"],
   },
   {
+    key: "finanze:stipendio-diviso",
+    label: "Dividere lo stipendio con il calcolatore",
+    category: "Finanze",
+    defaultMoodIds: ["sollevato"],
+  },
+  {
     key: "animali:interazione-positiva",
     label: "Interazione positiva con un animale",
     category: "Animali",
@@ -171,11 +185,73 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
     defaultMoodIds: ["frustrato"],
   },
   { key: "animali:sfamato", label: "Dar da mangiare a un animale affamato", category: "Animali", defaultMoodIds: ["sollevato"] },
+  /**
+   * Corretto secondo le istruzioni: un audit mirato ha trovato che questo catalogo non era
+   * mai stato aggiornato dopo l'introduzione di Hobby, Wishlist e Liste e note — tre schede
+   * intere senza un solo trigger, nonostante avessero momenti chiaramente "emotivi" quanto
+   * quelli già coperti altrove (finire un libro, vincere una partita, battere un record).
+   * Aggiunti qui sotto, con lo stesso principio già in uso altrove nel catalogo: solo agli
+   * estremi quando c'è un voto o un risultato di mezzo (es. libreria-completato-alto/basso,
+   * come luogo:valutazione-alta/bassa), mai un trigger per un caso "neutro" di mezzo.
+   *
+   * Trovati anche due punti morti nello stesso audit, corretti qui: "finanze:stipendio-
+   * diviso" veniva già attivato dal calcolatore in Finanze ma non esisteva in questo
+   * catalogo (invisibile, non configurabile); "famiglia:nuovo-legame" esisteva nel catalogo
+   * ma non veniva mai attivato da nessuna parte del codice — nessun punto d'aggancio reale
+   * trovato per collegarlo davvero, quindi rimosso invece di lasciarlo come opzione fantasma.
+   */
   {
-    key: "famiglia:nuovo-legame",
-    label: "Collegare un nuovo parente nella propria famiglia",
-    category: "Famiglia",
-    defaultMoodIds: ["curioso", "nostalgico"],
+    key: "hobby:libreria-completato-alto",
+    label: 'Finire un libro/film in Libreria con un voto alto (4-5)',
+    category: "Hobby",
+    defaultMoodIds: ["felice", "appagato"],
+  },
+  {
+    key: "hobby:libreria-completato-basso",
+    label: "Finire un libro/film in Libreria con un voto basso (1-2)",
+    category: "Hobby",
+    defaultMoodIds: ["frustrato"],
+  },
+  {
+    key: "hobby:libreria-abbandonato",
+    label: "Abbandonare un libro/film/serie in Libreria",
+    category: "Hobby",
+    defaultMoodIds: ["frustrato", "annoiato"],
+  },
+  { key: "hobby:progetto-finito", label: "Finire un progetto", category: "Hobby", defaultMoodIds: ["orgoglioso", "appagato"] },
+  { key: "hobby:progetto-abbandonato", label: "Abbandonare un progetto", category: "Hobby", defaultMoodIds: ["frustrato"] },
+  { key: "hobby:partita-vinta", label: "Vincere una partita registrata", category: "Hobby", defaultMoodIds: ["felice", "orgoglioso"] },
+  { key: "hobby:partita-persa", label: "Perdere una partita registrata", category: "Hobby", defaultMoodIds: ["frustrato"] },
+  {
+    key: "hobby:metrica-record",
+    label: "Battere il proprio record personale in una Metrica",
+    category: "Hobby",
+    defaultMoodIds: ["orgoglioso", "energico"],
+  },
+  { key: "hobby:checklist-completata", label: "Completare una voce di una Checklist", category: "Hobby", defaultMoodIds: ["appagato"] },
+  {
+    key: "hobby:inventario-nuovo",
+    label: "Aggiungere un nuovo pezzo all'Inventario",
+    category: "Hobby",
+    defaultMoodIds: ["curioso", "felice"],
+  },
+  {
+    key: "wishlist:ottenuto",
+    label: "Segnare un articolo della Wishlist come ottenuto",
+    category: "Wishlist",
+    defaultMoodIds: ["felice", "appagato"],
+  },
+  {
+    key: "wishlist:prezzo-sceso",
+    label: "Il prezzo di un articolo in Wishlist scende parecchio",
+    category: "Wishlist",
+    defaultMoodIds: ["sollevato", "felice"],
+  },
+  {
+    key: "note:lista-completata",
+    label: "Spuntare l'ultima voce di una lista in Liste e note",
+    category: "Liste e note",
+    defaultMoodIds: ["appagato", "sollevato"],
   },
   {
     key: "bisogni:desiderato",
@@ -183,5 +259,4 @@ export const TRIGGER_CATALOG: TriggerDefinition[] = [
     category: "Bisogni",
     defaultMoodIds: ["curioso"],
   },
-  { key: "bisogni:esaudito", label: "Esaudire un bisogno della settimana", category: "Bisogni", defaultMoodIds: ["appagato"] },
 ];

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHobby } from "@/lib/hobby-context";
+import { useMood } from "@/lib/mood-context";
 import { InventoryItem } from "@/lib/hobby-types";
 import { CustomField } from "@/lib/types";
 import { TextField } from "../ui/TextField";
@@ -24,6 +25,7 @@ export function InventoryItemModal({
   onClose: () => void;
 }) {
   const { addInventoryItem, updateInventoryItem, removeInventoryItem } = useHobby();
+  const { fireTrigger } = useMood();
 
   const [name, setName] = useState(item?.name ?? "");
   const [photoKeys, setPhotoKeys] = useState<string[]>(item?.photoKeys ?? []);
@@ -57,7 +59,10 @@ export function InventoryItemModal({
       details,
     };
     if (item) updateInventoryItem(hobbyId, blockId, item.id, payload);
-    else addInventoryItem(hobbyId, blockId, payload);
+    else {
+      addInventoryItem(hobbyId, blockId, payload);
+      fireTrigger("hobby:inventario-nuovo");
+    }
     onClose();
   };
 

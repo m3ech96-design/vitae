@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ListChecks } from "lucide-react";
 import { WorkoutPlanTable, WorkoutPlanExercise } from "@/lib/types";
 import { useWorkoutPlans } from "@/lib/workout-plans-context";
+import { useMood } from "@/lib/mood-context";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { WorkoutTableHeader } from "./WorkoutTableHeader";
 import { ExerciseRow } from "./ExerciseRow";
@@ -18,6 +19,7 @@ type Sheet =
 
 export function WorkoutTableCard({ planId, table }: { planId: string; table: WorkoutPlanTable }) {
   const { addExercise, updateExercise, removeExercise, addLogEntry, removeLogEntry } = useWorkoutPlans();
+  const { fireTrigger } = useMood();
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
   const openExercise: WorkoutPlanExercise | undefined =
@@ -76,7 +78,10 @@ export function WorkoutTableCard({ planId, table }: { planId: string; table: Wor
       {sheet?.kind === "log" && openExercise && (
         <ExerciseLogFormSheet
           exerciseName={openExercise.name}
-          onSave={(entry) => addLogEntry(planId, table.id, openExercise.id, entry)}
+          onSave={(entry) => {
+            addLogEntry(planId, table.id, openExercise.id, entry);
+            fireTrigger("salute:scheda-allenamento-completata");
+          }}
           onClose={() => setSheet({ kind: "detail", exerciseId: openExercise.id })}
         />
       )}

@@ -7,13 +7,15 @@ import { Button } from "../ui/Button";
 
 const CATEGORY_ORDER: TriggerCategory[] = [
   "Task",
+  "Hobby",
   "Luoghi",
   "Rapporti",
   "Scoperte",
   "Salute",
   "Finanze",
+  "Wishlist",
   "Animali",
-  "Famiglia",
+  "Liste e note",
   "Bisogni",
 ];
 
