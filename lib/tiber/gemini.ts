@@ -85,13 +85,23 @@ export async function callGemini(
     // scorretto nella richiesta — non alla chiave — veniva prima etichettato come "chiave
     // non valida", mandando a controllare inutilmente qualcosa che era già corretto).
     let googleMessage = "";
+    // Per un 429 il messaggio sopra è quasi sempre generico ("hai superato la quota
+    // attuale...") — MAI dice da solo se è per minuto (transitorio, secondi) o per giorno
+    // (persiste per ore). Quel dettaglio vive altrove nel corpo, dentro
+    // error.details[].quotaId (un QuotaFailure) — mai letto finora, per questo il messaggio
+    // mostrato è sempre stato lo stesso indipendentemente dal vero limite superato.
+    let quotaId = "";
     try {
-      googleMessage = JSON.parse(errText)?.error?.message ?? "";
+      const parsed = JSON.parse(errText);
+      googleMessage = parsed?.error?.message ?? "";
+      const violations = parsed?.error?.details?.flatMap((d: { violations?: { quotaId?: string }[] }) => d.violations ?? []) ?? [];
+      quotaId = violations.map((v: { quotaId?: string }) => v.quotaId).filter(Boolean).join(", ");
     } catch {
       // corpo non JSON: si userà errText grezzo più sotto
     }
     if (res.status === 429) {
-      throw new Error("Limite di richieste del piano gratuito Gemini raggiunto per ora — riprova tra poco o domani.");
+      const detail = [quotaId, googleMessage].filter(Boolean).join(" — ");
+      throw new Error(`Limite di richieste Gemini raggiunto (429)${detail ? `: ${detail}` : " — dettaglio non disponibile nella risposta."}`);
     }
     if (res.status === 401 || res.status === 403) {
       throw new Error(`Chiave Gemini non valida o senza permessi${googleMessage ? `: ${googleMessage}` : ""}`);

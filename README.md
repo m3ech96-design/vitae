@@ -4081,3 +4081,28 @@ l'Italia cade a metà mattina (le 9 o le 10, a seconda dell'ora legale), non sub
 mezzanotte italiana. Se il tetto era già stato raggiunto prima dell'1 di notte, restava
 esaurito fino a quell'orario del mattino dopo, non da un nuovo giorno di calendario
 italiano.
+
+## Checkpoint 132 — Il messaggio "limite raggiunto" ora mostra il dettaglio vero di Google
+
+Chiesto di analizzare a fondo perché il blocco persistesse anche dopo l'orario stimato di
+reset. Trovato: il messaggio mostrato per un 429 era da sempre un testo generico scritto
+qui nel codice ("limite del piano gratuito raggiunto") — il messaggio VERO restituito da
+Google in quel caso veniva letto (`googleMessage`) ma poi scartato senza mostrarlo, sempre
+sostituito da quello generico. Impossibile, con quel testo sempre uguale, distinguere un
+limite al minuto (transitorio, si risolve in secondi) da uno al giorno (persiste per ore) —
+o capire se fosse davvero un limite e non qualcos'altro.
+
+Corretto su due fronti: mostrato per intero il messaggio vero di Google invece di quello
+generico, e aggiunta l'estrazione di `quotaId` da `error.details` nel corpo della risposta
+— il campo dove Google indica di norma ESATTAMENTE quale quota è stata superata (es.
+"GenerateRequestsPerDayPerProjectPerModel-FreeTier" per il limite giornaliero), non
+recuperabile dal solo messaggio generico letto finora.
+
+Nota per onestà, emersa controllando: le cifre indicative ("~500 richieste/giorno per
+Flash-Lite") che avevo dato in una risposta precedente vengono da fonti web che possono
+essere ottimistiche o superate — Google ha smesso di pubblicare ufficialmente queste
+tabelle, e ci sono segnalazioni indipendenti di quote reali anche molto più basse di quelle
+riportate online, variabili da account ad account. Il modo affidabile di sapere il tetto
+vero per un account specifico resta il pannello di utilizzo su aistudio.google.com, non un
+numero preso da internet — o, da ora in poi, il messaggio d'errore stesso, che dice il
+dettaglio vero invece di quello generico.
