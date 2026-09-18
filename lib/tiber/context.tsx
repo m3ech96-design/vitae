@@ -15,6 +15,15 @@ import { buildActivitySnapshot } from "./activity-snapshot";
 const API_KEY_STORAGE = "tiber-secret:gemini-api-key";
 const MESSAGES_KEY = "vitae:tiber-messages";
 const LAST_REFLECTION_KEY = "vitae:tiber-last-reflection-at";
+const REFLECTION_BACKOFF_KEY = "vitae:tiber-reflection-backoff-until";
+/** Corretto un bug reale: se una riflessione falliva (es. limite di richieste raggiunto),
+ * il segnapunti di "ultima riflessione" non avanzava — lo scheduler (ogni minuto, vedi
+ * TiberProactiveScheduler.tsx) trovava quindi sempre lo stesso evento "nuovo" e ritentava
+ * subito, all'infinito, finché l'app restava aperta: proprio l'opposto di "controllare
+ * spesso perché il controllo in sé non costa nulla" se ogni controllo finiva comunque per
+ * richiamare Gemini e fallire di nuovo. Con questa pausa, un fallimento qualunque interrompe
+ * i tentativi per un po' invece di ripeterli ogni minuto a vuoto. */
+const REFLECTION_BACKOFF_MS = 15 * 60 * 1000;
 const LAST_SEEN_PROACTIVE_KEY = "vitae:tiber-last-seen-proactive-at";
 
 /** Quanta conversazione tornare a mandare a Gemini ad ogni messaggio — non l'intera
@@ -338,6 +347,15 @@ export function TiberProvider({
   const triggerReflection = useCallback(async () => {
     if (!apiKey || !proactiveEnabled || sendingRef.current || pendingRef.current) return;
 
+    const backoffUntil = (() => {
+      try {
+        return window.localStorage.getItem(REFLECTION_BACKOFF_KEY);
+      } catch {
+        return null;
+      }
+    })();
+    if (backoffUntil && Date.now() < Number(backoffUntil)) return;
+
     const lastAt = (() => {
       try {
         return window.localStorage.getItem(LAST_REFLECTION_KEY);
@@ -405,8 +423,13 @@ Non dire mai qualcosa solo per riempire il silenzio.]`;
       }
     } catch {
       // Una riflessione fallita non è un errore da mostrare all'utente (non l'ha chiesta
-      // lui) — semplicemente non succede nulla questo giro, e ci riprova lo scheduler al
-      // prossimo turno.
+      // lui) — ma niente nuovi tentativi per un po' (vedi REFLECTION_BACKOFF_MS sopra),
+      // invece di ritentare subito allo stesso modo un minuto dopo.
+      try {
+        window.localStorage.setItem(REFLECTION_BACKOFF_KEY, String(Date.now() + REFLECTION_BACKOFF_MS));
+      } catch {
+        // ignorato
+      }
     } finally {
       setSending(false);
     }

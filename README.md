@@ -4056,3 +4056,28 @@ Il permesso è raggruppato sotto lo stesso modulo "Mappa" già esistente nelle i
 Tiber — non uno nuovo — con una nota che spiega la dipendenza dal "Rilevamento posizione" di
 Home, spento di default: senza quello, questa parte resta silenziosa a prescindere dalla
 spunta.
+
+## Checkpoint 131 — Corretto un tentativo a vuoto ogni minuto quando una riflessione falliva
+
+Chiesto se fosse normale vedere "limite di richieste raggiunto" avendo parlato con Tiber
+l'ultima volta all'1 di notte — verificando la domanda, trovato un bug reale nello
+scheduler introdotto al checkpoint 129: quando una riflessione spontanea falliva (limite
+raggiunto, rete assente, qualunque errore), il segnapunti di "ultima riflessione" non
+avanzava. Lo scheduler (un controllo ogni minuto) trovava quindi sempre lo stesso evento
+"nuovo" e ritentava subito — all'infinito, in silenzio, per tutto il tempo in cui l'app
+restava aperta, invece di aspettare che il problema si risolvesse da solo. Proprio l'opposto
+dell'idea del checkpoint 129 ("controllare spesso perché il controllo in sé non costa
+nulla"): se ogni controllo finiva comunque per richiamare Gemini e fallire di nuovo, il
+costo tornava a esserci, solo nascosto.
+
+Corretto con una pausa di 15 minuti dopo qualunque fallimento, prima di riprovare — non
+serve distinguere il tipo di errore per questo: qualunque cosa vada storta, ha senso
+aspettare un po' invece di ripetere lo stesso tentativo un minuto dopo.
+
+Sulla domanda originale, comunque: **sì, può essere del tutto normale**, e non c'entra
+necessariamente questo bug. Il tetto giornaliero gratuito di Gemini non si azzera alla
+mezzanotte locale italiana — si azzera alla mezzanotte del fuso della California, che per
+l'Italia cade a metà mattina (le 9 o le 10, a seconda dell'ora legale), non subito dopo la
+mezzanotte italiana. Se il tetto era già stato raggiunto prima dell'1 di notte, restava
+esaurito fino a quell'orario del mattino dopo, non da un nuovo giorno di calendario
+italiano.
