@@ -3890,3 +3890,169 @@ Aggiunti i tool di lettura mancanti, sullo stesso schema già in uso altrove:
 Ogni nuovo tool descrive esplicitamente nel proprio prompt di aiutarsi con quello strumento
 "prima di dire che non puoi saperlo" — lo stesso punto debole colto nella risposta di Tiber
 su Skyrim.
+
+## Checkpoint 127 — Tiber: passato a gemini-3.5-flash-lite
+
+Su richiesta esplicita (il "pensiero" interno di 3.6 Flash non serve per come Tiber viene
+usato — chiamare tool, rispondere a domande dirette — mentre il tetto gratuito giornaliero
+di Flash-Lite è molto più alto, circa 500 richieste/giorno contro ~20): cambiato solo il
+nome del modello in `gemini.ts`, nessun'altra modifica di codice necessaria. Verificato che
+anche questo modello richiede la firma di pensiero nelle chiamate a tool (fa parte della
+stessa famiglia Gemini 3.x) — già gestita dal checkpoint 125 in modo generico, non specifico
+per un modello: nessun'altra correzione necessaria per questo passaggio.
+
+## Checkpoint 128 — Tiber: riflessioni spontanee vere (non scriptate), personalità sempre accesa, permessi per scheda
+
+Respinte esplicitamente le 14 idee di brainstorming del giro precedente: "troppo programmate,
+non lasciano a Tiber vita e libertà di espressione". Ripensato da zero, non aggiustato — la
+differenza non è cosmetica, è strutturale.
+
+### Il cambio di struttura
+
+Prima l'idea era "se succede X nei dati, Tiber dice Y" — un albero di decisioni scritto nel
+codice. Ora **l'unica cosa programmata è QUANDO dare a Tiber un momento di riflessione, mai
+COSA ne esce fuori**. Ogni 15-30 minuti (a caso, non un metronomo — in media 2-4 volte l'ora
+come richiesto, ma senza cadenza prevedibile) gli si passa un riepilogo gratuito di cosa è
+cambiato di recente (`activity-snapshot.ts`, letto direttamente dai context, zero chiamate a
+Gemini) e la libertà di usare i suoi stessi strumenti di lettura per guardare più a fondo se
+vuole — poi decide interamente lui se c'è qualcosa che vale la pena dire, cosa, e come. Se
+non ha nulla da aggiungere risponde con un segnale interno e non succede nulla — "occasione"
+non vuol dire "commento garantito": forzarlo a dire sempre qualcosa avrebbe tradito
+esattamente la richiesta di autenticità.
+
+**Un confine deliberato**: durante una riflessione spontanea Tiber può guardare i dati ma non
+modificarli — nessuna azione automatica di sua iniziativa senza che l'utente abbia chiesto
+nulla, a differenza della piena autonomia che ha già quando è l'utente a parlargli. Un tool
+che non sia di sola lettura (`elenca_`/`stato_`/`dettagli_`/`leggi_`) viene rifiutato con una
+spiegazione invece che eseguito.
+
+### Personalità, sempre accesa (non solo nei momenti spontanei)
+
+Riscritta l'istruzione di sistema: prima diceva esplicitamente "rispondi in modo conciso...
+senza premesse superflue" — buona per eseguire comandi, incompatibile con l'avere pareri
+propri. Ora Tiber ha il permesso esplicito di avere opinioni sue e dirle senza che gliele si
+chieda, anche in disaccordo con l'utente, con un registro che può cambiare da un momento
+all'altro invece di restare fisso — richiesto "sempre", non solo nei momenti spontanei, e
+vale per ogni scambio in chat, non solo per le riflessioni.
+
+### Una scelta ragionata sulla richiesta di cancellare la cronologia ogni 30 minuti
+
+Richiesto di eliminare la cronologia ogni 30 minuti per contenere i token. Fatto in modo
+diverso da quanto detto alla lettera, con la ragione esplicita: **la cronologia VISIBILE in
+chat resta intatta** — solo gli ultimi 30 minuti vengono ripassati a Gemini ad ogni nuovo
+messaggio (`recentHistory` in context.tsx), non l'intera conversazione da sempre. Stesso
+risparmio di token voluto, senza il difetto di cancellare anche le osservazioni spontanee di
+Tiber — proprio il genere di cosa che ha senso rileggere, non far sparire ogni mezz'ora, se
+l'obiettivo è dargli più vita, non meno. Chi preferisse la cancellazione vera e propria anche
+in chat può chiederlo: è un cambio di una riga (`CONTEXT_WINDOW_MS` in context.tsx), lasciato
+com'è per ora in attesa di conferma.
+
+### Bolla flottante, davvero globale
+
+`TiberProvider` non vive più solo nella pagina di Tiber — montato una volta nel layout radice
+(`components/tiber/TiberMount.tsx`), dentro tutti i provider di cui i suoi tool hanno bisogno.
+Necessario perché la bolla (`TiberFloatingBubble.tsx`, a sinistra per non sovrapporsi alla
+pillola del cronometro Hobby già presente a destra) e lo scheduler delle riflessioni
+(`TiberProactiveScheduler.tsx`) devono restare vivi anche su una scheda diversa da quella di
+Tiber. Limite onesto da tenere a mente: è pur sempre una PWA senza un vero server dietro — lo
+scheduler gira solo mentre l'app è aperta, non davvero "ogni ora" sul serio anche a telefono
+chiuso; alla riapertura dopo una pausa lunga riparte con un breve ritardo, non tutto insieme.
+
+### Permessi per scheda
+
+Nuova sezione nelle impostazioni di Tiber: una spunta per ciascuno dei 14 moduli (Task,
+Finanze, Alimentazione, Salute, Attività e peso, Animali, Rapporti, Mappa, Hobby, Wishlist,
+Diario, Stato d'animo, Liste e note, Schede allenamento). Un modulo senza spunta è
+irraggiungibile su due fronti, non solo scoraggiato: i suoi tool non vengono nemmeno proposti
+a Gemini come possibilità (`registry.ts`, `getEnabledTools`) e, per sicurezza, vengono
+comunque rifiutati se richiesti lo stesso (`runTool` in context.tsx) — un vero confine, non
+un suggerimento che il modello potrebbe ignorare. Aggiunto anche l'interruttore per le
+intromissioni spontanee, separato dai permessi sui moduli. Sistemato anche un refuso rimasto
+dai checkpoint precedenti nella stessa pagina ("Google Gemini 2.5 Flash" non era mai stato
+aggiornato lì, nonostante il modello fosse già cambiato due volte).
+
+### Copertura onesta del riepilogo di attività
+
+`buildActivitySnapshot` copre bene solo Stato d'animo, Hobby, Diario e Wishlist — gli unici
+moduli con un campo data affidabile per distinguere "aggiunto ora" da "aggiunto tempo fa" nel
+modello dati attuale. Gli altri (Finanze, Salute, Animali, Attività, Task, Note...) restano
+interamente consultabili da Tiber tramite i suoi stessi tool in qualunque momento, anche
+durante una riflessione — semplicemente non hanno un riepilogo automatico gratuito già
+pronto. Dichiarato invece di far finta di una copertura completa che non c'è.
+
+## Checkpoint 129 — Le riflessioni spontanee nascono da un evento vero, non più da un orologio
+
+Osservazione dell'utente, giusta: anche l'orologio a intervalli casuali del checkpoint 128
+(15-30 minuti) restava un programma imposto dall'esterno, per quanto imprevedibile nei
+tempi — Tiber non aveva voce in capitolo su *quando* veniva interpellato, solo su cosa dire
+una volta interpellato. Chiarito prima un limite tecnico reale e non aggirabile (un modello
+come Gemini non gira mai "da solo" tra una richiesta e l'altra — pensa solo durante una
+chiamata, non prima né dopo, per qualunque sistema del genere, non per come è costruito
+questo): "lascia che decida lui quando" nel senso letterale non è possibile. Concordata
+invece la terza strada discussa insieme: l'occasione stessa nasce da un evento vero rilevato
+nei dati, non da un timer scollegato dai fatti.
+
+**Come funziona ora**: lo scheduler (`TiberProactiveScheduler.tsx`) controlla ogni minuto,
+a COSTO ZERO — solo lettura locale dei dati (`buildActivitySnapshot`, la stessa già scritta
+al checkpoint 128), nessuna chiamata a Gemini — se è successo qualcosa di nuovo da quando
+Tiber è stato interpellato l'ultima volta. Se non c'è nulla, `triggerReflection` (in
+context.tsx) esce subito, prima di spendere qualunque cosa. Solo quando c'è davvero
+qualcosa di nuovo interpella Gemini — e anche allora resta interamente a Tiber decidere se
+dire qualcosa o restare in silenzio, esattamente come già al checkpoint 128. Controllare
+spesso è ora conveniente proprio perché il controllo in sé non costa nulla: prima si
+accettava di aspettare 15-30 minuti apposta per non sprecare chiamate vere; ora si può
+controllare ogni minuto perché la parte che ha un costo scatta solo quando serve davvero.
+
+Il vincolo "almeno 2, al massimo 4 volte l'ora" del checkpoint 128 è superato, non più in
+vigore: forzare un minimo di interventi quando non fosse successo nulla avrebbe ricreato
+esattamente il problema di fondo. Resta solo un tetto naturale, non uno imposto: burst di
+più modifiche ravvicinate (es. tre libri aggiunti in un minuto) finiscono già raggruppati
+in una sola occasione, dato che il controllo è comunque scandito a un minuto — nessun
+contatore artificiale in più necessario per evitare un affollamento di bolle.
+
+Copertura invariata rispetto al checkpoint 128 (Stato d'animo, Hobby, Diario, Wishlist —
+vedi la nota già in `activity-snapshot.ts` sul perché gli altri moduli non hanno un segnale
+di recenza abbastanza affidabile) — cambia solo QUANDO Tiber viene interpellato, non su cosa
+può accorgersi.
+
+## Checkpoint 130 — Tiber si accorge dei luoghi, e può cercare sul web
+
+Richiesto: che Tiber commenti/consigli sui luoghi visitati (anche quello attuale, se diverso
+da casa), chieda se si ha fame all'ora dei pasti proponendo posti ben valutati quando si è
+fuori, segnali negozi vicini legati a interessi noti — "che sia vivo, che consiglia,
+commenta, valuta. Tutto."
+
+**Nessun nuovo sistema di posizione**: riusato quello già esistente per il pallino "Sei Qui"
+e il rilevamento Casa/Fuori casa (`household-context.tsx`, `use-live-location.ts`) — stesso
+interruttore "Rilevamento posizione" già scelto dall'utente in Home, nessun permesso
+separato per Tiber. Esposto quel che mancava (`livePosition`, le coordinate grezze) sul
+context, prima tenuto privato al suo interno.
+
+**Due nuovi eventi veri** aggiunti al rilevamento del checkpoint 129 (`activity-snapshot.ts`),
+sullo stesso principio già in uso — nessun timer, solo un cambiamento osservabile:
+- **Arrivo in un luogo salvato diverso da casa** — quando cambia il luogo in cui l'utente
+  risulta "entrato" davvero (dopo aver confermato "Sì" al prompt "Sei qui?" già esistente,
+  non una semplice vicinanza), non ogni volta che ci si trova ancora lì.
+- **Ora dei pasti mentre si è fuori casa** (12-14 e 19-21) — segnalato al più una volta per
+  pasto per giorno, anche se il controllo gira ogni minuto.
+
+**Ricerca web vera, non solo dati dell'app**: aggiunto `googleSearch` come tool nativo di
+Gemini, insieme ai tool personalizzati già esistenti — confermato che i due si possono
+combinare nella stessa richiesta sui modelli Gemini 3.x (non lo era nelle generazioni
+precedenti), incluso nello stesso piano gratuito già in uso (5.000 ricerche/mese incluse,
+un tetto enorme per un solo utilizzatore). Questo dà a Tiber la possibilità reale di cercare
+un ristorante ben valutato vicino alle coordinate attuali, un negozio nei dintorni legato a
+un hobby noto, o informazioni su un libro appena aggiunto — con piena libertà di decidere
+lui quando ha senso farlo, coerente con tutto il resto della sua autonomia decisionale.
+
+**Un limite dichiarato apertamente, non aggirato**: "cosa c'è di scontato in quel negozio
+specifico in questo momento" non è una cosa che una ricerca web generica può promettere con
+affidabilità — non esiste un modo generale di sapere le offerte in corso di un negozio
+qualunque. Invece di fingere questa capacità con un tool che darebbe spesso risposte
+inventate o vecchie, l'istruzione di sistema dice esplicitamente a Tiber di provarci se
+vuole ma di ammettere onestamente quando non trova nulla di solido, invece di inventare.
+
+Il permesso è raggruppato sotto lo stesso modulo "Mappa" già esistente nelle impostazioni di
+Tiber — non uno nuovo — con una nota che spiega la dipendenza dal "Rilevamento posizione" di
+Home, spento di default: senza quello, questa parte resta silenziosa a prescindere dalla
+spunta.

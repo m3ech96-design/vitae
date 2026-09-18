@@ -38,6 +38,12 @@ export interface TiberMessage {
   text: string;
   toolCalls?: TiberToolCall[];
   createdAt: string;
+  /** true solo per un commento nato da un momento di riflessione spontanea (vedi
+   * triggerReflection in context.tsx), mai per una risposta a un messaggio scritto
+   * dall'utente — pilota un'etichetta discreta in TiberMessageBubble e la bolla flottante
+   * globale, non un ruolo diverso: resta comunque un messaggio "assistant" a tutti gli
+   * effetti nella cronologia mandata a Gemini. */
+  proactive?: boolean;
 }
 
 /** Una singola azione che un tool può proporre — usata sia per eseguire subito (fascia

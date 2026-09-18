@@ -1,20 +1,22 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, KeyRound, ExternalLink, Trash2, Sparkles, ShieldCheck, Check } from "lucide-react";
-import { TiberProvider, useTiber } from "@/lib/tiber/context";
-import { useTiberExecutionContext } from "@/lib/tiber/execution-bundle";
+import { ArrowLeft, KeyRound, ExternalLink, Trash2, Sparkles, ShieldCheck, Check, MessageCircleDashed, LayoutGrid } from "lucide-react";
+import { useTiber } from "@/lib/tiber/context";
+import { useTiberSettings } from "@/lib/tiber/settings-context";
+import { TIBER_MODULES } from "@/lib/tiber/registry";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 
-function TiberSettingsInner() {
+export default function TiberSettingsPage() {
   const router = useRouter();
   const { hydrated, apiKey, setApiKey, messages, clearConversation } = useTiber();
+  const { hydrated: settingsHydrated, disabledModules, toggleModule, proactiveEnabled, setProactiveEnabled } = useTiberSettings();
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  if (!hydrated) return null;
+  if (!hydrated || !settingsHydrated) return null;
 
   const maskedKey = apiKey ? `${apiKey.slice(0, 4)}${"•".repeat(Math.max(apiKey.length - 8, 4))}${apiKey.slice(-4)}` : null;
 
@@ -107,13 +109,76 @@ function TiberSettingsInner() {
         </GlassCard>
 
         <GlassCard className="p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <MessageCircleDashed size={16} className="text-aura-violet" />
+              <p className="font-display text-sm text-ink-100">Intromissioni spontanee</p>
+            </div>
+            <button
+              onClick={() => setProactiveEnabled(!proactiveEnabled)}
+              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full transition ${proactiveEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
+              aria-label={proactiveEnabled ? "Disattiva" : "Attiva"}
+              role="switch"
+              aria-checked={proactiveEnabled}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${proactiveEnabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+              />
+            </button>
+          </div>
+          <p className="text-xs text-ink-600">
+            Quando attive, Tiber si accorge da solo quando succede qualcosa di notabile nei tuoi dati (uno stato d'animo, una
+            voce d'Hobby, del Diario o della Wishlist) e, solo allora — mai a orario fisso — decide se dire qualcosa: un'osservazione,
+            una domanda, un parere. Una bolla flottante te lo fa sapere ovunque tu sia nell'app. Nessuna categoria fissa: decide
+            lui, ogni volta, se e cosa dire — spesso, anche, di non dire nulla.
+          </p>
+        </GlassCard>
+
+        <GlassCard className="p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <LayoutGrid size={16} className="text-aura-cyan" />
+            <p className="font-display text-sm text-ink-100">Accesso ai tuoi dati</p>
+          </div>
+          <p className="mb-3 text-xs text-ink-600">
+            Togli la spunta a una scheda per negare a Tiber ogni accesso a quei dati — non li vedrà nelle riflessioni spontanee, non
+            potrà consultarli né modificarli nemmeno se glielo chiedi esplicitamente in chat.
+          </p>
+          <div className="space-y-1">
+            {TIBER_MODULES.map((m) => {
+              const checked = !disabledModules.includes(m.id);
+              return (
+                <label
+                  key={m.id}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5"
+                >
+                  <span className="text-sm text-ink-100">{m.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => toggleModule(m.id, e.target.checked)}
+                    className="h-4 w-4 shrink-0 accent-aura-violet"
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-xs text-ink-600">
+            Con "Mappa" spuntato, Tiber sa anche dove ti trovi quando arrivi in un luogo salvato diverso da casa, se sei fuori
+            all'ora dei pasti, e può cercare sul web posti ben valutati o negozi nei dintorni — ma solo se il "Rilevamento
+            posizione" è acceso (l'icona in Home). Spento lì, questa parte resta silenziosa a prescindere dalla spunta qui.
+          </p>
+        </GlassCard>
+
+        <GlassCard className="p-5">
           <div className="mb-2 flex items-center gap-2">
             <ShieldCheck size={16} className="text-aura-cyan" />
             <p className="font-display text-sm text-ink-100">Autonomia</p>
           </div>
           <p className="text-xs text-ink-600">
             Tiber esegue da solo qualunque azione i suoi strumenti permettono. Per le azioni distruttive — cancellazioni,
-            prelievi di denaro, eliminazione di persone o animali — chiede sempre conferma prima di procedere.
+            prelievi di denaro, eliminazione di persone o animali — chiede sempre conferma prima di procedere. Durante una
+            riflessione spontanea, invece, può solo consultare i dati: non esegue mai un'azione che li modifica senza che tu
+            gliel'abbia chiesto in chat.
           </p>
         </GlassCard>
 
@@ -122,7 +187,7 @@ function TiberSettingsInner() {
             <Sparkles size={16} className="text-aura-violet" />
             <p className="font-display text-sm text-ink-100">Modello</p>
           </div>
-          <p className="text-xs text-ink-600">Google Gemini 2.5 Flash, piano gratuito.</p>
+          <p className="text-xs text-ink-600">Google Gemini 3.5 Flash-Lite, piano gratuito.</p>
         </GlassCard>
 
         <button
@@ -137,14 +202,5 @@ function TiberSettingsInner() {
         </button>
       </div>
     </div>
-  );
-}
-
-export default function TiberSettingsPage() {
-  const executionContext = useTiberExecutionContext();
-  return (
-    <TiberProvider executionContext={executionContext}>
-      <TiberSettingsInner />
-    </TiberProvider>
   );
 }

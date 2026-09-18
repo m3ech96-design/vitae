@@ -58,6 +58,16 @@ export function useTiberExecutionContext(): TiberExecutionContext {
       updatePerson: household.updatePerson,
       removePerson: household.removePerson,
     },
+    /** Riusa il rilevamento di posizione già esistente per il pallino "Sei Qui"/Casa-Fuori
+     * casa (vedi household-context.tsx) invece di aprirne uno indipendente — stesso
+     * `trackingEnabled` scelto dall'utente in Mappa, non un permesso separato per Tiber. */
+    location: {
+      currentPlaceIcon: household.currentPlaceIcon,
+      userIsAway: household.userIsAway,
+      livePosition: household.livePosition,
+      trackingEnabled: household.trackingEnabled,
+      home: household.home,
+    },
     places,
     hobby,
     wishlist,

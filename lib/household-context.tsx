@@ -19,7 +19,7 @@ import {
 } from "./geo";
 import { usePlaces } from "./places-context";
 import { deleteImage, isDataUrl } from "./image-store";
-import { useLiveLocation } from "./use-live-location";
+import { useLiveLocation, LiveLocation } from "./use-live-location";
 
 const PEOPLE_KEY = "vitae:people";
 const TRACKING_KEY = "vitae:tracking-enabled";
@@ -54,6 +54,11 @@ interface HouseholdContextValue {
   confirmNearbyPlace: () => void;
   dismissNearbyPlace: () => void;
   currentPlaceIcon: Place | null;
+  /** Coordinate grezze del rilevamento live — assenti finché il tracciamento è spento o non
+   * ha ancora un segnale. Esposte qui (prima restavano interne al provider) perché Tiber ne
+   * ha bisogno per cercare "vicino a me" nel mondo reale, non solo per sapere se si è a un
+   * luogo già salvato — vedi lib/tiber/activity-snapshot.ts. */
+  livePosition: LiveLocation | null;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
@@ -290,6 +295,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
       confirmNearbyPlace,
       dismissNearbyPlace,
       currentPlaceIcon,
+      livePosition,
     }),
     [
       hydrated,
@@ -307,6 +313,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
       confirmNearbyPlace,
       dismissNearbyPlace,
       currentPlaceIcon,
+      livePosition,
     ]
   );
 

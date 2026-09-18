@@ -1,5 +1,5 @@
 "use client";
-import { AlertTriangle, Check, X, Wrench } from "lucide-react";
+import { AlertTriangle, Check, X, Wrench, Sparkles } from "lucide-react";
 import { TiberMessage } from "@/lib/tiber/types";
 import { useTiber } from "@/lib/tiber/context";
 
@@ -10,6 +10,11 @@ export function TiberMessageBubble({ message }: { message: TiberMessage }) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[85%] rounded-xl2 px-4 py-3 ${isUser ? "bg-aura-gradient text-void-950" : "border border-white/10 bg-white/[0.03] text-ink-100"}`}>
+        {message.proactive && (
+          <p className="mb-1.5 flex items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-aura-violet">
+            <Sparkles size={10} /> Spontaneo
+          </p>
+        )}
         {message.text && <p className="whitespace-pre-wrap text-sm">{message.text}</p>}
 
         {message.toolCalls?.map((tc) => (

@@ -3,8 +3,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Send, Loader2, Settings } from "lucide-react";
 import { motion } from "framer-motion";
-import { TiberProvider, useTiber } from "@/lib/tiber/context";
-import { useTiberExecutionContext } from "@/lib/tiber/execution-bundle";
+import { useTiber } from "@/lib/tiber/context";
 import { TiberMessageBubble } from "@/components/tiber/TiberMessageBubble";
 import { TiberApiKeySetup } from "@/components/tiber/TiberApiKeySetup";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
@@ -12,7 +11,7 @@ import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 function TiberChat() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hydrated, apiKey, messages, sending, error, sendMessage } = useTiber();
+  const { hydrated, apiKey, messages, sending, error, sendMessage, markProactiveSeen } = useTiber();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
@@ -21,6 +20,13 @@ function TiberChat() {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
+
+  // Aprire questa pagina è come "leggere" qualunque commento spontaneo in attesa — la bolla
+  // flottante globale (TiberFloatingBubble.tsx) sparisce da sola di conseguenza, senza dover
+  // toccare nulla apposta.
+  useEffect(() => {
+    if (hydrated) markProactiveSeen();
+  }, [hydrated, markProactiveSeen]);
 
   // Il messaggio scritto nella barra rapida di Home arriva qui come ?q=... — inviato una
   // sola volta all'apertura (mai a ogni render, mai di nuovo se l'utente torna indietro e
@@ -118,22 +124,16 @@ function TiberChat() {
   );
 }
 
-function TiberPageInner() {
-  const executionContext = useTiberExecutionContext();
-  return (
-    <TiberProvider executionContext={executionContext}>
-      <TiberChat />
-    </TiberProvider>
-  );
-}
-
 export default function TiberPage() {
   // Suspense richiesto da Next.js per useSearchParams (legge ?q=... dalla barra rapida di
   // Home) — nessun fallback visibile: la pagina è già interamente client-side e hydrated
-  // gestisce già il primo istante prima che i context si popolino.
+  // gestisce già il primo istante prima che i context si popolino. TiberProvider non viene
+  // più montato qui: vive nel layout radice (vedi components/tiber/TiberMount.tsx) perché la
+  // bolla flottante e lo scheduler delle riflessioni spontanee devono restare vivi anche
+  // fuori da questa pagina.
   return (
     <Suspense fallback={null}>
-      <TiberPageInner />
+      <TiberChat />
     </Suspense>
   );
 }

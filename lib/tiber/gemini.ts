@@ -3,18 +3,12 @@ import { TiberToolDeclaration } from "./tool-types";
 /** Modello Flash del piano gratuito — vedi la nota nell'area vitae-assistente-ia sulla
  * scelta di partire da Gemini gratuito invece di una chiave a pagamento.
  *
- * Era "gemini-2.5-flash": Google l'ha ritirato per i nuovi utenti prima della data di
- * spegnimento annunciata (16 ottobre 2026) — un ritiro anticipato non annunciato, non un
- * problema di questo codice. Il messaggio d'errore di Google stesso indica il sostituto,
- * "gemini-3.6-flash": confermato compatibile con lo stesso endpoint REST generateContent
- * già in uso qui (stessa forma di richiesta — contents/systemInstruction/tools — nessun'
- * altra modifica necessaria), disponibile anch'esso nel piano gratuito di AI Studio senza
- * carta di credito. Le richieste gratuite giornaliere concesse ai modelli Flash "pieni"
- * come questo sono però più basse di quanto fossero su 2.5 Flash — se Tiber dovesse
- * rispondere con un errore 429 "limite raggiunto" più spesso di prima, è per questo, non
- * per un problema del codice: un'eventuale chiave a pagamento (bastano pochi centesimi per
- * conversazione) alzerebbe di molto quel tetto. */
-const GEMINI_MODEL = "gemini-3.6-flash";
+ * Passato da "gemini-3.6-flash" a "gemini-3.5-flash-lite" su richiesta esplicita: il
+ * "pensiero" interno di 3.6 Flash non serve per come Tiber viene usato qui (chiamare tool,
+ * rispondere a domande dirette), mentre il tetto gratuito giornaliero di Flash-Lite è molto
+ * più alto (~500 richieste/giorno contro ~20) — decisivo dato che ogni messaggio a Tiber può
+ * già scatenare 2-3 chiamate in sequenza nel ciclo di function calling qui sotto. */
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 export interface GeminiFunctionCall {
@@ -63,10 +57,18 @@ export async function callGemini(
   history: GeminiContent[],
   tools: TiberToolDeclaration[]
 ): Promise<GeminiTurnResult> {
+  // Due voci separate nell'array, non un'unica voce con entrambe le chiavi — è la forma
+  // richiesta dalla API per combinare un tool integrato (la ricerca web) con tool
+  // personalizzati nella stessa richiesta, confermata compatibile con i modelli Gemini 3.x
+  // (non lo era con le generazioni precedenti). Concede a Tiber la possibilità di cercare
+  // sul web di sua iniziativa — un ristorante ben valutato vicino a una posizione, notizie
+  // su un libro appena aggiunto, un negozio nei dintorni — senza una chiave o un servizio
+  // separati: 5.000 ricerche gratuite al mese sono incluse nello stesso piano gratuito già
+  // in uso, un tetto che per un solo utilizzatore personale è praticamente enorme.
   const body = {
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents: history,
-    tools: tools.length > 0 ? [{ functionDeclarations: tools }] : undefined,
+    tools: [...(tools.length > 0 ? [{ functionDeclarations: tools }] : []), { googleSearch: {} }],
   };
 
   const res = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {

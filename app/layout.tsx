@@ -36,6 +36,7 @@ import { VaccinationNotifier } from "@/components/medical/VaccinationNotifier";
 import { AnimalNotifier } from "@/components/animali/AnimalNotifier";
 import { PantryNotifier } from "@/components/food/PantryNotifier";
 import { MoodSuggestionPrompt } from "@/components/mood/MoodSuggestionPrompt";
+import { TiberMount } from "@/components/tiber/TiberMount";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <FinanceProvider>
                       <MoodProvider>
                         <NeedsProvider>
+                          <TiberMount>
                             {children}
                             <BottomNav />
                             <FloatingHobbyTimerPill />
@@ -102,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             <AnimalNotifier />
                             <PantryNotifier />
                             <MoodSuggestionPrompt />
+                          </TiberMount>
                         </NeedsProvider>
                       </MoodProvider>
                     </FinanceProvider>
