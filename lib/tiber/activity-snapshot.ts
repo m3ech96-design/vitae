@@ -4,14 +4,19 @@ import { DiaryEntry } from "@/lib/diary-types";
 import { WishlistItem } from "@/lib/wishlist-types";
 import { Place } from "@/lib/types";
 
-/** Ultimo luogo salvato in cui risultava trovarsi l'utente — non un confronto temporale
- * come gli altri moduli (la presenza in un luogo è uno stato che dura, non ha una "data di
- * creazione"): l'evento è il CAMBIAMENTO, l'arrivo, non la permanenza continua. */
-const LAST_PLACE_KEY = "vitae:tiber-last-place-id";
+/** Prefisso "tiber-runtime:", non "vitae:" — deliberatamente fuori dal backup (lib/backup.ts,
+ * che salva tutto ciò che inizia per "vitae:"): sono segnapunti tecnici, non contenuto vero,
+ * e ripristinarli da un vecchio backup su un momento o dispositivo diverso confonderebbe più
+ * che aiutare (es. un "ultimo luogo noto" di una sessione passata che non corrisponde più a
+ * dove ci si trova davvero ora). Ultimo luogo salvato in cui risultava trovarsi l'utente — non
+ * un confronto temporale come gli altri moduli (la presenza in un luogo è uno stato che dura,
+ * non ha una "data di creazione"): l'evento è il CAMBIAMENTO, l'arrivo, non la permanenza
+ * continua. */
+const LAST_PLACE_KEY = "tiber-runtime:last-place-id";
 /** Chiave del pasto già segnalato oggi ("2026-09-18:pranzo") — evita di richiedere la
  * stessa cosa più volte durante la stessa finestra pasto, dato che il controllo gira ogni
  * minuto (vedi TiberProactiveScheduler.tsx). */
-const LAST_MEAL_KEY = "vitae:tiber-last-meal-nudge";
+const LAST_MEAL_KEY = "tiber-runtime:last-meal-nudge";
 
 function currentMealWindow(): "pranzo" | "cena" | null {
   const h = new Date().getHours();

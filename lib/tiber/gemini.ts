@@ -85,23 +85,35 @@ export async function callGemini(
     // scorretto nella richiesta — non alla chiave — veniva prima etichettato come "chiave
     // non valida", mandando a controllare inutilmente qualcosa che era già corretto).
     let googleMessage = "";
-    // Per un 429 il messaggio sopra è quasi sempre generico ("hai superato la quota
-    // attuale...") — MAI dice da solo se è per minuto (transitorio, secondi) o per giorno
-    // (persiste per ore). Quel dettaglio vive altrove nel corpo, dentro
-    // error.details[].quotaId (un QuotaFailure) — mai letto finora, per questo il messaggio
-    // mostrato è sempre stato lo stesso indipendentemente dal vero limite superato.
+    // Per un 429 il messaggio sopra è spesso solo il testo generico ("hai superato la quota
+    // attuale...") — non sempre dice da solo se è per minuto (transitorio, secondi) o per
+    // giorno (persiste per ore). Quando c'è, quel dettaglio vive altrove nel corpo, dentro
+    // error.details[]: un QuotaFailure con `quotaId` (quale limite esatto) e/o un RetryInfo
+    // con `retryDelay` (quanto aspettare, in secondi, detto esplicitamente da Google) — mai
+    // letti finora, per questo il messaggio mostrato non cambiava mai in base al caso vero.
     let quotaId = "";
+    let retryDelay = "";
     try {
       const parsed = JSON.parse(errText);
       googleMessage = parsed?.error?.message ?? "";
-      const violations = parsed?.error?.details?.flatMap((d: { violations?: { quotaId?: string }[] }) => d.violations ?? []) ?? [];
-      quotaId = violations.map((v: { quotaId?: string }) => v.quotaId).filter(Boolean).join(", ");
+      const details: { violations?: { quotaId?: string }[]; retryDelay?: string }[] = parsed?.error?.details ?? [];
+      quotaId = details
+        .flatMap((d) => d.violations ?? [])
+        .map((v) => v.quotaId)
+        .filter(Boolean)
+        .join(", ");
+      retryDelay = details.find((d) => d.retryDelay)?.retryDelay ?? "";
     } catch {
       // corpo non JSON: si userà errText grezzo più sotto
     }
+    // Un secondo posto in cui Google può indicare l'attesa, indipendente dal corpo JSON —
+    // l'header HTTP standard per i 429, mai controllato finora (si guardava solo il corpo).
+    const retryAfterHeader = res.headers.get("retry-after") ?? "";
+
     if (res.status === 429) {
-      const detail = [quotaId, googleMessage].filter(Boolean).join(" — ");
-      throw new Error(`Limite di richieste Gemini raggiunto (429)${detail ? `: ${detail}` : " — dettaglio non disponibile nella risposta."}`);
+      const waitHint = retryDelay || (retryAfterHeader ? `${retryAfterHeader}s` : "");
+      const parts = [quotaId, googleMessage, waitHint ? `Attesa suggerita: ${waitHint}.` : ""].filter(Boolean);
+      throw new Error(`Limite di richieste Gemini raggiunto (429)${parts.length > 0 ? `: ${parts.join(" — ")}` : " — dettaglio non disponibile nella risposta."}`);
     }
     if (res.status === 401 || res.status === 403) {
       throw new Error(`Chiave Gemini non valida o senza permessi${googleMessage ? `: ${googleMessage}` : ""}`);

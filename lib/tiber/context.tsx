@@ -14,8 +14,18 @@ import { buildActivitySnapshot } from "./activity-snapshot";
  * prefisso che quel meccanismo non tocca per costruzione, non per un'eccezione fragile. */
 const API_KEY_STORAGE = "tiber-secret:gemini-api-key";
 const MESSAGES_KEY = "vitae:tiber-messages";
-const LAST_REFLECTION_KEY = "vitae:tiber-last-reflection-at";
-const REFLECTION_BACKOFF_KEY = "vitae:tiber-reflection-backoff-until";
+/** Prefisso "tiber-runtime:" invece di "vitae:" per le tre chiavi sotto — deliberatamente
+ * fuori dal backup (lib/backup.ts), che salva automaticamente tutto ciò che inizia per
+ * "vitae:". Non sono contenuto vero (a differenza della cronologia messaggi sopra, o delle
+ * preferenze in settings-context.tsx): sono segnapunti tecnici del motore delle riflessioni.
+ * Ripristinarli da un vecchio backup su un altro momento/dispositivo può solo confondere —
+ * es. cancellare una pausa di 15 minuti già in corso dopo un errore (checkpoint 131),
+ * facendo ripartire un tentativo che fallirebbe comunque, o resettare "l'ultima riflessione"
+ * a un istante diverso da quello vero. Stessa tecnica già usata per la chiave Gemini: un
+ * prefisso diverso esclude per costruzione, non serve un elenco di eccezioni da mantenere.
+ */
+const LAST_REFLECTION_KEY = "tiber-runtime:last-reflection-at";
+const REFLECTION_BACKOFF_KEY = "tiber-runtime:reflection-backoff-until";
 /** Corretto un bug reale: se una riflessione falliva (es. limite di richieste raggiunto),
  * il segnapunti di "ultima riflessione" non avanzava — lo scheduler (ogni minuto, vedi
  * TiberProactiveScheduler.tsx) trovava quindi sempre lo stesso evento "nuovo" e ritentava
@@ -24,7 +34,7 @@ const REFLECTION_BACKOFF_KEY = "vitae:tiber-reflection-backoff-until";
  * richiamare Gemini e fallire di nuovo. Con questa pausa, un fallimento qualunque interrompe
  * i tentativi per un po' invece di ripeterli ogni minuto a vuoto. */
 const REFLECTION_BACKOFF_MS = 15 * 60 * 1000;
-const LAST_SEEN_PROACTIVE_KEY = "vitae:tiber-last-seen-proactive-at";
+const LAST_SEEN_PROACTIVE_KEY = "tiber-runtime:last-seen-proactive-at";
 
 /** Quanta conversazione tornare a mandare a Gemini ad ogni messaggio — non l'intera
  * cronologia da sempre, solo l'ultima mezz'ora (richiesto esplicitamente per contenere i

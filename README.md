@@ -4106,3 +4106,39 @@ riportate online, variabili da account ad account. Il modo affidabile di sapere 
 vero per un account specifico resta il pannello di utilizzo su aistudio.google.com, non un
 numero preso da internet — o, da ora in poi, il messaggio d'errore stesso, che dice il
 dettaglio vero invece di quello generico.
+
+## Checkpoint 133 — Il backup non tocca più i segnapunti tecnici di Tiber
+
+Chiesto se importare un backup potesse c'entrare con la situazione del limite Gemini.
+Risposta verificata: **non è la causa** — il backup non contiene la chiave Gemini (esclusa
+da sempre con un prefisso diverso, vedi checkpoint precedenti) e non manda mai richieste a
+Gemini da solo. Ma trovato un effetto collaterale reale e degno di correzione: il backup
+salva tutto ciò che inizia per "vitae:" (per costruzione, senza un elenco da mantenere a
+mano) — ed è lo stesso prefisso usato finora anche da alcuni segnapunti puramente tecnici
+del motore delle riflessioni spontanee: quando è stata fatta l'ultima riflessione, la pausa
+di 15 minuti dopo un errore (checkpoint 131), l'ultimo luogo noto, l'ultimo pasto già
+segnalato.
+
+Importare un vecchio backup avrebbe quindi potuto azzerare o riportare indietro questi
+segnapunti — cancellando per esempio una pausa già in corso dopo un errore, o resettando
+"l'ultima riflessione" a un istante diverso da quello vero. Non causa un limite Gemini di
+per sé, ma può confondere: un tentativo che sembra ripartire da capo senza motivo apparente.
+
+Corretto spostando questi cinque segnapunti tecnici su un prefisso diverso
+("tiber-runtime:" invece di "vitae:") — stessa tecnica già usata per la chiave Gemini stessa:
+esclusi dal backup per costruzione, non per un'eccezione da ricordare. Restano invece dentro
+al backup, perché sono contenuto vero: la cronologia delle conversazioni con Tiber e le
+preferenze scelte nelle sue impostazioni (moduli permessi, intromissioni spontanee sì/no).
+
+## Checkpoint 134 — Controllato anche l'header di risposta per il tempo di attesa
+
+Il messaggio 429 mostrato dal checkpoint 132 conteneva stavolta solo il testo generico di
+Google ("hai superato la quota attuale...") — nessun `quotaId` nel corpo della risposta:
+Google non lo include sempre. Aggiunto un secondo punto mai controllato finora: l'header
+HTTP `Retry-After` (indipendente dal corpo JSON) e il campo `retryDelay` di un eventuale
+blocco RetryInfo nei dettagli dell'errore — quando presenti, dicono esplicitamente quanti
+secondi aspettare, il dato più diretto possibile invece di indovinare dal tipo di quota.
+
+Se anche questo risultasse assente (Google non li include sempre entrambi), il modo più
+diretto per sapere il numero vero resta quello che l'errore stesso indica esplicitamente:
+https://ai.dev/rate-limit, il pannello ufficiale di utilizzo per l'account specifico.
