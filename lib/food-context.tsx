@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import { newId } from "./id";
 import { Ingredient, FoodEntry, FoodGoals, DEFAULT_FOOD_GOALS, WaterLog, PantryEntry, MealSlot } from "./food-types";
 import { consumeFromPantry, restoreToPantry, hasExpiringPantryEntries } from "./pantry";
+import { recipeMacrosPer100 } from "./food-stats";
 import { todayIso } from "./date-format";
 
 const INGREDIENTS_KEY = "vitae:food-ingredients";
@@ -75,15 +76,73 @@ export function FoodProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const i = window.localStorage.getItem(INGREDIENTS_KEY);
-      if (i) setIngredients(JSON.parse(i));
+      let loadedIngredients: Ingredient[] = i ? JSON.parse(i) : [];
       const e = window.localStorage.getItem(ENTRIES_KEY);
-      if (e) setEntries(JSON.parse(e));
+      let loadedEntries: FoodEntry[] = e ? JSON.parse(e) : [];
       const w = window.localStorage.getItem(WATER_KEY);
       if (w) setWaterLogState(JSON.parse(w));
       const g = window.localStorage.getItem(GOALS_KEY);
       if (g) setGoalsState({ ...DEFAULT_FOOD_GOALS, ...JSON.parse(g) });
       const p = window.localStorage.getItem(PANTRY_KEY);
-      if (p) setPantryEntries(JSON.parse(p));
+      let loadedPantry: PantryEntry[] = p ? JSON.parse(p) : [];
+
+      // Migrazione una tantum, corretta secondo le istruzioni: prima una Ricetta si
+      // salvava con unit "g"/"ml" (macro "per 100" interpretati a peso, come un ingrediente
+      // comprato sfuso) — ora rappresenta SEMPRE l'intera composizione inserita, quindi vive
+      // sempre come unit "altro" con gramsPerUnit pari al peso reale di quella composizione
+      // (vedi il commento su RecipeComposition.servingLabel in food-types.ts). Qui si
+      // converte ogni Ricetta ancora nel vecchio formato, e si riscala ogni voce di menù o
+      // dispensa già registrata su di essa da grammi/millilitri a "numero di porzioni" —
+      // stessa identica caloria di prima (vedi baseQuantity/scaleFactor: kcal = per100 ×
+      // gramsPerUnit × quantità / 100, quindi dividere la vecchia quantità in grammi per il
+      // nuovo gramsPerUnit lascia il prodotto — e perciò le kcal già registrate in
+      // passato — invariato), cambia solo l'unità in cui il numero è espresso. Le ricette
+      // già lette (non ancora convertite) restano la fonte per il calcolo, indipendentemente
+      // dall'ordine in cui `.map` le visita, perché ogni riga di composizione punta comunque
+      // ai valori "per 100" dei suoi componenti, mai al loro `unit`/`gramsPerUnit` prima o
+      // dopo la conversione.
+      const migratedGramsPerUnit = new Map<string, number>();
+      loadedIngredients = loadedIngredients.map((ing) => {
+        if (!ing.recipe || ing.unit === "altro") return ing;
+        const totals = recipeMacrosPer100(ing.recipe.lines, loadedIngredients);
+        if (!totals || totals.totalGrams <= 0) return ing;
+        const label = ing.recipe.servingLabel?.trim() || "porzione";
+        migratedGramsPerUnit.set(ing.id, totals.totalGrams);
+        return {
+          ...ing,
+          unit: "altro" as const,
+          unitLabel: label,
+          gramsPerUnit: totals.totalGrams,
+          recipe: { lines: ing.recipe.lines, servingLabel: label, notes: ing.recipe.notes },
+        };
+      });
+      if (migratedGramsPerUnit.size > 0) {
+        loadedEntries = loadedEntries.map((entry) => {
+          const newGramsPerUnit = migratedGramsPerUnit.get(entry.ingredientId);
+          return newGramsPerUnit ? { ...entry, quantity: entry.quantity / newGramsPerUnit } : entry;
+        });
+        loadedPantry = loadedPantry.map((entry) => {
+          const newGramsPerUnit = migratedGramsPerUnit.get(entry.ingredientId);
+          if (!newGramsPerUnit) return entry;
+          return {
+            ...entry,
+            initialQuantity: entry.initialQuantity !== undefined ? entry.initialQuantity / newGramsPerUnit : entry.initialQuantity,
+            remainingQuantity: entry.remainingQuantity !== undefined ? entry.remainingQuantity / newGramsPerUnit : entry.remainingQuantity,
+          };
+        });
+        try {
+          window.localStorage.setItem(INGREDIENTS_KEY, JSON.stringify(loadedIngredients));
+          window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(loadedEntries));
+          window.localStorage.setItem(PANTRY_KEY, JSON.stringify(loadedPantry));
+        } catch {
+          // Salvataggio della migrazione fallito: resta comunque applicata in memoria per
+          // questa sessione, si ritenterà di persisterla al primo salvataggio successivo.
+        }
+      }
+
+      setIngredients(loadedIngredients);
+      setEntries(loadedEntries);
+      setPantryEntries(loadedPantry);
     } catch {
       // dati locali non leggibili: si riparte da zero
     } finally {

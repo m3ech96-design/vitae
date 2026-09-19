@@ -3,15 +3,19 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, ChefHat, Pencil, Trash2, Plus } from "lucide-react";
 import { useFood } from "@/lib/food-context";
-import { Ingredient } from "@/lib/food-types";
+import { Ingredient, scaleFactor } from "@/lib/food-types";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AddIngredientModal } from "@/components/food/AddIngredientModal";
 
-/** "125 kcal /100g" per g/ml; per "altro" mostra anche il peso di 1 unità — stessa
- * etichetta già usata in EntryModal, ripetuta qui per non introdurre una seconda copia
- * leggermente diversa della stessa informazione. */
+/** "125 kcal /100g" per g/ml; per "altro" mostra anche il peso di 1 unità; per una Ricetta
+ * "1 {unitLabel} = N kcal" — stessa etichetta già usata in EntryModal, ripetuta qui per non
+ * introdurre una seconda copia leggermente diversa della stessa informazione. */
 function ingredientSummary(ing: Ingredient): string {
+  if (ing.recipe) {
+    const perUnitKcal = Math.round(ing.kcal * scaleFactor(ing, 1));
+    return `1 ${ing.unitLabel || "porzione"} = ${perUnitKcal} kcal`;
+  }
   const base = ing.unit === "ml" ? "100 ml" : "100 g";
   if (ing.unit === "altro") {
     return `${ing.kcal} kcal/${base} · 1 ${ing.unitLabel} = ${ing.gramsPerUnit} g`;
@@ -123,7 +127,7 @@ export default function IngredientiPage() {
           title={`Eliminare "${deleting.name}"?`}
           description={
             usageCount(deleting.id) > 0
-              ? `Questo ${deleting.recipe ? "ricetta" : "ingrediente"} compare in ${usageCount(deleting.id)} ${
+              ? `${deleting.recipe ? "Questa ricetta" : "Questo ingrediente"} compare in ${usageCount(deleting.id)} ${
                   usageCount(deleting.id) === 1 ? "voce di menù" : "voci di menù"
                 }: verranno rimosse anche quelle.`
               : undefined

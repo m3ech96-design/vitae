@@ -4,12 +4,11 @@ import { createPortal } from "react-dom";
 import { X, Plus, Trash2, ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFood } from "@/lib/food-context";
-import { Ingredient, RecipeIngredientLine, FoodUnit, baseQuantity } from "@/lib/food-types";
-import { recipeMacrosPer100 } from "@/lib/food-stats";
+import { Ingredient, RecipeIngredientLine, baseQuantity } from "@/lib/food-types";
+import { recipeMacrosPer100, recipeWholeTotals } from "@/lib/food-stats";
 import { newId } from "@/lib/id";
 import { TextField } from "../ui/TextField";
 import { Button } from "../ui/Button";
-import { Chip } from "../ui/Chip";
 import { AddIngredientModal } from "./AddIngredientModal";
 
 /** Una riga della composizione — ingrediente scelto da un elenco a tendina (tra quelli
@@ -70,23 +69,26 @@ function LineRow({
 }
 
 /**
- * "Ricetta" — un ingrediente come qualunque altro (stesso `Ingredient`, stessi macro "per
- * 100 g/ml", registrabile in un pasto senza che il resto dell'app sappia che dietro c'è una
- * lista di componenti), ma composto scegliendo ingredienti esistenti o creandone di nuovi
- * al momento, invece di inserire i valori nutrizionali a mano. I macro totali per 100 g/ml
- * (vedi `recipeMacrosPer100`) si aggiornano in tempo reale man mano che la composizione
- * cambia. Aperta dalla stessa schermata di creazione ingrediente (vedi AddIngredientModal),
- * non una scheda separata da cercare altrove.
+ * "Ricetta" — un ingrediente come qualunque altro (stesso `Ingredient`, registrabile in un
+ * pasto senza che il resto dell'app sappia che dietro c'è una lista di componenti), ma
+ * composto scegliendo ingredienti esistenti o creandone di nuovi al momento, invece di
+ * inserire i valori nutrizionali a mano.
+ *
+ * Corretto secondo le istruzioni: una ricetta non è mai trattata come un ingrediente a peso
+ * libero (niente più scelta "Grammi/Millilitri" con macro "per 100" da interpretare a
+ * peso) — rappresenta SEMPRE l'intera composizione inserita qui sotto, con le quantità
+ * esatte di ciascuna riga. L'unica cosa che si dichiara è il nome di quell'unità intera
+ * (`servingLabel`, es. "burritos"): nel menù si registrerà "quanti burritos", mai "quanti
+ * grammi di burritos" — 2 raddoppia l'intera composizione, 3 la triplica. Salvata sempre con
+ * unit "altro" e `gramsPerUnit` pari al peso reale dell'intera composizione (mai chiesto a
+ * mano, sempre calcolato da `recipeWholeTotals`) — i macro "per 100 g" restano comunque lo
+ * stesso formato di storage di ogni altro Ingredient (vedi `recipeMacrosPer100`), solo mai
+ * mostrati né scelti dall'utente come base di conteggio.
  */
 export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSaved?: (ingredient: Ingredient) => void }) {
   const { ingredients, addIngredient } = useFood();
   const [name, setName] = useState("");
-  // Come per un ingrediente qualunque (vedi AddIngredientModal): i macro si esprimono per
-  // 100 g o per 100 ml a seconda della natura della ricetta — un frullato o una zuppa sono
-  // liquidi, non ha senso chiederne il valore "per 100 g" come per un piatto solido.
-  const [unit, setUnit] = useState<Extract<FoodUnit, "g" | "ml">>("g");
   const [lines, setLines] = useState<RecipeIngredientLine[]>([]);
-  const [servingSize, setServingSize] = useState("");
   const [servingLabel, setServingLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [creatingIngredient, setCreatingIngredient] = useState(false);
@@ -97,15 +99,21 @@ export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSa
   const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.id !== id));
 
   const validLines = useMemo(() => lines.filter((l) => l.ingredientId && l.quantity > 0), [lines]);
+  // Storage (per 100 g) e anteprima (per l'intera ricetta) derivano dallo stesso calcolo, mai
+  // due formule parallele — vedi il commento su `recipeWholeTotals` in food-stats.ts.
   const computed = useMemo(() => recipeMacrosPer100(validLines, ingredients), [validLines, ingredients]);
+  const whole = useMemo(() => recipeWholeTotals(validLines, ingredients), [validLines, ingredients]);
 
-  const canSave = name.trim().length > 0 && computed !== null;
+  const canSave = name.trim().length > 0 && servingLabel.trim().length > 0 && computed !== null && whole !== null;
 
   const submit = () => {
-    if (!canSave || !computed) return;
+    if (!canSave || !computed || !whole) return;
+    const label = servingLabel.trim();
     const created = addIngredient({
       name: name.trim(),
-      unit,
+      unit: "altro",
+      unitLabel: label,
+      gramsPerUnit: whole.totalGrams,
       kcal: Math.round(computed.kcal),
       fat: computed.fat,
       saturatedFat: computed.saturatedFat,
@@ -116,8 +124,7 @@ export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSa
       salt: computed.salt,
       recipe: {
         lines: validLines,
-        servingSizeGrams: servingSize.trim() ? Math.max(0, parseFloat(servingSize.replace(",", "."))) : undefined,
-        servingLabel: servingLabel.trim() || undefined,
+        servingLabel: label,
         notes: notes.trim() || undefined,
       },
     });
@@ -151,14 +158,15 @@ export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSa
           <TextField label="Nome della ricetta" value={name} onChange={(e) => setName(e.target.value)} placeholder="Es. Parmigiana di melanzane" />
 
           <div>
-            <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Dimensione di servizio</p>
-            <div className="flex gap-2">
-              <Chip label="Grammi" selected={unit === "g"} onClick={() => setUnit("g")} />
-              <Chip label="Millilitri" selected={unit === "ml"} onClick={() => setUnit("ml")} />
-            </div>
+            <TextField
+              label="Nome della porzione"
+              value={servingLabel}
+              onChange={(e) => setServingLabel(e.target.value)}
+              placeholder="Es. burritos, fetta, porzione"
+            />
             <p className="mt-2 text-[11px] leading-relaxed text-ink-800">
-              Scegli Millilitri per una ricetta liquida (zuppe, frullati, salse) — i valori nutrizionali sotto verranno espressi
-              per 100 {unit} invece che a peso.
+              Rappresenta SEMPRE l&apos;intera composizione che inserisci qui sotto, con le quantità esatte di ogni riga — mai un
+              peso a piacere. Se nel menù ne registri 2, raddoppia tutto; 3, triplica tutto.
             </p>
           </div>
 
@@ -185,23 +193,20 @@ export function RecipeComposer({ onClose, onSaved }: { onClose: () => void; onSa
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <TextField label="Porzione (g)" type="number" inputMode="decimal" value={servingSize} onChange={(e) => setServingSize(e.target.value)} placeholder="Es. 250" />
-            <TextField label="Nome porzione" value={servingLabel} onChange={(e) => setServingLabel(e.target.value)} placeholder="Es. 1 fetta" />
-          </div>
-
           <TextField label="Note" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Preparazione, varianti…" />
 
           <div className="rounded-xl2 border border-white/10 bg-white/[0.03] px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-ink-600">Valori nutrizionali per 100 {unit}</p>
-            {computed ? (
+            <p className="text-[11px] uppercase tracking-[0.14em] text-ink-600">
+              Valori nutrizionali per 1 {servingLabel.trim() || "porzione"}
+            </p>
+            {whole ? (
               <>
-                <p className="mt-1 font-display text-xl text-ink-100">{Math.round(computed.kcal)} kcal</p>
+                <p className="mt-1 font-display text-xl text-ink-100">{Math.round(whole.kcal)} kcal</p>
                 <p className="mt-1 text-xs text-ink-600">
-                  Grassi {Math.round(computed.fat * 10) / 10} g · Carboidrati {Math.round(computed.carbs * 10) / 10} g · Proteine{" "}
-                  {Math.round(computed.protein * 10) / 10} g
+                  Grassi {Math.round(whole.fat * 10) / 10} g · Carboidrati {Math.round(whole.carbs * 10) / 10} g · Proteine{" "}
+                  {Math.round(whole.protein * 10) / 10} g
                 </p>
-                <p className="mt-1 text-[11px] text-ink-800">Peso totale della ricetta: {Math.round(computed.totalGrams)} g</p>
+                <p className="mt-1 text-[11px] text-ink-800">Peso di 1 {servingLabel.trim() || "porzione"}: {Math.round(whole.totalGrams)} g</p>
               </>
             ) : (
               <p className="mt-1 text-xs text-ink-800">Aggiungi almeno un ingrediente con una quantità per vedere i valori.</p>

@@ -106,6 +106,36 @@ export function recipeMacrosPer100(
   };
 }
 
+/**
+ * Macro e calorie per l'INTERA ricetta così come composta — mai per 100 g/ml: la base di
+ * conteggio di una ricetta non è mai un peso di comodo, è sempre "tutti gli ingredienti
+ * inseriti, nelle quantità inserite" (vedi il commento su RecipeComposition.servingLabel in
+ * food-types.ts). Usata solo per l'anteprima nel wizard (RecipeComposer) e per l'etichetta
+ * "1 {servingLabel} = N kcal" mostrata dove si registra un pasto — la ricetta resta comunque
+ * salvata come Ingredient con macro "per 100 g" (vedi `recipeMacrosPer100`, un solo calcolo,
+ * mai due formule parallele che potrebbero disallinearsi): qui si scala semplicemente quel
+ * "per 100" al peso vero dell'intera composizione invece che a 100 fissi.
+ */
+export function recipeWholeTotals(
+  lines: { ingredientId: string; quantity: number }[],
+  ingredients: Ingredient[]
+): (MacroTotals & { totalGrams: number }) | null {
+  const per100 = recipeMacrosPer100(lines, ingredients);
+  if (!per100) return null;
+  const factor = per100.totalGrams / 100;
+  return {
+    totalGrams: per100.totalGrams,
+    kcal: per100.kcal * factor,
+    fat: per100.fat * factor,
+    saturatedFat: per100.saturatedFat * factor,
+    carbs: per100.carbs * factor,
+    sugars: per100.sugars * factor,
+    fiber: per100.fiber * factor,
+    protein: per100.protein * factor,
+    salt: per100.salt * factor,
+  };
+}
+
 /** Ultimi 7 giorni (compreso quello selezionato), stessa finestra mobile già usata in
  * "Attività e peso" — non la settimana di calendario lun-dom, per coerenza con il resto
  * dell'app. */

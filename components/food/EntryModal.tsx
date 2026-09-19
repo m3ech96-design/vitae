@@ -21,8 +21,15 @@ function quantityLabel(ingredient: Ingredient): string {
 }
 
 /** "125 kcal /100g" per g/ml; per "altro" mostra anche il peso di 1 unità, dato che i macro
- * restano sempre legati al peso vero, non all'unità di comodo. */
+ * restano sempre legati al peso vero, non all'unità di comodo. Per una Ricetta (vedi
+ * Ingredient.recipe in food-types.ts) mostra invece direttamente "1 {unitLabel} = N kcal" —
+ * il "per 100 g" è solo il formato di storage interno, mai qualcosa che chi registra un
+ * pasto deve interpretare: una ricetta si conta sempre per porzioni intere, mai a peso. */
 function ingredientSummary(ing: Ingredient): string {
+  if (ing.recipe) {
+    const perUnitKcal = Math.round(ing.kcal * scaleFactor(ing, 1));
+    return `1 ${ing.unitLabel || "porzione"} = ${perUnitKcal} kcal`;
+  }
   const base = ing.unit === "ml" ? "100 ml" : "100 g";
   if (ing.unit === "altro") {
     return `${ing.kcal} kcal/${base} · 1 ${ing.unitLabel} = ${ing.gramsPerUnit} g`;

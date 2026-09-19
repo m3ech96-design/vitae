@@ -61,12 +61,16 @@ export interface RecipeIngredientLine {
 
 export interface RecipeComposition {
   lines: RecipeIngredientLine[];
-  /** Dimensione di servizio dichiarata per la ricetta finita (es. "1 porzione = 250 g") —
-   * distinta dalla base "per 100" dei macro, che resta sempre la stessa di ogni altro
-   * ingrediente: questo è solo un aiuto a registrare il pasto senza dover pesare la singola
-   * porzione ogni volta. */
-  servingSizeGrams?: number;
-  servingLabel?: string;
+  /** Corretto secondo le istruzioni: una Ricetta non ha più una "dimensione di servizio" a
+   * peso scelta a mano (niente più "1 porzione = 250 g" scollegata dalla composizione) — 1
+   * unità di una ricetta rappresenta SEMPRE l'intera composizione qui sopra, con le quantità
+   * esatte inserite riga per riga: se nel menù ne registri 2, raddoppia tutto; 3, triplica
+   * tutto. `servingLabel` è solo il nome di quell'unità intera (es. "burritos", "fetta",
+   * "porzione") — mai una frazione della composizione. Salvata anche su Ingredient.unitLabel
+   * dell'ingrediente-ricetta risultante (vedi RecipeComposer), che usa sempre unit "altro"
+   * con gramsPerUnit pari al peso reale dell'intera composizione — mai "g"/"ml" a peso
+   * libero come un ingrediente comprato sfuso. */
+  servingLabel: string;
   notes?: string;
 }
 

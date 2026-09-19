@@ -4481,6 +4481,7 @@ Impostazioni → "Viste predefinite", con un pulsante "Reimposta" per scheda.
 
 Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
 
+
 ## Checkpoint 141.1 — "Altro" torna, come piccola icona sovrapposta al pill
 
 Richiesto subito dopo il Checkpoint 141: Impostazioni resta l'ultima icona fissa della barra,
@@ -4500,3 +4501,154 @@ click al solo elemento più in alto nello stacking (`stopPropagation` lasciato p
 lo stesso pattern altrove, ma qui ridondante).
 
 Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 142 — Una Ricetta è sempre un intero, mai un peso a piacere
+
+Corretto un difetto concettuale in Alimentazione: una Ricetta si salvava come un ingrediente
+"a peso" (unit "g"/"ml", macro dichiarati "per 100") — nell'atto pratico di registrare un
+pasto (`EntryModal`) bisognava quindi indicare quanti grammi della ricetta finita si erano
+mangiati, come se fosse farina o petto di pollo comprati sfusi. Non è mai stato questo il
+modello voluto: una ricetta è sempre l'insieme intero dei suoi ingredienti, con le loro
+quantità esatte — "1 burritos" con 200 g di tacos, 500 g di carne macinata e 100 g di
+peperoni rappresenta sempre e solo quell'intera composizione; registrarne 2 nel menù
+raddoppia tutto, 3 la triplica.
+
+**`components/food/RecipeComposer.tsx`.** Rimossa la scelta "Grammi/Millilitri" per la
+ricetta finita — non esiste più una base "per 100" scelta a mano. Al suo posto, un campo
+obbligatorio "Nome della porzione" (es. "burritos", "fetta"): la ricetta si salva sempre con
+`unit: "altro"` e `gramsPerUnit` pari al peso reale dell'INTERA composizione inserita, mai
+chiesto a mano — calcolato da una nuova funzione, `recipeWholeTotals` in `lib/food-stats.ts`
+(deriva dallo stesso calcolo "per 100" già esistente, `recipeMacrosPer100`, usato per il
+formato di storage interno dell'Ingredient — un solo calcolo, non due formule parallele).
+Rimossa anche la vecchia "Porzione (g)" a mano libera, scollegata dalla composizione reale: la
+porzione ora è sempre e solo il totale calcolato. L'anteprima mostra "Valori nutrizionali per
+1 {nome porzione}" con le kcal/macro dell'intera ricetta, non più "per 100 g/ml".
+
+Il meccanismo che rende tutto questo corretto matematicamente esisteva già in questa app per
+qualunque ingrediente a conteggio (`unit: "altro"`, es. "1 uovo = 50 g"): registrare N unità
+scala le kcal in proporzione esatta a N, indipendentemente dal peso di 1 unità — il difetto
+era solo nel wizard, che offriva "a peso" invece che "a porzioni intere" per una ricetta.
+
+**`components/food/EntryModal.tsx` e `app/alimentazione/ingredienti/page.tsx`.** L'etichetta
+di anteprima di un ingrediente-ricetta non mostra più "N kcal/100g · 1 burritos = 900 g" (un
+dettaglio di storage interno, non quello che serve a chi registra un pasto) ma direttamente
+"1 burritos = N kcal".
+
+**`components/food/AddIngredientModal.tsx`.** In modifica, una Ricetta non mostra più il
+selettore "Grammi/Millilitri/Altro" (che avrebbe permesso di romperne l'invariante riportando
+l'unità a un peso libero) — solo un riquadro informativo con il nome della porzione
+modificabile; non esiste ancora un modo per ricomporre gli ingredienti di una ricetta già
+creata (per farlo, va eliminata e ricreata — nessuna regressione: non esisteva nemmeno prima).
+
+**Migrazione automatica, in `lib/food-context.tsx`.** Le ricette create prima di questo
+checkpoint (ancora `unit: "g"/"ml"` con una composizione) vengono convertite da sole al primo
+caricamento, senza intervento: `unit` diventa "altro", `gramsPerUnit` il peso reale della
+composizione. Ogni voce di menù o di dispensa già registrata su quella ricetta viene riscalata
+da grammi a "numero di porzioni" nella stessa proporzione — le calorie già registrate in
+passato restano **esattamente le stesse** (cambia solo l'unità in cui il numero è espresso,
+mai il risultato), verificabile algebricamente: kcal = per100 × gramsPerUnit × quantità ÷ 100
+è invariante rispetto a come si sceglie di esprimere `quantità` finché `gramsPerUnit` la
+compensa di conseguenza.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 143 — Barra di navigazione tornata alle sue dimensioni, "azzera conversazione" ricliccabile
+
+Tre correzioni puntuali, tutte sulla stessa area (navigazione e Impostazioni).
+
+**`app/impostazioni/page.tsx`.** Rimosse le sezioni "Schede in barra" e "Tutte le schede"
+(introdotte al Checkpoint 141) — duplicavano da qui una gestione che vive già per intero sulla
+barra stessa: tenendo premuto su uno dei tre slot si apre lo stesso `SlotPicker` con l'intero
+catalogo di 14 schede tra cui scegliere (non solo quelle non ancora in barra), esattamente
+come faceva "Tutte le schede" qui. Un solo percorso invece di due punti da tenere
+sincronizzati. Rimossi con loro lo stato `pickingSlot`, l'hook `useNavSlots` e l'import di
+`SlotPicker`, ormai inutilizzati in questa pagina.
+
+**`components/BottomNav.tsx`.** Rimosso il badge "Altro" sovrapposto al pill (introdotto al
+Checkpoint 141.1) — allargava visivamente l'ingombro della barra oltre il profilo arrotondato
+del pill stesso, il motivo dietro la lamentela "adesso è enorme". La barra torna alla
+dimensione di subito dopo il Checkpoint 141: Home + i tre slot personalizzabili + Impostazioni
+fissa in fondo, cinque pulsanti in un solo pill, nessun elemento che sporge oltre il suo
+bordo. Nessuna scheda diventata irraggiungibile: la rimozione di "Altro" è compensata
+esattamente dallo stesso `SlotPicker` col catalogo completo di cui sopra — un tocco lungo su
+uno qualunque dei tre slot vale quanto il vecchio foglio "Altro", senza un elemento fisso in
+più a occupare spazio.
+
+**`app/tiber/impostazioni/page.tsx`.** "Azzera la conversazione" era impossibile da toccare
+perché finiva sotto la barra di navigazione fissa: questa pagina usava `pb-16` (64px) di
+margine inferiore invece del `pb-28` (112px) usato da ogni altra pagina dell'app con la barra
+visibile — un valore isolato, non coerente con il resto, mai abbastanza per lasciare l'ultimo
+elemento sopra il pill fisso in basso. Corretto a `pb-28`.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 143.1 — La larghezza era di "Impostazioni", non del badge "Altro"
+
+Correzione al Checkpoint 143: rimuovere il badge "Altro" non era la cosa giusta — richiesto
+esplicitamente di rimetterlo, restando quello che allargava il pill oltre il suo profilo era
+invece l'etichetta "Impostazioni" sotto l'icona fissa, molto più lunga di qualunque altra
+sempre visibile in barra prima d'ora ("Altro", 5 lettere, contro "Impostazioni", 12) — ogni
+pulsante della barra è un'icona sopra un'etichetta, largo quanto la più lunga delle due, quindi
+un'etichetta più lunga allarga davvero il pill, indipendentemente da badge o conteggio icone.
+
+**`components/BottomNav.tsx`.** Badge "Altro" (foglio con le schede non in barra, sovrapposto
+al pill in basso a destra, fratello nell'albero React del pill — mai annidato in un suo
+antenato cliccabile, per evitare per costruzione il "tocco un elemento e si attiva anche
+quello sotto") ripristinato esattamente come al Checkpoint 141.1. `NavButton` guadagna una
+prop `showLabel` (di serie `true`, invariato per ogni pulsante tranne uno): Impostazioni la
+passa `false` — resta un'icona da sola, un ingranaggio già riconoscibile senza bisogno di
+parole, con `aria-label="Impostazioni"` al suo posto per chi usa uno screen reader. Il pill
+torna così a una larghezza pari o inferiore a quella precedente al Checkpoint 141 (l'icona
+Impostazioni senza etichetta pesa meno del vecchio "Altro" con la sua), senza rinunciare al
+badge appena richiesto indietro.
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 144 — Il pallino degli interruttori di Tiber usciva dal contorno
+
+In Tiber → Impostazioni, "Intromissioni spontanee" e "Tiber ti parla" (`app/tiber/impostazioni/page.tsx`)
+avevano ciascuno un interruttore scritto a mano, con lo stesso identico difetto già risolto
+più volte altrove in questo progetto e documentato nel commento di `components/ui/Switch.tsx`:
+il pallino (`<span>` con `translate-x`) aveva solo `top-0.5`, nessun `left-*` esplicito — la
+sua posizione di partenza dipendeva quindi da dove sarebbe finito "naturalmente" nel flusso
+dentro il `<button>` che lo conteneva, e quel bottone non aveva `border-0 p-0` a azzerare il
+padding di default del browser. Quel padding spostava la posizione di partenza verso
+l'interno; sommato allo scorrimento verso il lato opposto, il pallino finiva oltre il bordo
+arrotondato della traccia invece di fermarsi a un margine costante.
+
+Non riusato il componente condiviso `Switch` perché questi due hanno una traccia in
+gradiente (`bg-aura-gradient`) propria di Tiber, diversa dal violetto pieno del componente
+condiviso — sarebbe stata una regressione visiva non richiesta. Corretti invece sul posto,
+con la stessa logica: `border-0 p-0` sul bottone, posizione di partenza esplicita (`left-0.5`)
+sul pallino, corsa ricalcolata per un margine di 2px simmetrico in ogni stato (traccia 44px,
+pallino 20px → 20px di corsa, non i 22px di prima).
+
+Verificato con `tsc --noEmit` e `next build` — puliti, nessun errore.
+
+## Checkpoint 145 — "Aggiorna" dal banner non aggiornava davvero Home, Tiber e le altre pagine
+
+Segnalato: aggiornando l'app dal banner ("Nuova versione pronta" → "Aggiorna"), Home, Tiber e
+altre schede restavano ferme al checkpoint precedente invece di mostrare il nuovo.
+
+Causa, in `public/sw.js`: il gestore `fetch` del service worker serviva OGNI richiesta GET
+già in cache (pagine comprese, non solo gli asset statici) con la strategia "cache prima,
+rete solo per rinfrescarla in sottofondo per la prossima volta" — la stessa identica strategia
+già corretta per le chiamate API al Checkpoint (v5, vedi lo storico dei commenti nel file
+stesso), ma mai estesa alle pagine HTML della shell. "Aggiorna" nel banner fa solo un
+`location.reload()` (`lib/app-update-context.tsx`) — quella richiesta di navigazione passava
+anch'essa da questo stesso service worker, che la serviva dalla cache VECCHIA se già presente:
+la pagina si ricaricava per davvero, ma con lo stesso contenuto di prima. Home e Tiber, citate
+esplicitamente nella segnalazione, sono anche le due pagine sempre precaricate all'avvio
+(`SHELL_URLS`) — le prime a fare da questo esempio, ma il difetto riguardava ogni pagina
+dell'app già visitata una volta, non solo quelle due.
+
+Corretto distinguendo le richieste di navigazione (`event.request.mode === "navigate"`, un
+vero caricamento di pagina) dal resto: per quelle la rete viene provata SEMPRE per prima
+(bump a `CACHE_NAME = "vitae-shell-v6"`, che fa anche scattare da solo un aggiornamento reale
+del service worker con questo stesso checkpoint), la cache resta solo il ripiego se sei
+offline — lo scopo originale della lista. Gli asset statici (script, stili, immagini, con un
+nome diverso ad ogni build) restano cache-first come prima: lì la staleness non è mai stata
+un problema.
+
+Verificato con `node --check public/sw.js`, `tsc --noEmit` e `next build` — puliti, nessun
+errore.

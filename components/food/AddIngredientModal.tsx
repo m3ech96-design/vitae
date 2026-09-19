@@ -35,6 +35,14 @@ export function AddIngredientModal({
   const { addIngredient, updateIngredient } = useFood();
   const [mode, setMode] = useState<"singolo" | "ricetta">("singolo");
   const [recipeOpen, setRecipeOpen] = useState(false);
+  // Una Ricetta ha sempre unit "altro" con gramsPerUnit derivato dalla sua composizione
+  // (vedi RecipeComposer) — mai scelto a mano. In modifica non esiste ancora un modo per
+  // ricomporre gli ingredienti (vedi il commento più sotto sulla scelta singolo/ricetta),
+  // quindi qui si nasconde solo il selettore unità per non lasciare che l'utente la
+  // riporti per sbaglio a un peso libero (g/ml) rompendo l'invariante "una ricetta
+  // rappresenta sempre l'intero" — il nome della porzione (unitLabel) resta comunque
+  // modificabile normalmente più sotto, come qualunque altro campo.
+  const isRecipe = Boolean(initial?.recipe);
   const [name, setName] = useState(initial?.name ?? initialName ?? "");
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [unit, setUnit] = useState<FoodUnit>(initial?.unit ?? "g");
@@ -151,8 +159,8 @@ export function AddIngredientModal({
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <ChefHat size={22} className="text-aura-emerald" />
               <p className="text-sm text-ink-200">
-                Componi la ricetta dai tuoi ingredienti (o creane di nuovi al volo): i valori nutrizionali per 100 g/ml verranno
-                calcolati per te.
+                Componi la ricetta dai tuoi ingredienti (o creane di nuovi al volo): le calorie e i valori nutrizionali si
+                calcolano da soli, sempre per l&apos;intera composizione che inserisci — mai per un peso a piacere.
               </p>
               <Button onClick={() => setRecipeOpen(true)}>Apri la composizione</Button>
             </div>
@@ -173,40 +181,62 @@ export function AddIngredientModal({
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Dimensione di servizio</p>
-            <div className="flex flex-wrap gap-2">
-              {UNIT_OPTIONS.map((o) => (
-                <Chip key={o.id} label={o.label} selected={unit === o.id} onClick={() => setUnit(o.id)} />
-              ))}
-            </div>
-            {unit === "altro" && (
-              <p className="mt-2 text-[11px] leading-relaxed text-ink-800">
-                Serve solo a registrare i pasti in un'unità comoda (es. "2 uova"). I valori
-                nutrizionali restano legati al peso vero, non a quest'unità — per questo li
-                chiediamo comunque per 100 g qui sotto.
+          {isRecipe ? (
+            <div className="rounded-xl2 border border-aura-emerald/30 bg-aura-emerald/[0.06] px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-ink-600">
+                <ChefHat size={12} className="text-aura-emerald" /> Ricetta
               </p>
-            )}
-          </div>
-
-          {unit === "altro" && (
-            <div className="grid grid-cols-2 gap-3">
-              <TextField
-                label="Nome dell'unità"
-                value={unitLabel}
-                onChange={(e) => setUnitLabel(e.target.value)}
-                placeholder="Es. uovo, fetta"
-              />
-              <TextField
-                label="Peso di 1 unità (g)"
-                type="number"
-                inputMode="decimal"
-                value={gramsPerUnit}
-                onChange={(e) => setGramsPerUnit(e.target.value)}
-                placeholder="Es. 50"
-                hint={unitLabel.trim() ? `Quanto pesa 1 ${unitLabel.trim()}` : undefined}
-              />
+              <p className="mt-1 text-xs text-ink-200">
+                1 {unitLabel.trim() || "porzione"} = l&apos;intera composizione inserita ({unitWeight > 0 ? `${Math.round(unitWeight)} g` : "peso derivato"}
+                ). Per cambiare gli ingredienti, elimina questa ricetta e ricreala.
+              </p>
+              <div className="mt-3">
+                <TextField
+                  label="Nome della porzione"
+                  value={unitLabel}
+                  onChange={(e) => setUnitLabel(e.target.value)}
+                  placeholder="Es. burritos, fetta"
+                />
+              </div>
             </div>
+          ) : (
+            <>
+              <div>
+                <p className="mb-2 font-display text-xs uppercase tracking-[0.14em] text-ink-600">Dimensione di servizio</p>
+                <div className="flex flex-wrap gap-2">
+                  {UNIT_OPTIONS.map((o) => (
+                    <Chip key={o.id} label={o.label} selected={unit === o.id} onClick={() => setUnit(o.id)} />
+                  ))}
+                </div>
+                {unit === "altro" && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-ink-800">
+                    Serve solo a registrare i pasti in un'unità comoda (es. "2 uova"). I valori
+                    nutrizionali restano legati al peso vero, non a quest'unità — per questo li
+                    chiediamo comunque per 100 g qui sotto.
+                  </p>
+                )}
+              </div>
+
+              {unit === "altro" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <TextField
+                    label="Nome dell'unità"
+                    value={unitLabel}
+                    onChange={(e) => setUnitLabel(e.target.value)}
+                    placeholder="Es. uovo, fetta"
+                  />
+                  <TextField
+                    label="Peso di 1 unità (g)"
+                    type="number"
+                    inputMode="decimal"
+                    value={gramsPerUnit}
+                    onChange={(e) => setGramsPerUnit(e.target.value)}
+                    placeholder="Es. 50"
+                    hint={unitLabel.trim() ? `Quanto pesa 1 ${unitLabel.trim()}` : undefined}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <div>

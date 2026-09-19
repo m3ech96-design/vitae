@@ -28,7 +28,23 @@
 // quella sessione del service worker, aggiornandosi solo "per la prossima volta" che però
 // ripeteva lo stesso problema. Le chiamate API sono dati dinamici per natura — mai da servire
 // dalla cache di un service worker pensato per la sola shell dell'app.
-const CACHE_NAME = "vitae-shell-v5";
+//
+// v6: corretta la causa reale dietro "aggiorno l'app e Home, Tiber e altre schede restano
+// ferme al checkpoint precedente" — la stessa strategia "cache prima, rete solo per la
+// PROSSIMA volta" (v5 sopra) valeva finora anche per le pagine HTML della shell (SHELL_URLS
+// qui sotto comprende proprio "/home" e "/tiber"), non solo per le API. Toccare "Aggiorna"
+// nel banner (vedi lib/app-update-context.tsx → applyUpdate) fa solo un `location.reload()`
+// — ma quella richiesta di navigazione passava anch'essa da questo stesso service worker, che
+// la serviva dalla cache VECCHIA se già presente, rinfrescandola solo in sottofondo per un
+// eventuale terzo caricamento: il banner "Nuova versione pronta" appariva, il tocco su
+// "Aggiorna" sembrava funzionare (la pagina si ricarica per davvero), ma il contenuto restava
+// quello di prima. Corretto qui sotto distinguendo le richieste di navigazione (un
+// caricamento di pagina vero e proprio, `event.request.mode === "navigate"`) dal resto: per
+// quelle la rete viene provata SEMPRE per prima (la cache resta solo il ripiego se sei
+// offline, lo scopo originale di questa lista), mentre gli asset statici (script, stili,
+// immagini, con nomi di file che cambiano da soli a ogni build) restano cache-first come
+// prima — non hanno questo problema, un nome diverso è già di per sé una richiesta diversa.
+const CACHE_NAME = "vitae-shell-v6";
 const SHELL_URLS = [
   "/",
   "/wizard",
@@ -91,6 +107,29 @@ self.addEventListener("fetch", (event) => {
   // trovato.
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/api/")) return;
+
+  // v6: una richiesta di navigazione (un caricamento di pagina vero e proprio — anche un
+  // `location.reload()` dopo aver toccato "Aggiorna" nel banner) prova SEMPRE prima la rete,
+  // e cade sulla cache solo se la rete non risponde (offline): è l'unico modo per cui un
+  // aggiornamento pubblicato su Vercel si veda davvero al primo ricaricamento, invece che al
+  // terzo (vedi la nota v6 più sopra). Gli asset statici sotto (script, stili, immagini)
+  // restano invece cache-first, rinfrescati in sottofondo per la prossima volta: qui la
+  // staleness non è un problema, dato che ogni build dà loro un nome diverso.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/home")))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const network = fetch(event.request)

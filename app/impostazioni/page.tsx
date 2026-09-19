@@ -3,8 +3,6 @@ import { ReactNode, useState } from "react";
 import Link from "next/link";
 import {
   Settings as SettingsIcon,
-  LayoutGrid,
-  Compass,
   LayoutDashboard,
   Wallet,
   HeartPulse,
@@ -24,8 +22,6 @@ import {
   Scale,
   LucideIcon,
 } from "lucide-react";
-import { ALL_NAV_ITEMS, useNavSlots } from "@/lib/nav-slots";
-import { SlotPicker } from "@/components/nav/SlotPicker";
 import { useFinance, SalarySplit } from "@/lib/finance-context";
 import { useHealth, WeeklyGoalType, WeeklyActivityGoal } from "@/lib/health-context";
 import { useFood } from "@/lib/food-context";
@@ -115,11 +111,14 @@ const WEEKLY_GOAL_TYPES: { id: WeeklyGoalType; label: string }[] = [
  * aprono dal loro stesso modulo già esistente (un pulsante o un link), per restare la sola
  * fonte di verità di quella UI. Quelle invece senza una vera casa propria (rilevamento
  * posizione, ciclo del budget, obiettivi di peso e attività, backup) vivono qui per intero.
+ *
+ * Corretto secondo le istruzioni: niente più sezioni "Schede in barra"/"Tutte le schede" —
+ * duplicavano da qui una gestione che vive già, per intero, sulla barra stessa (pressione
+ * lunga su uno slot apre lo stesso `SlotPicker`, con l'intero catalogo `ALL_NAV_ITEMS` tra
+ * cui scegliere — vedi BottomNav.tsx), un'unica fonte anche per questo invece di due punti
+ * da tenere sincronizzati.
  */
 export default function ImpostazioniPage() {
-  const { slots, hydrated: slotsHydrated, setSlot, swapSlots } = useNavSlots();
-  const [pickingSlot, setPickingSlot] = useState<number | null>(null);
-
   const { placed: widgets, hydrated: widgetsHydrated } = useWidgets();
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const { hrefs: shortcutHrefs, hydrated: shortcutsHydrated, addShortcut, removeShortcut } = useShortcuts();
@@ -158,7 +157,7 @@ export default function ImpostazioniPage() {
   );
 
   const allHydrated =
-    slotsHydrated && widgetsHydrated && shortcutsHydrated && financeHydrated && healthHydrated && diaryHydrated && householdHydrated;
+    widgetsHydrated && shortcutsHydrated && financeHydrated && healthHydrated && diaryHydrated && householdHydrated;
   if (!allHydrated) return null;
 
   const commitSplit = (key: SplitKey, text: string) => {
@@ -216,69 +215,8 @@ export default function ImpostazioniPage() {
         </p>
       </Reveal>
 
-      {/* Navigazione */}
-      <Reveal delay={next()} className="mt-7">
-        <GlassCard className="p-5">
-          <SectionHeader
-            icon={LayoutGrid}
-            tone="violet"
-            title="Schede in barra"
-            subtitle="Le tre posizioni personalizzabili accanto a Home — tocca per cambiarle, senza bisogno di tenere premuto sull'icona."
-          />
-          <div className="grid grid-cols-3 gap-2.5">
-            {slots.map((href, index) => {
-              const item = ALL_NAV_ITEMS.find((i) => i.href === href);
-              if (!item) return null;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={index}
-                  onClick={() => setPickingSlot(index)}
-                  className="focus-ring flex flex-col items-center gap-1.5 rounded-xl2 border border-white/10 bg-white/[0.02] py-4 transition hover:border-aura-violet/50"
-                >
-                  <Icon size={18} className="text-aura-cyan" />
-                  <span className="text-[11px] text-ink-100">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </GlassCard>
-      </Reveal>
-
-      <Reveal delay={next()} className="mt-4">
-        <GlassCard className="p-5">
-          <SectionHeader
-            icon={Compass}
-            tone="cyan"
-            title="Tutte le schede"
-            subtitle="Ogni sezione dell'app, raggiungibile da qui — non solo le tre in barra."
-          />
-          <div className="grid grid-cols-2 gap-2.5">
-            {ALL_NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const inSlot = slots.includes(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="focus-ring relative flex items-center gap-2.5 rounded-xl2 border border-white/[0.06] bg-white/[0.015] px-3.5 py-3 transition hover:border-aura-violet/40"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-aura-cyan">
-                    <Icon size={14} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-ink-100">{item.label}</span>
-                  {inSlot && (
-                    <span className="shrink-0 rounded-full bg-aura-violet/15 px-2 py-0.5 text-[9px] text-aura-violet">in barra</span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </GlassCard>
-      </Reveal>
-
       {/* Home */}
-      <Reveal delay={next()} className="mt-4">
+      <Reveal delay={next()} className="mt-7">
         <GlassCard className="p-5">
           <SectionHeader icon={LayoutDashboard} tone="emerald" title="Home" subtitle="Cosa compare nella tua schermata principale." />
           <Row
@@ -547,18 +485,6 @@ export default function ImpostazioniPage() {
 
       <p className="mt-8 text-center text-[11px] text-ink-800">Vitae · La tua vita, vissuta due volte.</p>
 
-      {pickingSlot !== null && (
-        <SlotPicker
-          current={slots[pickingSlot]}
-          otherSlots={slots.filter((_, i) => i !== pickingSlot)}
-          onPick={(href) => {
-            const otherIndex = slots.findIndex((s, i) => s === href && i !== pickingSlot);
-            if (otherIndex !== -1) swapSlots(pickingSlot, otherIndex);
-            else setSlot(pickingSlot, href);
-          }}
-          onClose={() => setPickingSlot(null)}
-        />
-      )}
       {addWidgetOpen && <AddWidgetSheet onClose={() => setAddWidgetOpen(false)} />}
       {foodGoalsOpen && <FoodGoalsModal onClose={() => setFoodGoalsOpen(false)} />}
     </div>

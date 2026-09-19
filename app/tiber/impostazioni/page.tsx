@@ -38,7 +38,11 @@ export default function TiberSettingsPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-16 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
+    // Corretto secondo le istruzioni: pb-16 lasciava "Azzera la conversazione" (l'ultimo
+    // elemento della pagina) sotto la barra di navigazione fissa in basso — invisibile e
+    // impossibile da toccare. pb-28 è lo stesso margine usato da ogni altra pagina con la
+    // barra visibile (vedi Home, Task, Wishlist, ecc.), non un valore scelto qui a sé.
+    <div className="mx-auto min-h-screen w-full max-w-xl px-5 pb-28 pt-[max(env(safe-area-inset-top),2.5rem)] sm:px-6">
       <button onClick={() => router.back()} className="focus-ring flex items-center gap-1.5 text-xs text-ink-600 hover:text-ink-200">
         <ArrowLeft size={14} /> Indietro
       </button>
@@ -116,6 +120,22 @@ export default function TiberSettingsPage() {
           )}
         </GlassCard>
 
+        {/* Corretto secondo le istruzioni: il pallino dei due interruttori qui sotto usciva
+           dal contorno della traccia. Causa, la stessa già risolta più volte altrove in
+           questo progetto (vedi il commento in components/ui/Switch.tsx) — non riusata qui
+           perché questi due hanno una traccia in gradiente (`bg-aura-gradient`) propria di
+           Tiber, diversa dal violetto pieno di quel componente condiviso: un `<span
+           translate-x>` con SOLO `top-0.5` e nessun `left-*` esplicito parte dalla posizione
+           "naturale" nel flusso del `<button>` che lo contiene — un `<button>` non azzerato
+           (senza `border-0 p-0`, mancanti qui) ha però un padding di default del browser
+           diverso da zero, che sposta quella posizione naturale verso l'interno; sommato poi
+           allo scorrimento verso il bordo opposto (`translate-x`), il pallino finiva oltre il
+           bordo arrotondato della traccia invece di fermarsi a un margine costante da esso.
+           Corretto con `border-0 p-0` sul bottone e una posizione di partenza esplicita
+           (`left-0.5`) sul pallino, invece di lasciarla implicita — stessa identica logica
+           del componente condiviso, margine di 2px simmetrico su entrambi i lati in ogni
+           stato (`translate-x-0`/`translate-x-[20px]` su una traccia larga 44px con un
+           pallino di 20px: 44 − 20 − 2 − 2 = 20px di corsa). */}
         <GlassCard className="p-5">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -124,13 +144,13 @@ export default function TiberSettingsPage() {
             </div>
             <button
               onClick={() => setProactiveEnabled(!proactiveEnabled)}
-              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full transition ${proactiveEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
+              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full border-0 p-0 transition ${proactiveEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
               aria-label={proactiveEnabled ? "Disattiva" : "Attiva"}
               role="switch"
               aria-checked={proactiveEnabled}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${proactiveEnabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${proactiveEnabled ? "translate-x-[20px]" : "translate-x-0"}`}
               />
             </button>
           </div>
@@ -150,13 +170,13 @@ export default function TiberSettingsPage() {
             </div>
             <button
               onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full transition ${voiceEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
+              className={`focus-ring relative h-6 w-11 shrink-0 rounded-full border-0 p-0 transition ${voiceEnabled ? "bg-aura-gradient" : "bg-white/10"}`}
               aria-label={voiceEnabled ? "Disattiva" : "Attiva"}
               role="switch"
               aria-checked={voiceEnabled}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${voiceEnabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-void-950 transition-transform ${voiceEnabled ? "translate-x-[20px]" : "translate-x-0"}`}
               />
             </button>
           </div>

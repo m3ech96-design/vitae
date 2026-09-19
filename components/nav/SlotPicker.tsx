@@ -4,17 +4,19 @@ import { X, Check, ArrowLeftRight } from "lucide-react";
 import clsx from "clsx";
 import { ALL_NAV_ITEMS } from "@/lib/nav-slots";
 
-/** Il foglio che si apre tenendo premuta una delle tre schede personalizzabili in barra (o
- * toccando uno slot dalla scheda Impostazioni, vedi app/impostazioni/page.tsx — stesso
- * componente, due punti d'accesso) — sceglie cosa mettere in quello slot tra TUTTE le altre
- * schede, comprese quelle già in barra negli altri due slot: sceglierne una lì scambia le due
- * posizioni invece di lasciarla semplicemente sparire, così ogni scheda in barra resta sempre
- * raggiungibile da qualche parte. Home e Impostazioni non sono mai tra le opzioni: restano
- * fissi, come richiesto.
+/** Il foglio che si apre tenendo premuta una delle tre schede personalizzabili in barra —
+ * sceglie cosa mettere in quello slot tra TUTTE le altre schede (`ALL_NAV_ITEMS`, l'intero
+ * catalogo), comprese quelle già in barra negli altri due slot: sceglierne una lì scambia le
+ * due posizioni invece di lasciarla semplicemente sparire, così ogni scheda in barra resta
+ * sempre raggiungibile da qualche parte. Home e Impostazioni non sono mai tra le opzioni:
+ * restano fissi, come richiesto. Corretto secondo le istruzioni: niente più doppione "Schede
+ * in barra"/"Tutte le schede" dentro Impostazioni (rimosso, ridondante con questo stesso
+ * foglio) — il foglio "Altro" in BottomNav.tsx resta invece, come richiesto esplicitamente:
+ * i due percorsi (pressione lunga su uno slot qui, tocco sul badge "Altro" per l'elenco
+ * completo) restano entrambi, solo non più triplicati anche dentro Impostazioni.
  *
- * Estratto da components/BottomNav.tsx (dove viveva come funzione locale, non esportata) per
- * essere richiamabile anche dalla scheda Impostazioni — stesso identico comportamento, un solo
- * file da mantenere invece di due copie che rischierebbero di scollegarsi nel tempo. */
+ * File a sé (non più una funzione locale di BottomNav.tsx) per come è stato introdotto —
+ * in quel momento richiamabile anche dalla scheda Impostazioni. */
 export function SlotPicker({
   current,
   otherSlots,

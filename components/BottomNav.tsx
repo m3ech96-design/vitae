@@ -31,7 +31,28 @@ function ActiveGlow() {
   );
 }
 
-function NavButton({ item, active, onLongPress }: { item: NavItemDef; active: boolean; onLongPress?: () => void }) {
+/**
+ * Corretto secondo le istruzioni: la larghezza del pill dipende dalla somma delle etichette
+ * dei suoi pulsanti (ciascuno un flex-col icona-sopra-etichetta, largo quanto il più lungo
+ * dei due) — non solo dal loro numero. "Impostazioni" (12 lettere) al posto di "Altro" (5)
+ * come icona fissa aveva allargato il pill oltre la sua misura precedente, anche senza alcun
+ * badge. `showLabel` (di serie true, com'era per ogni pulsante finora) permesso a false per
+ * chi non deve contribuire con la propria etichetta alla larghezza — usato solo da
+ * Impostazioni qui sotto, l'unico caso in cui la parola è sensibilmente più lunga della norma
+ * ed è comunque un'icona già universalmente riconoscibile da sola (un ingranaggio) — non un
+ * cambiamento applicato agli altri pulsanti, che restano larghi come sono sempre stati.
+ * `aria-label` prende il posto dell'etichetta visibile per chi usa uno screen reader. */
+function NavButton({
+  item,
+  active,
+  onLongPress,
+  showLabel = true,
+}: {
+  item: NavItemDef;
+  active: boolean;
+  onLongPress?: () => void;
+  showLabel?: boolean;
+}) {
   const { handlers, pressing } = useLongPress(onLongPress ?? (() => {}));
   const Icon = item.icon;
   return (
@@ -39,6 +60,7 @@ function NavButton({ item, active, onLongPress }: { item: NavItemDef; active: bo
       href={item.href}
       {...(onLongPress ? handlers : {})}
       onContextMenu={(e) => onLongPress && e.preventDefault()}
+      aria-label={showLabel ? undefined : item.label}
       className={clsx(
         "focus-ring relative flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-all",
         pressing && "scale-90",
@@ -47,17 +69,20 @@ function NavButton({ item, active, onLongPress }: { item: NavItemDef; active: bo
     >
       {active && <ActiveGlow />}
       <Icon size={18} className="relative z-10" />
-      <span className="relative z-10 text-[9px]">{item.label}</span>
+      {showLabel && <span className="relative z-10 text-[9px]">{item.label}</span>}
     </Link>
   );
 }
 
+/**
+ * Corretto secondo le istruzioni: "Altro" resta, come piccola icona sovrapposta al pill (vedi
+ * più sotto) — il pill torna comunque alla sua larghezza precedente (senza il badge, che
+ * conta a parte) togliendo l'unica vera causa dell'allargamento: l'etichetta "Impostazioni",
+ * più lunga di qualunque altra sempre visibile in barra prima d'ora (vedi `showLabel` sopra).
+ */
 export function BottomNav() {
   const pathname = usePathname();
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
-  // Corretto secondo le istruzioni: "Altro" torna, non più come scheda della fila principale
-  // (sostituita da Impostazioni, vedi SETTINGS_ITEM) ma come piccola icona a parte — lo stesso
-  // foglio con le schede non in barra, riaperto da qui.
   const [moreOpen, setMoreOpen] = useState(false);
   const { activeMood, activeMoodIntensity, allMoods } = useMood();
   const { hasStalePlaces } = usePlaces();
@@ -72,8 +97,7 @@ export function BottomNav() {
   const pickForSlot = (href: string) => {
     if (pickingSlot === null) return;
     // Se l'href scelto occupa già un altro slot in barra, le due posizioni si scambiano —
-    // altrimenti è una scheda libera (oggi raggiungibile solo da Impostazioni → "Tutte le
-    // schede") e prende semplicemente il posto.
+    // altrimenti è una scheda libera e prende semplicemente il posto.
     const otherIndex = slots.findIndex((s, i) => s === href && i !== pickingSlot);
     if (otherIndex !== -1) swapSlots(pickingSlot, otherIndex);
     else setSlot(pickingSlot, href);
@@ -87,8 +111,7 @@ export function BottomNav() {
         {!hidden && (
           <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),14px)]">
             {/* `relative` solo per dare al badge "Altro" qui sotto un riferimento su cui
-               ancorarsi — il pill stesso non ne aveva bisogno prima, dato che non ospitava
-               nulla in `position: absolute`. */}
+               ancorarsi — il pill stesso non ne ha bisogno per sé. */}
             <div className="relative">
               <motion.div
                 key="offline-pill"
@@ -129,25 +152,25 @@ export function BottomNav() {
                     </span>
                   ))}
                 {/* Impostazioni resta fissa, ultima della fila, mai riassegnabile con la
-                   pressione lunga — esattamente come Home. La possibilità di raggiungere ogni
-                   scheda non in barra vive anche dentro Impostazioni → "Tutte le schede" (vedi
-                   app/impostazioni/page.tsx), più ricca del solo foglio "Altro" qui sotto
-                   (mostra anche quali sono già in barra). */}
-                <NavButton item={SETTINGS_ITEM} active={pathname.startsWith("/impostazioni")} />
+                   pressione lunga — esattamente come Home. Senza etichetta (vedi il
+                   commento su `showLabel` in NavButton): l'ingranaggio da solo basta a
+                   farla riconoscere, e la parola "Impostazioni" era l'unica ragione per
+                   cui il pill si era allargato oltre la sua misura di sempre. */}
+                <NavButton item={SETTINGS_ITEM} active={pathname.startsWith("/impostazioni")} showLabel={false} />
               </motion.div>
 
-              {/* Corretto secondo le istruzioni: "Altro" torna come piccola icona in basso a
-                 destra, leggermente sovrapposta al pill — MA come fratello del pill nell'albero
-                 React (figlio di questo stesso `<div className="relative">`, non annidato
-                 dentro il `<Link>` di Impostazioni che gli sta sotto): un tocco qui non risale
-                 quindi a nessun antenato con un proprio `onClick` o `href`, lo stesso principio
-                 già seguito per HobbyPreviewSheet.tsx (fratello, non figlio, del bottone che lo
-                 apre) e per PersonalCardMenu.tsx — la causa reale, in questo progetto, del
-                 "tocco un elemento sovrapposto e si attiva anche quello sotto" non è mai la
-                 sovrapposizione visiva in sé (il browser consegna il click al solo elemento più
-                 in alto nello stacking, `stopPropagation` qui è ridondante ma lasciato per
-                 coerenza con lo stesso pattern altrove) — è quasi sempre un elemento annidato
-                 dentro un antenato cliccabile, evitato qui per costruzione. */}
+              {/* "Altro" — piccola icona in basso a destra, leggermente sovrapposta al pill,
+                 fratello del pill nell'albero React (figlio di questo stesso
+                 `<div className="relative">`, non annidato dentro il `<Link>` di
+                 Impostazioni su cui visivamente si sovrappone): un tocco qui non risale
+                 quindi a nessun antenato con un proprio `onClick` o `href`, lo stesso
+                 principio già seguito per HobbyPreviewSheet.tsx e PersonalCardMenu.tsx — la
+                 causa reale, in questo progetto, del "tocco un elemento sovrapposto e si
+                 attiva anche quello sotto" non è mai la sovrapposizione visiva in sé (il
+                 browser consegna il click al solo elemento più in alto nello stacking,
+                 `stopPropagation` qui è ridondante ma lasciato per coerenza con lo stesso
+                 pattern altrove) — è quasi sempre un elemento annidato dentro un antenato
+                 cliccabile, evitato qui per costruzione. */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
